@@ -39,7 +39,8 @@
     <ProjectGuid>5544fbff-ad9c-4119-8cb3-9dcf055dbf86</ProjectGuid>
     <TargetPlatformVersion>10.0.26100.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <AssetTargetFallback>net8.0-windows$(TargetPlatformVersion);$(AssetTargetFallback)</AssetTargetFallback>
+    <AssetTargetFallback>net10.0-windows$(TargetPlatformVersion);$(AssetTargetFallback)</AssetTargetFallback>
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
     <DefaultLanguage>en-US</DefaultLanguage>
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
     <EntryPointProjectUniqueName>..\FileFormatAIStudio\FileFormatAIStudio.csproj</EntryPointProjectUniqueName>

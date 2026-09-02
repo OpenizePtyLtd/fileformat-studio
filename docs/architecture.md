@@ -1,13 +1,13 @@
 # FileFormat Studio - High-Level Architecture
 
-> **Platform:** WinUI 3 (Windows App SDK) | .NET 8 / .NET 9  
+> **Platform:** WinUI 3 (Windows App SDK) | .NET 10 (LTS)  
 > **Ecosystem:** [FileFormat.ai](https://fileformat.ai) | Open-Source & Enterprise Desktop AI Knowledgebase
 
 ---
 
 ## 1. Executive Summary & Vision
 
-**FileFormat Studio** is a native Windows desktop application built with **WinUI 3** and **.NET 8** that allows users to chat with their local documents (`.docx`, `.xlsx`, `.pptx`, `.pdf`, `.txt`, `.csv`, etc.) locally and natively on Windows.
+**FileFormat Studio** is a native Windows desktop application built with **WinUI 3** and **.NET 10 (LTS)** that allows users to chat with their local documents (`.docx`, `.xlsx`, `.pptx`, `.pdf`, `.txt`, `.csv`, etc.) locally and natively on Windows.
 
 ### Core Architectural Pillars:
 1. **Multi-Session Chat & Navigation:** Multi-turn conversational interface with dynamic session creation, history tracking, and deletion.
@@ -322,10 +322,10 @@ fileformat-studio/
 
 | Area | Choice | Rationale |
 | :--- | :--- | :--- |
-| **Framework** | WinUI 3 (Windows App SDK) + .NET 8 | Native Windows 11 Fluent UI, Mica backdrops, high-performance desktop execution. |
+| **Framework** | WinUI 3 (Windows App SDK) + .NET 10 (LTS) | Native Windows 11 Fluent UI, Mica backdrops, high-performance desktop execution. |
 | **AI Abstraction** | `Microsoft.Extensions.AI` | Standardized Microsoft abstraction layer (`IChatClient`, `IEmbeddingGenerator`) for cloud & local LLMs. |
 | **Relational DB** | SQLite via `Microsoft.EntityFrameworkCore.Sqlite` | Zero-configuration, serverless, single-file embedded DB. |
-| **Vector DB** | SQLite BLOB + .NET 8 SIMD `TensorPrimitives` | 100% zero external installs, hardware-accelerated CPU search (<10ms for 50k chunks). |
+| **Vector DB** | SQLite BLOB + .NET 10 SIMD `TensorPrimitives` | 100% zero external installs, hardware-accelerated CPU search (<10ms for 50k chunks). |
 | **Document Parsers** | Pluggable (`IDocumentParser`): Aspose + .NET OSS + Node.js OSS | Gives users the flexibility between 100% free open-source parsers and high-fidelity enterprise engines. |
 | **MVVM Pattern** | `CommunityToolkit.Mvvm` | Fast source generators (`[ObservableProperty]`, `[RelayCommand]`), clean separation of concerns. |
 
