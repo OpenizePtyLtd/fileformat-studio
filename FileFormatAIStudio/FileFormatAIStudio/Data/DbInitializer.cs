@@ -1,0 +1,68 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using FileFormatAIStudio.Data.Entities;
+using Microsoft.EntityFrameworkCore;
+
+namespace FileFormatAIStudio.Data
+{
+    public static class DbInitializer
+    {
+        public static async Task InitializeAsync(AppDbContext context)
+        {
+            // Ensure SQLite database and tables exist
+            await context.Database.EnsureCreatedAsync();
+
+            // Seed default providers if none exist
+            if (!await context.Providers.AnyAsync())
+            {
+                var openAiProvider = new ProviderConfigEntity
+                {
+                    Name = "OpenAI",
+                    ProviderType = "OpenAI",
+                    EndpointUrl = "https://api.openai.com/v1",
+                    ApiKey = string.Empty,
+                    IsEnabled = true,
+                    Models = new List<ModelConfigEntity>
+                    {
+                        new() { ModelId = "gpt-4o", DisplayName = "GPT-4o", IsDefault = true },
+                        new() { ModelId = "gpt-4o-mini", DisplayName = "GPT-4o Mini", IsDefault = false }
+                    }
+                };
+
+                var openRouterProvider = new ProviderConfigEntity
+                {
+                    Name = "OpenRouter",
+                    ProviderType = "OpenRouter",
+                    EndpointUrl = "https://openrouter.ai/api/v1",
+                    ApiKey = string.Empty,
+                    IsEnabled = true,
+                    Models = new List<ModelConfigEntity>
+                    {
+                        new() { ModelId = "openai/gpt-4o-mini", DisplayName = "OpenRouter: GPT-4o Mini", IsDefault = false },
+                        new() { ModelId = "anthropic/claude-3.5-sonnet", DisplayName = "OpenRouter: Claude 3.5 Sonnet", IsDefault = false },
+                        new() { ModelId = "meta-llama/llama-3.2-3b-instruct:free", DisplayName = "OpenRouter: Llama 3.2 3B (Free)", IsDefault = false }
+                    }
+                };
+
+                var localGptOssProvider = new ProviderConfigEntity
+                {
+                    Name = "Local Infrastructure (gptoss)",
+                    ProviderType = "Custom",
+                    EndpointUrl = "http://localhost:8000/v1",
+                    ApiKey = "not-needed",
+                    IsEnabled = true,
+                    Models = new List<ModelConfigEntity>
+                    {
+                        new() { ModelId = "gptoss", DisplayName = "Local gptoss Model", IsDefault = false }
+                    }
+                };
+
+                context.Providers.AddRange(openAiProvider, openRouterProvider, localGptOssProvider);
+                await context.SaveChangesAsync();
+            }
+        }
+    }
+}
+

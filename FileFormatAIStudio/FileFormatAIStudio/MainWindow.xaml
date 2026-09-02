@@ -4,16 +4,92 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:FileFormatAIStudio"
+    xmlns:entities="using:FileFormatAIStudio.Data.Entities"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Title="FileFormatAIStudio">
+    Title="FileFormat Studio">
 
     <Window.SystemBackdrop>
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
     <Grid>
+        <NavigationView x:Name="RootNavigationView"
+                        PaneTitle="FileFormat Studio"
+                        IsBackButtonVisible="Collapsed"
+                        IsSettingsVisible="True"
+                        PaneDisplayMode="Left"
+                        IsPaneToggleButtonVisible="True"
+                        OpenPaneLength="280"
+                        SelectionChanged="OnNavigationSelectionChanged">
 
+            <NavigationView.PaneCustomContent>
+                <Grid Padding="12,8,12,8" RowSpacing="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- New Chat Button inside PaneCustomContent so it never overlaps Hamburger Toggle -->
+                    <Button Grid.Row="0"
+                            HorizontalAlignment="Stretch"
+                            Style="{ThemeResource AccentButtonStyle}"
+                            Height="38"
+                            Click="OnNewChatClicked">
+                        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                            <FontIcon Glyph="&#xE710;" FontSize="14" />
+                            <TextBlock Text="New Chat" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Button>
+
+                    <TextBlock Grid.Row="1"
+                               Text="RECENT SESSIONS"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                               Margin="4,4,0,0" />
+
+                    <ListView x:Name="SessionsListView"
+                              Grid.Row="2"
+                              ItemsSource="{x:Bind ViewModel.Sessions, Mode=OneWay}"
+                              SelectedItem="{x:Bind ViewModel.SelectedSession, Mode=TwoWay}"
+                              SelectionMode="Single"
+                              SelectionChanged="OnSessionSelectionChanged">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="entities:ChatSessionEntity">
+                                <Grid Padding="6,8" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <FontIcon Grid.Column="0" Glyph="&#xE8BD;" FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    
+                                    <TextBlock Grid.Column="1"
+                                               Text="{x:Bind Title, Mode=OneWay}"
+                                               TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center" />
+
+                                    <Button Grid.Column="2"
+                                            Padding="6,4"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            ToolTipService.ToolTip="Delete Chat"
+                                            Click="OnDeleteSessionClicked">
+                                        <FontIcon Glyph="&#xE74D;" FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </NavigationView.PaneCustomContent>
+
+            <Frame x:Name="ContentFrame" />
+        </NavigationView>
     </Grid>
 </Window>
+
