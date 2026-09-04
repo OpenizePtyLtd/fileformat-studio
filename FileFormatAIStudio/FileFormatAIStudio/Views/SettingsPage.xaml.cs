@@ -15,7 +15,38 @@ namespace FileFormatAIStudio.Views
         {
             InitializeComponent();
             ViewModel = ((App)Application.Current).Services.GetRequiredService<SettingsViewModel>();
-            this.Loaded += async (s, e) => await ViewModel.LoadProvidersAsync();
+            ViewModel.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(ViewModel.SelectedProvider))
+                {
+                    UpdateApiKeyBox();
+                }
+            };
+            this.Loaded += async (s, e) =>
+            {
+                await ViewModel.LoadProvidersAsync();
+                UpdateApiKeyBox();
+            };
+        }
+
+        private void UpdateApiKeyBox()
+        {
+            if (ApiKeyPasswordBox != null)
+            {
+                string currentKey = ViewModel.SelectedProvider?.ApiKey ?? string.Empty;
+                if (ApiKeyPasswordBox.Password != currentKey)
+                {
+                    ApiKeyPasswordBox.Password = currentKey;
+                }
+            }
+        }
+
+        private void OnApiKeyPasswordChanged(object sender, RoutedEventArgs e)
+        {
+            if (ViewModel.SelectedProvider != null && ApiKeyPasswordBox != null)
+            {
+                ViewModel.SelectedProvider.ApiKey = ApiKeyPasswordBox.Password;
+            }
         }
 
         public static Visibility ToVisibility(object? obj) => obj != null ? Visibility.Visible : Visibility.Collapsed;

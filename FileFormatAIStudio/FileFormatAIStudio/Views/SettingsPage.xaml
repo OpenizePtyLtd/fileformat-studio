@@ -134,8 +134,10 @@
                             <TextBox Header="Endpoint URL (e.g., https://api.openai.com/v1 or http://localhost:8000/v1)"
                                      Text="{x:Bind ViewModel.SelectedProvider.EndpointUrl, Mode=TwoWay}" />
 
-                            <TextBox Header="API Key"
-                                     Text="{x:Bind ViewModel.SelectedProvider.ApiKey, Mode=TwoWay}" />
+                            <PasswordBox x:Name="ApiKeyPasswordBox"
+                                         Header="API Key"
+                                         PasswordRevealMode="Peek"
+                                         PasswordChanged="OnApiKeyPasswordChanged" />
 
                             <ToggleSwitch Header="Enable this Provider"
                                           IsOn="{x:Bind ViewModel.SelectedProvider.IsEnabled, Mode=TwoWay}" />

@@ -1,7 +1,9 @@
 using System;
 using System.IO;
 using FileFormatAIStudio.Data.Entities;
+using FileFormatAIStudio.Services.Security;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace FileFormatAIStudio.Data
 {
@@ -39,6 +41,15 @@ namespace FileFormatAIStudio.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // DPAPI encryption for sensitive API keys at rest
+            var dpapiConverter = new ValueConverter<string, string>(
+                v => DataProtectionService.Protect(v),
+                v => DataProtectionService.Unprotect(v));
+
+            modelBuilder.Entity<ProviderConfigEntity>()
+                .Property(p => p.ApiKey)
+                .HasConversion(dpapiConverter);
 
             // Provider -> Models (Cascade Delete)
             modelBuilder.Entity<ProviderConfigEntity>()
