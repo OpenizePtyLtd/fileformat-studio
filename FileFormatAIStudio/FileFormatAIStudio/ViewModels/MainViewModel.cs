@@ -58,6 +58,7 @@ namespace FileFormatAIStudio.ViewModels
             if (existingEmpty != null)
             {
                 SelectedSession = existingEmpty;
+                SessionSelected?.Invoke(existingEmpty.Id);
                 return;
             }
 
@@ -72,6 +73,7 @@ namespace FileFormatAIStudio.ViewModels
             {
                 SelectedSession = inList;
             }
+            SessionSelected?.Invoke(SelectedSession.Id);
         }
 
         [RelayCommand]

@@ -18,6 +18,28 @@ namespace FileFormatAIStudio.Views
             this.Loaded += async (s, e) => await ViewModel.LoadProvidersAsync();
         }
 
+        public static Visibility ToVisibility(object? obj) => obj != null ? Visibility.Visible : Visibility.Collapsed;
+
+        private void OnCloseSettingsClicked(object sender, RoutedEventArgs e)
+        {
+            if (Frame != null && Frame.CanGoBack)
+            {
+                Frame.GoBack();
+            }
+            else
+            {
+                var mainVm = ((App)Application.Current).Services.GetRequiredService<MainViewModel>();
+                if (mainVm.SelectedSession != null)
+                {
+                    Frame?.Navigate(typeof(ChatPage), mainVm.SelectedSession.Id);
+                }
+                else
+                {
+                    Frame?.Navigate(typeof(ChatPage));
+                }
+            }
+        }
+
         private async void OnDeleteModelClicked(object sender, RoutedEventArgs e)
         {
             if (sender is FrameworkElement element && element.DataContext is ModelConfigEntity model)

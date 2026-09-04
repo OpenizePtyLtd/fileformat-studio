@@ -17,7 +17,8 @@
     <Grid>
         <NavigationView x:Name="RootNavigationView"
                         PaneTitle="FileFormat Studio"
-                        IsBackButtonVisible="Collapsed"
+                        IsBackButtonVisible="Auto"
+                        BackRequested="OnBackRequested"
                         IsSettingsVisible="True"
                         PaneDisplayMode="Left"
                         IsPaneToggleButtonVisible="True"
@@ -56,6 +57,8 @@
                               ItemsSource="{x:Bind ViewModel.Sessions, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.SelectedSession, Mode=TwoWay}"
                               SelectionMode="Single"
+                              IsItemClickEnabled="True"
+                              ItemClick="OnSessionItemClicked"
                               SelectionChanged="OnSessionSelectionChanged">
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="entities:ChatSessionEntity">
@@ -88,7 +91,7 @@
                 </Grid>
             </NavigationView.PaneCustomContent>
 
-            <Frame x:Name="ContentFrame" />
+            <Frame x:Name="ContentFrame" Navigated="OnContentFrameNavigated" />
         </NavigationView>
     </Grid>
 </Window>

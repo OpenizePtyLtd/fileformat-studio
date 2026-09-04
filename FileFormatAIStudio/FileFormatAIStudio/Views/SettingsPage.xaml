@@ -15,12 +15,40 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <StackPanel Grid.Row="0" Spacing="4">
-            <TextBlock Text="AI Providers &amp; Models Settings" Style="{ThemeResource TitleTextBlockStyle}" />
-            <TextBlock Text="Configure cloud and local LLM endpoints (OpenAI, OpenRouter, Local company LLMs)"
-                       Style="{ThemeResource BodyTextBlockStyle}"
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-        </StackPanel>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0"
+                    ToolTipService.ToolTip="Back to Chat"
+                    Click="OnCloseSettingsClicked"
+                    VerticalAlignment="Center"
+                    Margin="0,0,16,0"
+                    Padding="8"
+                    Background="Transparent"
+                    BorderThickness="0">
+                <FontIcon Glyph="&#xE72B;" FontSize="16" />
+            </Button>
+
+            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                <TextBlock Text="AI Providers &amp; Models Settings" Style="{ThemeResource TitleTextBlockStyle}" />
+                <TextBlock Text="Configure cloud and local LLM endpoints (OpenAI, OpenRouter, Local company LLMs)"
+                           Style="{ThemeResource BodyTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+
+            <Button Grid.Column="2"
+                    Click="OnCloseSettingsClicked"
+                    VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xE8BB;" FontSize="12" />
+                    <TextBlock Text="Close Settings" />
+                </StackPanel>
+            </Button>
+        </Grid>
 
         <!-- Main Settings Body -->
         <Grid Grid.Row="1" ColumnSpacing="24">
@@ -69,12 +97,16 @@
                     <Button Grid.Row="2"
                             Content="+ Add Provider"
                             HorizontalAlignment="Stretch"
+                            IsEnabled="{x:Bind ViewModel.CanAddProvider, Mode=OneWay}"
+                            ToolTipService.ToolTip="Add a new provider (max 1 unconfigured at a time)"
                             Command="{x:Bind ViewModel.AddProviderCommand}" />
                 </Grid>
             </Border>
 
             <!-- Right: Provider Detail & Models -->
-            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer Grid.Column="1"
+                          VerticalScrollBarVisibility="Auto"
+                          Visibility="{x:Bind local:SettingsPage.ToVisibility(ViewModel.SelectedProvider), Mode=OneWay}">
                 <StackPanel Spacing="20" Margin="0,0,12,0">
 
                     <!-- Provider Details Card -->

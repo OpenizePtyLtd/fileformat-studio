@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -19,6 +20,10 @@ namespace FileFormatAIStudio.ViewModels
 
         [ObservableProperty]
         private ProviderConfigEntity? _selectedProvider;
+
+        public bool HasSelectedProvider => SelectedProvider != null;
+
+        public bool CanAddProvider => !Providers.Any(p => p.Name.Equals("New Provider", StringComparison.OrdinalIgnoreCase));
 
         [ObservableProperty]
         private ObservableCollection<ModelConfigEntity> _selectedProviderModels = new();
@@ -44,6 +49,12 @@ namespace FileFormatAIStudio.ViewModels
             _aiClientFactory = aiClientFactory;
         }
 
+        public void UpdateCanAddProvider()
+        {
+            OnPropertyChanged(nameof(CanAddProvider));
+            AddProviderCommand.NotifyCanExecuteChanged();
+        }
+
         [RelayCommand]
         public async Task LoadProvidersAsync()
         {
@@ -58,6 +69,7 @@ namespace FileFormatAIStudio.ViewModels
             {
                 SelectedProvider = Providers[0];
             }
+            UpdateCanAddProvider();
         }
 
         partial void OnSelectedProviderChanged(ProviderConfigEntity? value)
@@ -71,6 +83,8 @@ namespace FileFormatAIStudio.ViewModels
                     SelectedProviderModels.Add(model);
                 }
             }
+            OnPropertyChanged(nameof(HasSelectedProvider));
+            UpdateCanAddProvider();
         }
 
         [RelayCommand]
@@ -80,11 +94,20 @@ namespace FileFormatAIStudio.ViewModels
             await _settingsService.SaveProviderAsync(SelectedProvider);
             TestStatusMessage = "Settings saved successfully!";
             IsTestSuccess = true;
+            UpdateCanAddProvider();
         }
 
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(CanAddProvider))]
         public async Task AddProviderAsync()
         {
+            var existing = Providers.FirstOrDefault(p => p.Name.Equals("New Provider", StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+            {
+                SelectedProvider = existing;
+                UpdateCanAddProvider();
+                return;
+            }
+
             var newProvider = new ProviderConfigEntity
             {
                 Name = "New Provider",
@@ -97,6 +120,7 @@ namespace FileFormatAIStudio.ViewModels
             await _settingsService.SaveProviderAsync(newProvider);
             Providers.Add(newProvider);
             SelectedProvider = newProvider;
+            UpdateCanAddProvider();
         }
 
         [RelayCommand]
@@ -111,6 +135,7 @@ namespace FileFormatAIStudio.ViewModels
             {
                 SelectedProvider = Providers.Count > 0 ? Providers[0] : null;
             }
+            UpdateCanAddProvider();
         }
 
         [RelayCommand]
