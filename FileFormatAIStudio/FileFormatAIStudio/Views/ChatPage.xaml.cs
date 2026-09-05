@@ -42,7 +42,7 @@ namespace FileFormatAIStudio.Views
             });
         }
 
-        private async void OnPromptKeyDown(object sender, KeyRoutedEventArgs e)
+        private async void OnPromptPreviewKeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == VirtualKey.Enter)
             {
@@ -52,7 +52,10 @@ namespace FileFormatAIStudio.Views
                 if (!isShiftDown)
                 {
                     e.Handled = true;
-                    await ViewModel.SendMessageCommand.ExecuteAsync(null);
+                    if (ViewModel.SendMessageCommand.CanExecute(null))
+                    {
+                        await ViewModel.SendMessageCommand.ExecuteAsync(null);
+                    }
                 }
             }
         }

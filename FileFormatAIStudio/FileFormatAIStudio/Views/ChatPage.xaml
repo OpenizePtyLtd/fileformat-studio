@@ -127,7 +127,7 @@
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
                      MaxHeight="120"
-                     KeyDown="OnPromptKeyDown" />
+                     PreviewKeyDown="OnPromptPreviewKeyDown" />
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom">
                 <Button Style="{ThemeResource AccentButtonStyle}"
