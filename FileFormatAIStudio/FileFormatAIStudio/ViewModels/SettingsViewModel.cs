@@ -142,26 +142,36 @@ namespace FileFormatAIStudio.ViewModels
 
             try
             {
-                string? firstModelId = SelectedProviderModels.FirstOrDefault()?.ModelId;
-                var validationResult = await _aiClientFactory.ValidateProviderAsync(SelectedProvider, firstModelId);
-
-                if (!validationResult.Success)
+                (bool Success, string Message) validationResult;
+                try
                 {
-                    SaveStatusSeverity = InfoBarSeverity.Error;
-                    SaveStatusMessage = $"Validation Failed: {validationResult.Message}";
-                    IsSaveStatusOpen = true;
-                    TestStatusMessage = validationResult.Message;
-                    IsTestSuccess = false;
-                    return;
+                    string? firstModelId = SelectedProviderModels.FirstOrDefault()?.ModelId;
+                    validationResult = await _aiClientFactory.ValidateProviderAsync(SelectedProvider, firstModelId);
+                }
+                catch (Exception valEx)
+                {
+                    validationResult = (false, valEx.Message);
                 }
 
                 await _settingsService.SaveProviderAsync(SelectedProvider);
-                SaveStatusSeverity = InfoBarSeverity.Success;
-                SaveStatusMessage = $"Provider validated and saved successfully! {validationResult.Message}";
-                IsSaveStatusOpen = true;
-                TestStatusMessage = validationResult.Message;
-                IsTestSuccess = true;
                 UpdateCanAddProvider();
+
+                if (!validationResult.Success)
+                {
+                    SaveStatusSeverity = InfoBarSeverity.Warning;
+                    SaveStatusMessage = $"Provider settings saved, but live validation failed: {validationResult.Message}";
+                    IsSaveStatusOpen = true;
+                    TestStatusMessage = validationResult.Message;
+                    IsTestSuccess = false;
+                }
+                else
+                {
+                    SaveStatusSeverity = InfoBarSeverity.Success;
+                    SaveStatusMessage = $"Provider validated and saved successfully! {validationResult.Message}";
+                    IsSaveStatusOpen = true;
+                    TestStatusMessage = validationResult.Message;
+                    IsTestSuccess = true;
+                }
             }
             catch (Exception ex)
             {
