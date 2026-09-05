@@ -13,6 +13,7 @@ namespace FileFormatAIStudio.Data
         public DbSet<ModelConfigEntity> Models => Set<ModelConfigEntity>();
         public DbSet<ChatSessionEntity> Sessions => Set<ChatSessionEntity>();
         public DbSet<ChatMessageEntity> Messages => Set<ChatMessageEntity>();
+        public DbSet<AppSettingEntity> AppSettings => Set<AppSettingEntity>();
 
         public AppDbContext()
         {
@@ -64,6 +65,10 @@ namespace FileFormatAIStudio.Data
                 .WithOne(m => m.Session)
                 .HasForeignKey(m => m.SessionId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // AppSettingEntity
+            modelBuilder.Entity<AppSettingEntity>()
+                .HasKey(s => s.Key);
         }
     }
 }

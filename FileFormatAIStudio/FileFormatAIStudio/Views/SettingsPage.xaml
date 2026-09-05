@@ -69,6 +69,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Text="Providers" FontWeight="SemiBold" Style="{ThemeResource SubtitleTextBlockStyle}" />
@@ -100,6 +101,12 @@
                             IsEnabled="{x:Bind ViewModel.CanAddProvider, Mode=OneWay}"
                             ToolTipService.ToolTip="Add a new provider (max 1 unconfigured at a time)"
                             Command="{x:Bind ViewModel.AddProviderCommand}" />
+
+                    <Button Grid.Row="3"
+                            Content="Restore Default Providers"
+                            HorizontalAlignment="Stretch"
+                            ToolTipService.ToolTip="Restore standard built-in providers (OpenAI, OpenRouter, Local gptoss)"
+                            Command="{x:Bind ViewModel.RestoreDefaultProvidersCommand}" />
                 </Grid>
             </Border>
 
@@ -234,6 +241,37 @@
 
                 </StackPanel>
             </ScrollViewer>
+
+            <!-- Right: Empty State when no provider is selected -->
+            <Grid Grid.Column="1"
+                  Visibility="{x:Bind local:SettingsPage.ToInvertedVisibility(ViewModel.SelectedProvider), Mode=OneWay}"
+                  VerticalAlignment="Center"
+                  HorizontalAlignment="Center">
+                <StackPanel Spacing="16" MaxWidth="440" HorizontalAlignment="Center">
+                    <FontIcon Glyph="&#xE753;" FontSize="48" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center" />
+                    <TextBlock Text="No Provider Selected"
+                               Style="{ThemeResource SubtitleTextBlockStyle}"
+                               HorizontalAlignment="Center"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="Select a provider from the left panel, add a custom provider, or restore default built-in providers."
+                               Style="{ThemeResource BodyTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center" />
+                    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center" Margin="0,8,0,0">
+                        <Button Content="+ Add Provider"
+                                Command="{x:Bind ViewModel.AddProviderCommand}"
+                                IsEnabled="{x:Bind ViewModel.CanAddProvider, Mode=OneWay}" />
+                        <Button Content="Restore Default Providers"
+                                Style="{ThemeResource AccentButtonStyle}"
+                                Command="{x:Bind ViewModel.RestoreDefaultProvidersCommand}" />
+                    </StackPanel>
+                    <InfoBar IsOpen="{x:Bind ViewModel.IsSaveStatusOpen, Mode=TwoWay}"
+                             Severity="{x:Bind ViewModel.SaveStatusSeverity, Mode=OneWay}"
+                             Message="{x:Bind ViewModel.SaveStatusMessage, Mode=OneWay}"
+                             IsClosable="True" />
+                </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </Page>

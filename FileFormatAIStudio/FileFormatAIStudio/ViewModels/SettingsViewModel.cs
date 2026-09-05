@@ -24,6 +24,8 @@ namespace FileFormatAIStudio.ViewModels
 
         public bool HasSelectedProvider => SelectedProvider != null;
 
+        public bool HasNoProviders => Providers.Count == 0;
+
         public bool CanAddProvider => !Providers.Any(p => p.Name.Equals("New Provider", StringComparison.OrdinalIgnoreCase));
 
         [ObservableProperty]
@@ -73,6 +75,7 @@ namespace FileFormatAIStudio.ViewModels
         public void UpdateCanAddProvider()
         {
             OnPropertyChanged(nameof(CanAddProvider));
+            OnPropertyChanged(nameof(HasNoProviders));
             AddProviderCommand.NotifyCanExecuteChanged();
         }
 
@@ -277,6 +280,25 @@ namespace FileFormatAIStudio.ViewModels
             SaveStatusSeverity = result.Success ? InfoBarSeverity.Success : InfoBarSeverity.Error;
             SaveStatusMessage = result.Message;
             IsSaveStatusOpen = true;
+        }
+
+        [RelayCommand]
+        public async Task RestoreDefaultProvidersAsync()
+        {
+            try
+            {
+                await _settingsService.RestoreDefaultProvidersAsync();
+                await LoadProvidersAsync();
+                SaveStatusSeverity = InfoBarSeverity.Success;
+                SaveStatusMessage = "Default providers restored successfully.";
+                IsSaveStatusOpen = true;
+            }
+            catch (Exception ex)
+            {
+                SaveStatusSeverity = InfoBarSeverity.Error;
+                SaveStatusMessage = $"Failed to restore default providers: {ex.Message}";
+                IsSaveStatusOpen = true;
+            }
         }
     }
 }

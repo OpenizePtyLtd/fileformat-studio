@@ -15,6 +15,7 @@ namespace FileFormatAIStudio.Services.Settings
         Task AddModelAsync(ModelConfigEntity model);
         Task DeleteModelAsync(Guid modelId);
         Task<List<ModelConfigEntity>> GetAllEnabledModelsAsync();
+        Task RestoreDefaultProvidersAsync();
     }
 }
 

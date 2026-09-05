@@ -85,6 +85,11 @@ namespace FileFormatAIStudio.Services.Settings
                 .OrderBy(m => m.DisplayName)
                 .ToListAsync();
         }
+
+        public async Task RestoreDefaultProvidersAsync()
+        {
+            await DbInitializer.SeedDefaultProvidersAsync(_context);
+        }
     }
 }
 
