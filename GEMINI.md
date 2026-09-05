@@ -5,6 +5,7 @@
 - **GitHub CLI**: `gh` is installed and available system-wide on `PATH` across all directories (fallback path: `"C:\Program Files\GitHub CLI\gh.exe"` if a running daemon has an unrefreshed environment).
 - **Issue Tracking Conventions**:
   - Keep Epic/Feature issues open as the parent tracking issue until all subtasks are finished.
+  - Whenever creating any GitHub issue, always assign it to `@me` (`--assignee "@me"`).
   - Granular tasks should follow conventional commits:
     - `feat(security): ...`
     - `feat(data): ...`
