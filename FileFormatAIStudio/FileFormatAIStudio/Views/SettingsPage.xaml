@@ -125,7 +125,7 @@
                                 <Button Grid.Column="1"
                                         Content="Delete Provider"
                                         Foreground="Red"
-                                        Command="{x:Bind ViewModel.DeleteProviderCommand}" />
+                                        Click="OnDeleteProviderClicked" />
                             </Grid>
 
                             <TextBox Header="Provider Name"

@@ -10,7 +10,29 @@
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
                 <!-- Other merged dictionaries here -->
             </ResourceDictionary.MergedDictionaries>
-            <!-- Other app resources here -->
+
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="DestructiveButtonBackground" Color="#C42B1C" />
+                    <SolidColorBrush x:Key="DestructiveButtonBackgroundPointerOver" Color="#B72415" />
+                    <SolidColorBrush x:Key="DestructiveButtonBackgroundPressed" Color="#A81C0F" />
+                    <SolidColorBrush x:Key="DestructiveButtonForeground" Color="#FFFFFF" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="DestructiveButtonBackground" Color="#E81123" />
+                    <SolidColorBrush x:Key="DestructiveButtonBackgroundPointerOver" Color="#EA2A3A" />
+                    <SolidColorBrush x:Key="DestructiveButtonBackgroundPressed" Color="#C42B1C" />
+                    <SolidColorBrush x:Key="DestructiveButtonForeground" Color="#FFFFFF" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <Style x:Key="DestructiveButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="{ThemeResource DestructiveButtonBackground}" />
+                <Setter Property="Foreground" Value="{ThemeResource DestructiveButtonForeground}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource DestructiveButtonBackground}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

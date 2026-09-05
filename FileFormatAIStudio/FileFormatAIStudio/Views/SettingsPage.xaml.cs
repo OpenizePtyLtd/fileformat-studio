@@ -78,6 +78,23 @@ namespace FileFormatAIStudio.Views
                 await ViewModel.DeleteModelCommand.ExecuteAsync(model);
             }
         }
+
+        private async void OnDeleteProviderClicked(object sender, RoutedEventArgs e)
+        {
+            var provider = ViewModel.SelectedProvider;
+            if (provider == null) return;
+
+            var dialog = new Dialogs.DeleteProviderConfirmationDialog(provider, ViewModel.SelectedProviderModels)
+            {
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                await ViewModel.DeleteProviderCommand.ExecuteAsync(provider);
+            }
+        }
     }
 }
 
