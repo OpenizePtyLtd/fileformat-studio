@@ -50,15 +50,18 @@
                 BorderThickness="1"
                 CornerRadius="8"
                 Padding="12">
-            <ScrollViewer x:Name="MessagesScrollViewer" VerticalScrollBarVisibility="Auto">
-                <ItemsControl ItemsSource="{x:Bind ViewModel.Messages, Mode=OneWay}">
+            <ScrollViewer x:Name="MessagesScrollViewer"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{x:Bind ViewModel.Messages, Mode=OneWay}"
+                              HorizontalContentAlignment="Stretch">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:ChatMessageItemViewModel">
-                            <Grid Margin="0,6,0,6">
+                            <Grid Margin="0,6,0,6" HorizontalAlignment="Stretch">
                                 <!-- User Bubble (Right Aligned) -->
                                 <StackPanel Visibility="{x:Bind UserVisibility, Mode=OneWay}"
                                             HorizontalAlignment="Right"
-                                            MaxWidth="650"
+                                            MaxWidth="800"
                                             Spacing="4">
                                     <TextBlock Text="You"
                                                FontSize="11"
@@ -70,6 +73,7 @@
                                             Padding="14,10">
                                         <TextBlock Text="{x:Bind Content, Mode=OneWay}"
                                                    TextWrapping="Wrap"
+                                                   IsTextSelectionEnabled="True"
                                                    Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
                                     </Border>
                                     <TextBlock Text="{x:Bind TimeString, Mode=OneWay}"
@@ -78,10 +82,9 @@
                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
                                 </StackPanel>
 
-                                <!-- Assistant Bubble (Left Aligned) -->
+                                <!-- Assistant Bubble (100% Width) -->
                                 <StackPanel Visibility="{x:Bind AssistantVisibility, Mode=OneWay}"
-                                            HorizontalAlignment="Left"
-                                            MaxWidth="750"
+                                            HorizontalAlignment="Stretch"
                                             Spacing="4">
                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                         <FontIcon Glyph="&#xE99A;" FontSize="13" Foreground="{ThemeResource AccentAAFillColorDefaultBrush}" />
@@ -94,13 +97,11 @@
                                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                             BorderThickness="1"
                                             CornerRadius="12,12,12,2"
-                                            Padding="14,12">
-                                        <TextBox Text="{x:Bind Content, Mode=OneWay}"
-                                                 IsReadOnly="True"
-                                                 BorderThickness="0"
-                                                 Background="Transparent"
-                                                 TextWrapping="Wrap"
-                                                 Padding="0" />
+                                            Padding="14,12"
+                                            HorizontalAlignment="Stretch">
+                                        <TextBlock Text="{x:Bind Content, Mode=OneWay}"
+                                                   TextWrapping="Wrap"
+                                                   IsTextSelectionEnabled="True" />
                                     </Border>
                                     <TextBlock Text="{x:Bind TimeString, Mode=OneWay}"
                                                FontSize="10"
