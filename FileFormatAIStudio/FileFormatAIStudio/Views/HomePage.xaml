@@ -46,14 +46,14 @@
                                            FontSize="26"
                                            FontWeight="Bold" />
 
-                                <Border Background="{ThemeResource AccentFillColorSecondaryBrush}"
+                                <Border Background="{ThemeResource AccentFillColorDefaultBrush}"
                                         CornerRadius="6"
                                         Padding="8,3"
                                         VerticalAlignment="Center">
                                     <TextBlock Text="{x:Bind ViewModel.AppVersion, Mode=OneWay}"
                                                FontSize="12"
                                                FontWeight="SemiBold"
-                                               Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                               Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
                                 </Border>
                             </StackPanel>
 

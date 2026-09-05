@@ -10,10 +10,37 @@
     <UseWinUI>true</UseWinUI>
     <WinUISDKReferences>false</WinUISDKReferences>
     <Nullable>enable</Nullable>
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <Version Condition="'$(Version)' == ''">1.0.0</Version>
     <NoWarn>$(NoWarn);MVVMTK0045</NoWarn>
   </PropertyGroup>
+
+  <!-- Automated Date + Monthly Commit Count Versioning: x.y.z
+       x = Year index (2026 = 0, 2027 = 1, 2028 = 2, ...)
+       y = Current Month (1 - 12)
+       z = Number of commits in the current month
+  -->
+  <Target Name="SetVersionFromGit" BeforeTargets="BeforeBuild;GetAssemblyVersion;GenerateAssemblyInfo">
+    <PropertyGroup>
+      <AppMajor>$([MSBuild]::Subtract($([System.DateTime]::Now.Year), 2026))</AppMajor>
+      <AppMinor>$([System.DateTime]::Now.Month)</AppMinor>
+      <MonthStartDate>$([System.DateTime]::Now.ToString("yyyy-MM-01 00:00:00"))</MonthStartDate>
+    </PropertyGroup>
+    <Exec Command="git rev-list --count --since=&quot;$(MonthStartDate)&quot; HEAD"
+          ConsoleToMSBuild="true"
+          StandardOutputImportance="low"
+          IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="RawGitCommitCount" />
+    </Exec>
+    <PropertyGroup>
+      <GitCommitCount>$([System.Text.RegularExpressions.Regex]::Match('$(RawGitCommitCount)', '\d+').Value)</GitCommitCount>
+      <GitCommitCount Condition="'$(GitCommitCount)' == ''">0</GitCommitCount>
+      <Version>$(AppMajor).$(AppMinor).$(GitCommitCount)</Version>
+      <AssemblyVersion>$(AppMajor).$(AppMinor).$(GitCommitCount).0</AssemblyVersion>
+      <FileVersion>$(AppMajor).$(AppMinor).$(GitCommitCount).0</FileVersion>
+      <InformationalVersion>$(AppMajor).$(AppMinor).$(GitCommitCount)</InformationalVersion>
+    </PropertyGroup>
+    <Message Importance="high" Text="FileFormatAIStudio build version: $(Version) (Year index: $(AppMajor), Month: $(AppMinor), Month Commits: $(GitCommitCount))" />
+  </Target>
 
   <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />

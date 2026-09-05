@@ -22,8 +22,19 @@ namespace FileFormatAIStudio.ViewModels
 
         public HomeViewModel()
         {
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            _appVersion = version != null ? $"v{version.Major}.{version.Minor}.{version.Build}" : "v1.0.0";
+            var infoVersion = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+
+            if (!string.IsNullOrWhiteSpace(infoVersion))
+            {
+                var cleanVersion = infoVersion.Split('+')[0];
+                _appVersion = cleanVersion.StartsWith('v') ? cleanVersion : $"v{cleanVersion}";
+            }
+            else
+            {
+                var version = Assembly.GetExecutingAssembly().GetName().Version;
+                _appVersion = version != null ? $"v{version.Major}.{version.Minor}.{version.Build}" : "v1.0.0";
+            }
         }
 
         [RelayCommand]
