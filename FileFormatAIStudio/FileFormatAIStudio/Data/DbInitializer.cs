@@ -11,8 +11,11 @@ namespace FileFormatAIStudio.Data
     {
         public static async Task InitializeAsync(AppDbContext context)
         {
-            // Ensure SQLite database and tables exist
-            await context.Database.EnsureCreatedAsync();
+            // Baseline existing databases created via EnsureCreatedAsync prior to migrations
+            await BaselineLegacyDatabaseIfNecessaryAsync(context);
+
+            // Apply any pending EF Core migrations
+            await context.Database.MigrateAsync();
 
             // Seed default providers if none exist
             if (!await context.Providers.AnyAsync())
@@ -61,6 +64,54 @@ namespace FileFormatAIStudio.Data
 
                 context.Providers.AddRange(openAiProvider, openRouterProvider, localGptOssProvider);
                 await context.SaveChangesAsync();
+            }
+        }
+
+        private static async Task BaselineLegacyDatabaseIfNecessaryAsync(AppDbContext context)
+        {
+            try
+            {
+                var connection = context.Database.GetDbConnection();
+                bool shouldClose = false;
+                if (connection.State != System.Data.ConnectionState.Open)
+                {
+                    await connection.OpenAsync();
+                    shouldClose = true;
+                }
+
+                try
+                {
+                    // Check if 'Providers' table already exists in the SQLite database
+                    using var checkCmd = connection.CreateCommand();
+                    checkCmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Providers';";
+                    var result = await checkCmd.ExecuteScalarAsync();
+                    long tableCount = result is long l ? l : Convert.ToInt64(result);
+
+                    if (tableCount > 0)
+                    {
+                        // Ensure __EFMigrationsHistory table exists and baseline InitialCreate
+                        using var baselineCmd = connection.CreateCommand();
+                        baselineCmd.CommandText = @"
+                            CREATE TABLE IF NOT EXISTS ""__EFMigrationsHistory"" (
+                                ""MigrationId"" TEXT NOT NULL CONSTRAINT ""PK___EFMigrationsHistory"" PRIMARY KEY,
+                                ""ProductVersion"" TEXT NOT NULL
+                            );
+                            INSERT OR IGNORE INTO ""__EFMigrationsHistory"" (""MigrationId"", ""ProductVersion"")
+                            VALUES ('20260905060012_InitialCreate', '10.0.11');";
+                        await baselineCmd.ExecuteNonQueryAsync();
+                    }
+                }
+                finally
+                {
+                    if (shouldClose)
+                    {
+                        await connection.CloseAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DbInitializer] Legacy database baseline check skipped: {ex.Message}");
             }
         }
     }
