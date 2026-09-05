@@ -20,6 +20,7 @@ namespace FileFormatAIStudio.ViewModels
         private ChatSessionEntity? _selectedSession;
 
         public event Action<Guid>? SessionSelected;
+        public event Action? AllSessionsCleared;
 
         public MainViewModel(IChatSessionService sessionService)
         {
@@ -34,11 +35,6 @@ namespace FileFormatAIStudio.ViewModels
             foreach (var s in list)
             {
                 Sessions.Add(s);
-            }
-
-            if (SelectedSession == null && Sessions.Count > 0)
-            {
-                SelectedSession = Sessions[0];
             }
         }
 
@@ -90,7 +86,7 @@ namespace FileFormatAIStudio.ViewModels
                 SelectedSession = Sessions.Count > 0 ? Sessions[0] : null;
                 if (SelectedSession == null)
                 {
-                    await CreateNewSessionAsync();
+                    AllSessionsCleared?.Invoke();
                 }
             }
         }

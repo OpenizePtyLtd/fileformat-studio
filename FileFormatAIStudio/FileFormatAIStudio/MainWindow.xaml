@@ -25,6 +25,16 @@
                         OpenPaneLength="280"
                         SelectionChanged="OnNavigationSelectionChanged">
 
+            <NavigationView.MenuItems>
+                <NavigationViewItem x:Name="HomeNavItem"
+                                    Content="Home"
+                                    Tag="Home">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE80F;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+
             <NavigationView.PaneCustomContent>
                 <Grid Padding="12,8,12,8" RowSpacing="10">
                     <Grid.RowDefinitions>

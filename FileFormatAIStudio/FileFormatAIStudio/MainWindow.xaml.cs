@@ -19,6 +19,7 @@ namespace FileFormatAIStudio
             ViewModel = ((App)Application.Current).Services.GetRequiredService<MainViewModel>();
 
             ViewModel.SessionSelected += OnSessionSelectedFromViewModel;
+            ViewModel.AllSessionsCleared += OnAllSessionsClearedFromViewModel;
 
             this.Activated += OnWindowActivated;
         }
@@ -27,14 +28,17 @@ namespace FileFormatAIStudio
         {
             this.Activated -= OnWindowActivated;
             await ViewModel.LoadSessionsAsync();
-            if (ViewModel.SelectedSession != null)
-            {
-                ContentFrame.Navigate(typeof(ChatPage), ViewModel.SelectedSession.Id);
-            }
-            else
-            {
-                await ViewModel.CreateNewSessionAsync();
-            }
+
+            RootNavigationView.SelectedItem = HomeNavItem;
+            SessionsListView.SelectedItem = null;
+            ContentFrame.Navigate(typeof(HomePage));
+        }
+
+        private void OnAllSessionsClearedFromViewModel()
+        {
+            RootNavigationView.SelectedItem = HomeNavItem;
+            SessionsListView.SelectedItem = null;
+            ContentFrame.Navigate(typeof(HomePage));
         }
 
         private void OnSessionSelectedFromViewModel(Guid sessionId)
@@ -84,7 +88,13 @@ namespace FileFormatAIStudio
         {
             if (args.IsSettingsSelected)
             {
+                SessionsListView.SelectedItem = null;
                 ContentFrame.Navigate(typeof(SettingsPage));
+            }
+            else if (args.SelectedItemContainer == HomeNavItem || (args.SelectedItem as NavigationViewItem)?.Tag?.ToString() == "Home")
+            {
+                SessionsListView.SelectedItem = null;
+                ContentFrame.Navigate(typeof(HomePage));
             }
         }
 
@@ -94,10 +104,11 @@ namespace FileFormatAIStudio
             {
                 ContentFrame.GoBack();
             }
-            else if (ViewModel.SelectedSession != null)
+            else
             {
-                RootNavigationView.SelectedItem = null;
-                ContentFrame.Navigate(typeof(ChatPage), ViewModel.SelectedSession.Id);
+                RootNavigationView.SelectedItem = HomeNavItem;
+                SessionsListView.SelectedItem = null;
+                ContentFrame.Navigate(typeof(HomePage));
             }
         }
 
@@ -106,8 +117,26 @@ namespace FileFormatAIStudio
             if (e.SourcePageType == typeof(SettingsPage))
             {
                 RootNavigationView.SelectedItem = RootNavigationView.SettingsItem;
+                SessionsListView.SelectedItem = null;
                 RootNavigationView.IsBackButtonVisible = NavigationViewBackButtonVisible.Visible;
                 RootNavigationView.IsBackEnabled = true;
+            }
+            else if (e.SourcePageType == typeof(HomePage))
+            {
+                RootNavigationView.SelectedItem = HomeNavItem;
+                SessionsListView.SelectedItem = null;
+                RootNavigationView.IsBackButtonVisible = ContentFrame.CanGoBack
+                    ? NavigationViewBackButtonVisible.Visible
+                    : NavigationViewBackButtonVisible.Collapsed;
+                RootNavigationView.IsBackEnabled = ContentFrame.CanGoBack;
+            }
+            else if (e.SourcePageType == typeof(ChatPage))
+            {
+                RootNavigationView.SelectedItem = null;
+                RootNavigationView.IsBackButtonVisible = ContentFrame.CanGoBack
+                    ? NavigationViewBackButtonVisible.Visible
+                    : NavigationViewBackButtonVisible.Collapsed;
+                RootNavigationView.IsBackEnabled = ContentFrame.CanGoBack;
             }
             else
             {

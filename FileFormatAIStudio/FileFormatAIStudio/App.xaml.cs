@@ -36,6 +36,7 @@ namespace FileFormatAIStudio
             services.AddScoped<IChatExecutionService, ChatExecutionService>();
 
             // ViewModels
+            services.AddTransient<HomeViewModel>();
             services.AddTransient<MainViewModel>();
             services.AddTransient<ChatViewModel>();
             services.AddTransient<SettingsViewModel>();
