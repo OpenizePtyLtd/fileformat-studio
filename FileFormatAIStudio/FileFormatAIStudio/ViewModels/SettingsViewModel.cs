@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using FileFormatAIStudio.Data.Entities;
 using FileFormatAIStudio.Services.AI;
 using FileFormatAIStudio.Services.Settings;
+using Microsoft.UI.Xaml.Controls;
 
 namespace FileFormatAIStudio.ViewModels
 {
@@ -24,6 +25,26 @@ namespace FileFormatAIStudio.ViewModels
         public bool HasSelectedProvider => SelectedProvider != null;
 
         public bool CanAddProvider => !Providers.Any(p => p.Name.Equals("New Provider", StringComparison.OrdinalIgnoreCase));
+
+        [ObservableProperty]
+        private bool _isSavingProvider;
+
+        public bool CanSaveProvider => !IsSavingProvider;
+
+        partial void OnIsSavingProviderChanged(bool value)
+        {
+            OnPropertyChanged(nameof(CanSaveProvider));
+            SaveProviderCommand.NotifyCanExecuteChanged();
+        }
+
+        [ObservableProperty]
+        private string _saveStatusMessage = string.Empty;
+
+        [ObservableProperty]
+        private bool _isSaveStatusOpen;
+
+        [ObservableProperty]
+        private InfoBarSeverity _saveStatusSeverity = InfoBarSeverity.Informational;
 
         [ObservableProperty]
         private ObservableCollection<ModelConfigEntity> _selectedProviderModels = new();
@@ -76,6 +97,9 @@ namespace FileFormatAIStudio.ViewModels
         {
             SelectedProviderModels.Clear();
             TestStatusMessage = string.Empty;
+            SaveStatusMessage = string.Empty;
+            IsSaveStatusOpen = false;
+
             if (value != null && value.Models != null)
             {
                 foreach (var model in value.Models)
@@ -87,14 +111,70 @@ namespace FileFormatAIStudio.ViewModels
             UpdateCanAddProvider();
         }
 
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(CanSaveProvider))]
         public async Task SaveProviderAsync()
         {
             if (SelectedProvider == null) return;
-            await _settingsService.SaveProviderAsync(SelectedProvider);
-            TestStatusMessage = "Settings saved successfully!";
-            IsTestSuccess = true;
-            UpdateCanAddProvider();
+
+            // 1. Basic input validation
+            if (string.IsNullOrWhiteSpace(SelectedProvider.Name))
+            {
+                SaveStatusSeverity = InfoBarSeverity.Error;
+                SaveStatusMessage = "Provider Name cannot be empty.";
+                IsSaveStatusOpen = true;
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(SelectedProvider.EndpointUrl) ||
+                !Uri.TryCreate(SelectedProvider.EndpointUrl.Trim(), UriKind.Absolute, out var endpointUri) ||
+                (endpointUri.Scheme != Uri.UriSchemeHttp && endpointUri.Scheme != Uri.UriSchemeHttps))
+            {
+                SaveStatusSeverity = InfoBarSeverity.Error;
+                SaveStatusMessage = "Endpoint URL must be a valid HTTP or HTTPS address (e.g., https://api.openai.com/v1).";
+                IsSaveStatusOpen = true;
+                return;
+            }
+
+            IsSavingProvider = true;
+            SaveStatusSeverity = InfoBarSeverity.Informational;
+            SaveStatusMessage = "Validating endpoint connectivity and credentials...";
+            IsSaveStatusOpen = true;
+
+            try
+            {
+                string? firstModelId = SelectedProviderModels.FirstOrDefault()?.ModelId;
+                var validationResult = await _aiClientFactory.ValidateProviderAsync(SelectedProvider, firstModelId);
+
+                if (!validationResult.Success)
+                {
+                    SaveStatusSeverity = InfoBarSeverity.Error;
+                    SaveStatusMessage = $"Validation Failed: {validationResult.Message}";
+                    IsSaveStatusOpen = true;
+                    TestStatusMessage = validationResult.Message;
+                    IsTestSuccess = false;
+                    return;
+                }
+
+                await _settingsService.SaveProviderAsync(SelectedProvider);
+                SaveStatusSeverity = InfoBarSeverity.Success;
+                SaveStatusMessage = $"Provider validated and saved successfully! {validationResult.Message}";
+                IsSaveStatusOpen = true;
+                TestStatusMessage = validationResult.Message;
+                IsTestSuccess = true;
+                UpdateCanAddProvider();
+            }
+            catch (Exception ex)
+            {
+                SaveStatusSeverity = InfoBarSeverity.Error;
+                SaveStatusMessage = $"An unexpected error occurred while saving: {ex.Message}";
+                IsSaveStatusOpen = true;
+                TestStatusMessage = ex.Message;
+                IsTestSuccess = false;
+            }
+            finally
+            {
+                IsSavingProvider = false;
+            }
         }
 
         [RelayCommand(CanExecute = nameof(CanAddProvider))]
@@ -174,22 +254,19 @@ namespace FileFormatAIStudio.ViewModels
         {
             if (SelectedProvider == null) return;
 
-            if (SelectedProviderModels.Count == 0)
-            {
-                TestStatusMessage = "Please add at least one model before testing connection.";
-                IsTestSuccess = false;
-                return;
-            }
-
             IsTestingConnection = true;
             TestStatusMessage = "Testing connection...";
 
-            string testModelId = SelectedProviderModels[0].ModelId;
-            var result = await _aiClientFactory.TestConnectionAsync(SelectedProvider, testModelId);
+            string? testModelId = SelectedProviderModels.FirstOrDefault()?.ModelId;
+            var result = await _aiClientFactory.ValidateProviderAsync(SelectedProvider, testModelId);
 
             IsTestingConnection = false;
             IsTestSuccess = result.Success;
             TestStatusMessage = result.Message;
+
+            SaveStatusSeverity = result.Success ? InfoBarSeverity.Success : InfoBarSeverity.Error;
+            SaveStatusMessage = result.Message;
+            IsSaveStatusOpen = true;
         }
     }
 }

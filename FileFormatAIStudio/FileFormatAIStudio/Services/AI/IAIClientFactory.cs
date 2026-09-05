@@ -10,6 +10,7 @@ namespace FileFormatAIStudio.Services.AI
     {
         IChatClient CreateChatClient(ProviderConfigEntity provider, string modelId);
         Task<(bool Success, string Message)> TestConnectionAsync(ProviderConfigEntity provider, string modelId, CancellationToken ct = default);
+        Task<(bool Success, string Message)> ValidateProviderAsync(ProviderConfigEntity provider, string? modelId = null, CancellationToken ct = default);
     }
 }
 

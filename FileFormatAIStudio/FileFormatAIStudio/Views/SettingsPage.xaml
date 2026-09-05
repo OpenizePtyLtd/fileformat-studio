@@ -142,9 +142,18 @@
                             <ToggleSwitch Header="Enable this Provider"
                                           IsOn="{x:Bind ViewModel.SelectedProvider.IsEnabled, Mode=TwoWay}" />
 
-                            <Button Content="Save Provider Settings"
-                                    Style="{ThemeResource AccentButtonStyle}"
-                                    Command="{x:Bind ViewModel.SaveProviderCommand}" />
+                            <InfoBar IsOpen="{x:Bind ViewModel.IsSaveStatusOpen, Mode=TwoWay}"
+                                     Severity="{x:Bind ViewModel.SaveStatusSeverity, Mode=OneWay}"
+                                     Message="{x:Bind ViewModel.SaveStatusMessage, Mode=OneWay}"
+                                     IsClosable="True" />
+
+                            <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+                                <Button Content="Save Provider Settings"
+                                        Style="{ThemeResource AccentButtonStyle}"
+                                        Command="{x:Bind ViewModel.SaveProviderCommand}" />
+                                <ProgressRing IsActive="{x:Bind ViewModel.IsSavingProvider, Mode=OneWay}"
+                                              Width="20" Height="20" />
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 
