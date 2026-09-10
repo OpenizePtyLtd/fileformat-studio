@@ -16,6 +16,8 @@ namespace FileFormatAIStudio
     {
         private Window? _window;
 
+        public static Window? MainWindowInstance { get; private set; }
+
         public IServiceProvider Services { get; }
 
         public App()
@@ -53,6 +55,7 @@ namespace FileFormatAIStudio
             services.AddTransient<ChatViewModel>();
             services.AddTransient<SettingsViewModel>();
             services.AddTransient<KnowledgebaseViewModel>();
+            services.AddTransient<CreateKnowledgebaseViewModel>();
 
             return services.BuildServiceProvider();
         }
@@ -67,6 +70,7 @@ namespace FileFormatAIStudio
             }
 
             _window = new MainWindow();
+            MainWindowInstance = _window;
             _window.Activate();
         }
     }
