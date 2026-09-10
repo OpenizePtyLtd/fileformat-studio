@@ -45,6 +45,7 @@ namespace FileFormatAIStudio
             services.AddSingleton<IDocumentParserFactory, DocumentParserFactory>();
             services.AddSingleton<ITextChunker, TextChunker>();
             services.AddScoped<IVectorStoreService, VectorStoreService>();
+            services.AddScoped<IKnowledgebaseService, KnowledgebaseService>();
 
             // ViewModels
             services.AddTransient<HomeViewModel>();
