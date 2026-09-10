@@ -10,12 +10,9 @@ namespace FileFormatAIStudio.Services.AI
 {
     public class AIClientFactory : IAIClientFactory
     {
-        public IChatClient CreateChatClient(ProviderConfigEntity provider, string modelId)
+        private static OpenAIClient CreateOpenAIClient(ProviderConfigEntity provider)
         {
-            if (string.IsNullOrWhiteSpace(modelId))
-            {
-                throw new ArgumentException("Model ID cannot be empty.", nameof(modelId));
-            }
+            ArgumentNullException.ThrowIfNull(provider);
 
             string apiKey = string.IsNullOrWhiteSpace(provider.ApiKey) ? "sk-local-no-key-required" : provider.ApiKey;
             var credentials = new ApiKeyCredential(apiKey);
@@ -28,10 +25,70 @@ namespace FileFormatAIStudio.Services.AI
                 options.Endpoint = endpointUri;
             }
 
-            var openAiClient = new OpenAIClient(credentials, options);
+            return new OpenAIClient(credentials, options);
+        }
 
-            // Converts the OpenAI ChatClient to an IChatClient
+        public IChatClient CreateChatClient(ProviderConfigEntity provider, string modelId)
+        {
+            if (string.IsNullOrWhiteSpace(modelId))
+            {
+                throw new ArgumentException("Model ID cannot be empty.", nameof(modelId));
+            }
+
+            var openAiClient = CreateOpenAIClient(provider);
             return openAiClient.GetChatClient(modelId).AsIChatClient();
+        }
+
+        public IEmbeddingGenerator<string, Embedding<float>> CreateEmbeddingGenerator(ProviderConfigEntity provider, string modelId)
+        {
+            if (string.IsNullOrWhiteSpace(modelId))
+            {
+                throw new ArgumentException("Model ID cannot be empty.", nameof(modelId));
+            }
+
+            var openAiClient = CreateOpenAIClient(provider);
+            return openAiClient.GetEmbeddingClient(modelId).AsIEmbeddingGenerator();
+        }
+
+        public async Task<(bool Success, string Message, int Dimensions)> TestEmbeddingGenerationAsync(
+            ProviderConfigEntity provider, string modelId, CancellationToken ct = default)
+        {
+            try
+            {
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                cts.CancelAfter(TimeSpan.FromSeconds(15));
+
+                using var generator = CreateEmbeddingGenerator(provider, modelId);
+                var response = await generator.GenerateAsync(["FileFormat AI Studio embedding test"], cancellationToken: cts.Token);
+
+                if (response == null || response.Count == 0 || response[0].Vector.IsEmpty)
+                {
+                    return (false, $"Model '{modelId}' returned an empty embedding response.", 0);
+                }
+
+                int dimensions = response[0].Vector.Length;
+                return (true, $"Embedding test successful! Model '{modelId}' generated a {dimensions}-dimensional vector.", dimensions);
+            }
+            catch (TaskCanceledException)
+            {
+                return (false, "Embedding generation timed out after 15 seconds. Please verify host responsiveness.", 0);
+            }
+            catch (ClientResultException cre)
+            {
+                if (cre.Status == 401)
+                {
+                    return (false, "Authentication failed (401 Unauthorized): The provided API key is invalid or expired.", 0);
+                }
+                if (cre.Status == 404)
+                {
+                    return (false, $"Endpoint or embedding model not found (404): Ensure model ID '{modelId}' exists on this provider.", 0);
+                }
+                return (false, $"API Error (HTTP {cre.Status}): {cre.Message}", 0);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Embedding test failed: {ex.Message}", 0);
+            }
         }
 
         public async Task<(bool Success, string Message)> TestConnectionAsync(ProviderConfigEntity provider, string modelId, CancellationToken ct = default)
