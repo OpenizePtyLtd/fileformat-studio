@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using FileFormatAIStudio.Data;
 using FileFormatAIStudio.Services.AI;
 using FileFormatAIStudio.Services.Chat;
+using FileFormatAIStudio.Services.Parsing;
 using FileFormatAIStudio.Services.Settings;
 using FileFormatAIStudio.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +35,10 @@ namespace FileFormatAIStudio
             services.AddScoped<ISettingsService, SettingsService>();
             services.AddScoped<IChatSessionService, ChatSessionService>();
             services.AddScoped<IChatExecutionService, ChatExecutionService>();
+
+            // Document Parsing
+            services.AddSingleton<IDocumentParser, PlainTextParser>();
+            services.AddSingleton<IDocumentParserFactory, DocumentParserFactory>();
 
             // ViewModels
             services.AddTransient<HomeViewModel>();
