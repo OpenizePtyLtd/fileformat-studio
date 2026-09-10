@@ -39,6 +39,7 @@ namespace FileFormatAIStudio
             // Document Parsing
             services.AddSingleton<IAsposeLicenseService, AsposeLicenseService>();
             services.AddSingleton<IDocumentParser, AsposeDocumentParser>();
+            services.AddSingleton<IDocumentParser, DotNetOssDocumentParser>();
             services.AddSingleton<IDocumentParser, PlainTextParser>();
             services.AddSingleton<IDocumentParserFactory, DocumentParserFactory>();
 
