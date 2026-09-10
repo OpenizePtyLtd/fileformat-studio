@@ -277,6 +277,78 @@ namespace FileFormatAIStudio.Tests
                 (await verifyContext.Knowledgebases.AnyAsync(k => k.Id == kb2Id)).Should().BeTrue();
             }
         }
+
+        [Fact]
+        public async Task DbInitializer_AppliesMigration_CreatesKnowledgebaseAndVectorTablesSuccessfully()
+        {
+            using var freshConnection = new SqliteConnection("Data Source=:memory:");
+            await freshConnection.OpenAsync();
+
+            var freshOptions = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite(freshConnection)
+                .Options;
+
+            using (var context = new AppDbContext(freshOptions))
+            {
+                // Run DbInitializer which applies pending migrations
+                await DbInitializer.InitializeAsync(context);
+            }
+
+            // Verify tables and indexes exist in SQLite schema
+            using (var checkCmd = freshConnection.CreateCommand())
+            {
+                checkCmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table';";
+                var tableNames = new List<string>();
+                using (var reader = await checkCmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        tableNames.Add(reader.GetString(0));
+                    }
+                }
+
+                tableNames.Should().Contain("Knowledgebases");
+                tableNames.Should().Contain("KnowledgebaseDocuments");
+                tableNames.Should().Contain("SessionKnowledgebases");
+                tableNames.Should().Contain("DocumentChunks");
+            }
+
+            using (var indexCmd = freshConnection.CreateCommand())
+            {
+                indexCmd.CommandText = "SELECT name FROM sqlite_master WHERE type='index';";
+                var indexNames = new List<string>();
+                using (var reader = await indexCmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        indexNames.Add(reader.GetString(0));
+                    }
+                }
+
+                indexNames.Should().Contain("IX_DocumentChunks_KnowledgebaseId");
+                indexNames.Should().Contain("IX_DocumentChunks_DocumentId");
+                indexNames.Should().Contain("IX_KnowledgebaseDocuments_KnowledgebaseId");
+                indexNames.Should().Contain("IX_SessionKnowledgebases_KnowledgebaseId");
+            }
+
+            using (var columnCmd = freshConnection.CreateCommand())
+            {
+                columnCmd.CommandText = "PRAGMA table_info(\"DocumentChunks\");";
+                var columnTypes = new Dictionary<string, string>();
+                using (var reader = await columnCmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var colName = reader.GetString(1);
+                        var colType = reader.GetString(2);
+                        columnTypes[colName] = colType;
+                    }
+                }
+
+                columnTypes.Should().ContainKey("EmbeddingVector");
+                columnTypes["EmbeddingVector"].Should().Be("BLOB");
+            }
+        }
     }
 }
 

@@ -23,7 +23,7 @@
 | **TASK-02** | [#25](https://github.com/OpenizePtyLtd/fileformat-studio/issues/25) | 1. Architectural Decisions | `spike(rag): Evaluate & decide Embedding Generation pipeline via Microsoft.Extensions.AI` | M1 | None | ⏳ Pending |
 | **TASK-03** | [#26](https://github.com/OpenizePtyLtd/fileformat-studio/issues/26) | 1. Architectural Decisions | `spike(parser): Design Node.js IPC runner for officeparser / node scripts in WinUI 3` | M1 | None | ⏳ Pending |
 | **TASK-04** | [#27](https://github.com/OpenizePtyLtd/fileformat-studio/issues/27) | 2. Data & Persistence | `feat(data): Implement Knowledgebase and Document Chunk EF Core Entities` | M1 | TASK-01 | ✅ Completed |
-| **TASK-05** | [#28](https://github.com/OpenizePtyLtd/fileformat-studio/issues/28) | 2. Data & Persistence | `feat(data): Add EF Core migration for Knowledgebase & Vector schema` | M1 | TASK-04 | ⏳ Pending |
+| **TASK-05** | [#28](https://github.com/OpenizePtyLtd/fileformat-studio/issues/28) | 2. Data & Persistence | `feat(data): Add EF Core migration for Knowledgebase & Vector schema` | M1 | TASK-04 | ✅ Completed |
 | **TASK-06** | [#29](https://github.com/OpenizePtyLtd/fileformat-studio/issues/29) | 3. Parser Subsystem | `feat(parser): Implement IDocumentParser contract, metadata models, and DocumentParserFactory` | M1 | None | ✅ Completed |
 | **TASK-07** | [#30](https://github.com/OpenizePtyLtd/fileformat-studio/issues/30) | 3. Parser Subsystem | `feat(parser): Implement AsposeDocumentParser (.NET Words, Cells, Slides, PDF)` | M1 | TASK-06 | ✅ Completed |
 | **TASK-08** | [#31](https://github.com/OpenizePtyLtd/fileformat-studio/issues/31) | 3. Parser Subsystem | `feat(parser): Implement DotNetOssDocumentParser (OpenXML, PdfPig, ExcelDataReader)` | M1 | TASK-06 | ✅ Completed |
