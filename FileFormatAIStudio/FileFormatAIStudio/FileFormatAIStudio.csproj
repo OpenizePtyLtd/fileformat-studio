@@ -60,6 +60,7 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
     <PackageReference Include="PdfPig" Version="0.1.16" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.11" />
+    <PackageReference Include="System.Numerics.Tensors" Version="10.0.11" />
     <PackageReference Include="Aspose.Words" Version="26.9.0" />
     <PackageReference Include="Aspose.Cells" Version="26.8.0" />
     <PackageReference Include="Aspose.Slides.NET" Version="26.9.0" />
