@@ -66,6 +66,17 @@ namespace FileFormatAIStudio.ViewModels
         [ObservableProperty]
         private string _newModelDisplayName = string.Empty;
 
+        [ObservableProperty]
+        private int _newModelTypeIndex;
+
+        partial void OnNewModelIdChanged(string value)
+        {
+            if (!string.IsNullOrWhiteSpace(value) && EmbeddingModelMetadata.IsEmbeddingModel(value))
+            {
+                NewModelTypeIndex = 1;
+            }
+        }
+
         public SettingsViewModel(ISettingsService settingsService, IAIClientFactory aiClientFactory)
         {
             _settingsService = settingsService;
@@ -236,12 +247,15 @@ namespace FileFormatAIStudio.ViewModels
         {
             if (SelectedProvider == null || string.IsNullOrWhiteSpace(NewModelId)) return;
 
+            bool isEmbedding = NewModelTypeIndex == 1;
+
             var model = new ModelConfigEntity
             {
                 ProviderId = SelectedProvider.Id,
                 ModelId = NewModelId.Trim(),
                 DisplayName = string.IsNullOrWhiteSpace(NewModelDisplayName) ? NewModelId.Trim() : NewModelDisplayName.Trim(),
-                IsDefault = SelectedProviderModels.Count == 0
+                IsDefault = !isEmbedding && SelectedProviderModels.Count(m => !m.IsEmbeddingModel) == 0,
+                IsEmbeddingModel = isEmbedding
             };
 
             await _settingsService.AddModelAsync(model);
@@ -250,6 +264,7 @@ namespace FileFormatAIStudio.ViewModels
 
             NewModelId = string.Empty;
             NewModelDisplayName = string.Empty;
+            NewModelTypeIndex = 0;
         }
 
         [RelayCommand]

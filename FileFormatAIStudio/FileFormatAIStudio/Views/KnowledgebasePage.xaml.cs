@@ -143,37 +143,25 @@ namespace FileFormatAIStudio.Views
                     providerWarningText.Visibility = Visibility.Collapsed;
                 }
 
-                // Populate with models configured on this provider
-                if (selectedProvider.Models != null && selectedProvider.Models.Count > 0)
+                // Populate strictly with embedding models registered under this provider in Settings
+                var embeddingModels = selectedProvider.Models?
+                    .Where(m => m.IsEmbeddingModel || EmbeddingModelMetadata.IsEmbeddingModel(m.ModelId))
+                    .ToList() ?? new();
+
+                if (embeddingModels.Count == 0)
                 {
-                    foreach (var m in selectedProvider.Models)
+                    providerWarningText.Text = $"No embedding models are registered under '{selectedProvider.Name}' in Settings. Please open Settings (gear icon in sidebar) and add an embedding model (e.g. nomic-embed-text, bge-m3, text-embedding-3-small) under this provider first.";
+                    providerWarningText.Visibility = Visibility.Visible;
+                    modelCombo.IsEnabled = false;
+                }
+                else
+                {
+                    modelCombo.IsEnabled = true;
+                    foreach (var m in embeddingModels)
                     {
                         int dims = EmbeddingModelMetadata.GetKnownDimensions(m.ModelId) ?? 1536;
                         modelCombo.Items.Add($"{m.ModelId} ({dims} dims)");
                     }
-                }
-
-                // Add standard known embedding models as suggestions
-                string providerType = selectedProvider.ProviderType.ToLowerInvariant();
-                if (providerType.Contains("openai") || selectedProvider.Name.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (!modelCombo.Items.Cast<object>().Any(i => i.ToString()!.StartsWith("text-embedding-3-small")))
-                        modelCombo.Items.Add("text-embedding-3-small (1536 dims)");
-                    if (!modelCombo.Items.Cast<object>().Any(i => i.ToString()!.StartsWith("text-embedding-3-large")))
-                        modelCombo.Items.Add("text-embedding-3-large (3072 dims)");
-                }
-                else
-                {
-                    if (!modelCombo.Items.Cast<object>().Any(i => i.ToString()!.StartsWith("nomic-embed-text")))
-                        modelCombo.Items.Add("nomic-embed-text (768 dims)");
-                    if (!modelCombo.Items.Cast<object>().Any(i => i.ToString()!.StartsWith("bge-m3")))
-                        modelCombo.Items.Add("bge-m3 (1024 dims)");
-                    if (!modelCombo.Items.Cast<object>().Any(i => i.ToString()!.StartsWith("all-minilm")))
-                        modelCombo.Items.Add("all-minilm (384 dims)");
-                }
-
-                if (modelCombo.Items.Count > 0)
-                {
                     modelCombo.SelectedIndex = 0;
                 }
             }
@@ -220,10 +208,25 @@ namespace FileFormatAIStudio.Views
                 };
 
                 int selectedProvIdx = providerCombo.SelectedIndex >= 0 ? providerCombo.SelectedIndex : 0;
-                string providerName = configuredProviders[selectedProvIdx].Name;
+                var selectedProvider = configuredProviders[selectedProvIdx];
+                string providerName = selectedProvider.Name;
 
-                string selectedModelStr = modelCombo.SelectedItem?.ToString() ?? modelCombo.Text?.Trim() ?? "text-embedding-3-small";
-                string modelId = selectedModelStr.Split(' ')[0];
+                var registeredEmbeddingModels = selectedProvider.Models?
+                    .Where(m => m.IsEmbeddingModel || EmbeddingModelMetadata.IsEmbeddingModel(m.ModelId))
+                    .ToList() ?? new();
+
+                string selectedModelStr = modelCombo.SelectedItem?.ToString() ?? modelCombo.Text?.Trim() ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(selectedModelStr) && registeredEmbeddingModels.Count == 0)
+                {
+                    ViewModel.ShowStatus($"Cannot create knowledgebase: No embedding model is registered under '{providerName}'. Please register an embedding model in Settings first.", InfoBarSeverity.Error);
+                    return;
+                }
+
+                string modelId = !string.IsNullOrWhiteSpace(selectedModelStr)
+                    ? selectedModelStr.Split(' ')[0]
+                    : registeredEmbeddingModels[0].ModelId;
+
                 int dims = EmbeddingModelMetadata.GetKnownDimensions(modelId) ?? 1536;
 
                 try

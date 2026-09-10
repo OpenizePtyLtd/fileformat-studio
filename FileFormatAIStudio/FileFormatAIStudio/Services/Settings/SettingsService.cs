@@ -81,7 +81,7 @@ namespace FileFormatAIStudio.Services.Settings
         {
             return await _context.Models
                 .Include(m => m.Provider)
-                .Where(m => m.Provider != null && m.Provider.IsEnabled)
+                .Where(m => m.Provider != null && m.Provider.IsEnabled && !m.IsEmbeddingModel)
                 .OrderBy(m => m.DisplayName)
                 .ToListAsync();
         }

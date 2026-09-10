@@ -181,12 +181,27 @@
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <StackPanel Grid.Column="0">
                                                 <TextBlock Text="{x:Bind DisplayName}" FontWeight="Medium" />
                                                 <TextBlock Text="{x:Bind ModelId}" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                             </StackPanel>
-                                            <Button Grid.Column="1"
+
+                                            <Border Grid.Column="1"
+                                                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="4"
+                                                    Padding="8,2"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{x:Bind local:SettingsPage.FormatModelType(IsEmbeddingModel)}"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            </Border>
+
+                                            <Button Grid.Column="2"
                                                     Content="Remove"
                                                     FontSize="12"
                                                     Click="OnDeleteModelClicked" />
@@ -200,15 +215,23 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="150" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBox Grid.Column="0"
-                                         Header="Model ID (e.g. gpt-4o, gptoss)"
+                                         Header="Model ID (e.g. gpt-4o, nomic-embed-text)"
                                          Text="{x:Bind ViewModel.NewModelId, Mode=TwoWay}" />
                                 <TextBox Grid.Column="1"
                                          Header="Display Name"
                                          Text="{x:Bind ViewModel.NewModelDisplayName, Mode=TwoWay}" />
-                                <Button Grid.Column="2"
+                                <ComboBox Grid.Column="2"
+                                          Header="Model Type"
+                                          HorizontalAlignment="Stretch"
+                                          SelectedIndex="{x:Bind ViewModel.NewModelTypeIndex, Mode=TwoWay}">
+                                    <ComboBoxItem Content="Chat (LLM)" />
+                                    <ComboBoxItem Content="Embedding" />
+                                </ComboBox>
+                                <Button Grid.Column="3"
                                         Content="Add Model"
                                         VerticalAlignment="Bottom"
                                         Command="{x:Bind ViewModel.AddModelCommand}" />
