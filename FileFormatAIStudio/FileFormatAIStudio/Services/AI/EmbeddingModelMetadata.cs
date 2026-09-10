@@ -122,7 +122,18 @@ namespace FileFormatAIStudio.Services.AI
         /// </summary>
         public static bool IsEmbeddingModel(string? modelId)
         {
-            return GetKnownDimensions(modelId) != null;
+            if (string.IsNullOrWhiteSpace(modelId))
+            {
+                return false;
+            }
+
+            if (GetKnownDimensions(modelId) != null)
+            {
+                return true;
+            }
+
+            string lower = modelId.ToLowerInvariant();
+            return lower.Contains("embed") || lower.Contains("embedding");
         }
 
         /// <summary>

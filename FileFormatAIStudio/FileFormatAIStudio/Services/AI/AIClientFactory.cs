@@ -1,5 +1,6 @@
 using System;
 using System.ClientModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FileFormatAIStudio.Data.Entities;
@@ -142,9 +143,18 @@ namespace FileFormatAIStudio.Services.AI
                 ? modelId
                 : provider.Models != null && provider.Models.Count > 0 ? provider.Models[0].ModelId : null;
 
-            // If a model is available, validate via chat completion ping
+            // If a model is available, validate appropriately based on model type (Embedding vs Chat)
             if (!string.IsNullOrWhiteSpace(targetModelId))
             {
+                bool isEmbedding = provider.Models?.FirstOrDefault(m => m.ModelId.Equals(targetModelId, StringComparison.OrdinalIgnoreCase))?.IsEmbeddingModel
+                    ?? EmbeddingModelMetadata.IsEmbeddingModel(targetModelId);
+
+                if (isEmbedding)
+                {
+                    var embedResult = await TestEmbeddingGenerationAsync(provider, targetModelId, ct);
+                    return (embedResult.Success, embedResult.Message);
+                }
+
                 return await TestConnectionAsync(provider, targetModelId, ct);
             }
 

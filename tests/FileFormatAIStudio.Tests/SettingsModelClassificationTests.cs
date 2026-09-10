@@ -156,6 +156,90 @@ namespace FileFormatAIStudio.Tests
             enabledModels.Should().Contain(m => m.ModelId == "llama-3.2");
             enabledModels.Should().NotContain(m => m.ModelId == "nomic-embed-text");
         }
+
+        [Fact]
+        public void NewModelId_AutoDetectsOpenRouterEmbeddingModel()
+        {
+            using var context = new AppDbContext(_options);
+            var settingsService = new SettingsService(context);
+            var aiClientFactory = new FakeAiClientFactory();
+            var viewModel = new SettingsViewModel(settingsService, aiClientFactory);
+
+            viewModel.NewModelTypeIndex = 0;
+            viewModel.NewModelId = "liquid/lfm-2.5-embedding-350m:free";
+            viewModel.NewModelTypeIndex.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task AddModelAsync_DuplicateModel_DoesNotDuplicateInDatabaseOrViewModel()
+        {
+            using var context = new AppDbContext(_options);
+            var settingsService = new SettingsService(context);
+            var aiClientFactory = new FakeAiClientFactory();
+
+            var provider = new ProviderConfigEntity
+            {
+                Name = "OpenRouter",
+                ProviderType = "OpenRouter",
+                EndpointUrl = "https://openrouter.ai/api/v1"
+            };
+            context.Providers.Add(provider);
+            await context.SaveChangesAsync();
+
+            var viewModel = new SettingsViewModel(settingsService, aiClientFactory);
+            await viewModel.LoadProvidersAsync();
+            viewModel.SelectedProvider = viewModel.Providers.First();
+
+            viewModel.NewModelId = "liquid/lfm-2.5-embedding-350m:free";
+            viewModel.NewModelDisplayName = "Liquid LFM 2.5 Embedding";
+            viewModel.NewModelTypeIndex = 1;
+
+            await viewModel.AddModelCommand.ExecuteAsync(null);
+
+            // Try adding exact same model again
+            viewModel.NewModelId = "liquid/lfm-2.5-embedding-350m:free";
+            viewModel.NewModelDisplayName = "Liquid LFM 2.5 Embedding";
+            viewModel.NewModelTypeIndex = 1;
+
+            await viewModel.AddModelCommand.ExecuteAsync(null);
+
+            var inDb = await context.Models.Where(m => m.ModelId == "liquid/lfm-2.5-embedding-350m:free").ToListAsync();
+            inDb.Should().HaveCount(1);
+            viewModel.SelectedProviderModels.Count(m => m.ModelId == "liquid/lfm-2.5-embedding-350m:free").Should().Be(1);
+        }
+
+        [Fact]
+        public async Task DeleteModelAsync_RemovesAllDuplicateInstancesIfPresent()
+        {
+            using var context = new AppDbContext(_options);
+            var settingsService = new SettingsService(context);
+            var aiClientFactory = new FakeAiClientFactory();
+
+            var provider = new ProviderConfigEntity
+            {
+                Name = "OpenRouter",
+                ProviderType = "OpenRouter",
+                EndpointUrl = "https://openrouter.ai/api/v1"
+            };
+            context.Providers.Add(provider);
+            await context.SaveChangesAsync();
+
+            // Simulate legacy database with duplicate rows
+            var m1 = new ModelConfigEntity { ProviderId = provider.Id, ModelId = "dup-embed", DisplayName = "Dup 1", IsEmbeddingModel = true };
+            var m2 = new ModelConfigEntity { ProviderId = provider.Id, ModelId = "dup-embed", DisplayName = "Dup 2", IsEmbeddingModel = true };
+            context.Models.AddRange(m1, m2);
+            await context.SaveChangesAsync();
+
+            var viewModel = new SettingsViewModel(settingsService, aiClientFactory);
+            await viewModel.LoadProvidersAsync();
+            viewModel.SelectedProvider = viewModel.Providers.First();
+
+            await viewModel.DeleteModelCommand.ExecuteAsync(m1);
+
+            var remaining = await context.Models.Where(m => m.ModelId == "dup-embed").ToListAsync();
+            remaining.Should().BeEmpty();
+            viewModel.SelectedProviderModels.Should().NotContain(m => m.ModelId == "dup-embed");
+        }
     }
 }
 

@@ -94,13 +94,20 @@ namespace FileFormatAIStudio.ViewModels
         public async Task LoadProvidersAsync()
         {
             var list = await _settingsService.GetProvidersAsync();
+            var currentSelectedId = SelectedProvider?.Id;
+
             Providers.Clear();
             foreach (var p in list)
             {
                 Providers.Add(p);
             }
 
-            if (SelectedProvider == null && Providers.Count > 0)
+            if (currentSelectedId.HasValue)
+            {
+                SelectedProvider = Providers.FirstOrDefault(p => p.Id == currentSelectedId.Value)
+                                   ?? (Providers.Count > 0 ? Providers[0] : null);
+            }
+            else if (Providers.Count > 0)
             {
                 SelectedProvider = Providers[0];
             }
@@ -116,7 +123,11 @@ namespace FileFormatAIStudio.ViewModels
 
             if (value != null && value.Models != null)
             {
-                foreach (var model in value.Models)
+                var uniqueModels = value.Models
+                    .GroupBy(m => m.ModelId.Trim().ToLowerInvariant())
+                    .Select(g => g.First());
+
+                foreach (var model in uniqueModels)
                 {
                     SelectedProviderModels.Add(model);
                 }
@@ -247,20 +258,35 @@ namespace FileFormatAIStudio.ViewModels
         {
             if (SelectedProvider == null || string.IsNullOrWhiteSpace(NewModelId)) return;
 
+            string cleanModelId = NewModelId.Trim();
+
+            // Prevent adding duplicate model ID under same provider
+            if (SelectedProviderModels.Any(m => m.ModelId.Equals(cleanModelId, StringComparison.OrdinalIgnoreCase)))
+            {
+                SaveStatusSeverity = InfoBarSeverity.Warning;
+                SaveStatusMessage = $"Model '{cleanModelId}' is already added to this provider.";
+                IsSaveStatusOpen = true;
+                return;
+            }
+
             bool isEmbedding = NewModelTypeIndex == 1;
 
             var model = new ModelConfigEntity
             {
                 ProviderId = SelectedProvider.Id,
-                ModelId = NewModelId.Trim(),
-                DisplayName = string.IsNullOrWhiteSpace(NewModelDisplayName) ? NewModelId.Trim() : NewModelDisplayName.Trim(),
+                ModelId = cleanModelId,
+                DisplayName = string.IsNullOrWhiteSpace(NewModelDisplayName) ? cleanModelId : NewModelDisplayName.Trim(),
                 IsDefault = !isEmbedding && SelectedProviderModels.Count(m => !m.IsEmbeddingModel) == 0,
                 IsEmbeddingModel = isEmbedding
             };
 
             await _settingsService.AddModelAsync(model);
             SelectedProviderModels.Add(model);
-            SelectedProvider.Models.Add(model);
+
+            if (!SelectedProvider.Models.Any(m => m.Id == model.Id || m.ModelId.Equals(cleanModelId, StringComparison.OrdinalIgnoreCase)))
+            {
+                SelectedProvider.Models.Add(model);
+            }
 
             NewModelId = string.Empty;
             NewModelDisplayName = string.Empty;
@@ -273,8 +299,16 @@ namespace FileFormatAIStudio.ViewModels
             if (model == null || SelectedProvider == null) return;
 
             await _settingsService.DeleteModelAsync(model.Id);
-            SelectedProviderModels.Remove(model);
-            SelectedProvider.Models.Remove(model);
+
+            var toRemove = SelectedProviderModels
+                .Where(m => m.Id == model.Id || m.ModelId.Equals(model.ModelId, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            foreach (var item in toRemove)
+            {
+                SelectedProviderModels.Remove(item);
+                SelectedProvider.Models.Remove(item);
+            }
         }
 
         [RelayCommand]
@@ -285,8 +319,11 @@ namespace FileFormatAIStudio.ViewModels
             IsTestingConnection = true;
             TestStatusMessage = "Testing connection...";
 
-            string? testModelId = SelectedProviderModels.FirstOrDefault()?.ModelId;
-            var result = await _aiClientFactory.ValidateProviderAsync(SelectedProvider, testModelId);
+            // Prefer testing a chat model if available; if only embedding models exist, test embedding generation
+            var targetModel = SelectedProviderModels.FirstOrDefault(m => !m.IsEmbeddingModel)
+                              ?? SelectedProviderModels.FirstOrDefault();
+
+            var result = await _aiClientFactory.ValidateProviderAsync(SelectedProvider, targetModel?.ModelId);
 
             IsTestingConnection = false;
             IsTestSuccess = result.Success;

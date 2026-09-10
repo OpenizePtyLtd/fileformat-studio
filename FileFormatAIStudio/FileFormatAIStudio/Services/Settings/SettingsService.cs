@@ -19,17 +19,41 @@ namespace FileFormatAIStudio.Services.Settings
 
         public async Task<List<ProviderConfigEntity>> GetProvidersAsync()
         {
-            return await _context.Providers
+            var providers = await _context.Providers
                 .Include(p => p.Models)
                 .OrderBy(p => p.CreatedAt)
                 .ToListAsync();
+
+            // Deduplicate models in memory if any accidental duplicates exist in the database
+            foreach (var provider in providers)
+            {
+                if (provider.Models != null && provider.Models.Count > 1)
+                {
+                    provider.Models = provider.Models
+                        .GroupBy(m => m.ModelId.Trim().ToLowerInvariant())
+                        .Select(g => g.First())
+                        .ToList();
+                }
+            }
+
+            return providers;
         }
 
         public async Task<ProviderConfigEntity?> GetProviderByIdAsync(Guid providerId)
         {
-            return await _context.Providers
+            var provider = await _context.Providers
                 .Include(p => p.Models)
                 .FirstOrDefaultAsync(p => p.Id == providerId);
+
+            if (provider?.Models != null && provider.Models.Count > 1)
+            {
+                provider.Models = provider.Models
+                    .GroupBy(m => m.ModelId.Trim().ToLowerInvariant())
+                    .Select(g => g.First())
+                    .ToList();
+            }
+
+            return provider;
         }
 
         public async Task SaveProviderAsync(ProviderConfigEntity provider)
@@ -63,6 +87,16 @@ namespace FileFormatAIStudio.Services.Settings
 
         public async Task AddModelAsync(ModelConfigEntity model)
         {
+            string cleanId = model.ModelId.Trim().ToLowerInvariant();
+            bool alreadyExists = await _context.Models.AnyAsync(m =>
+                m.ProviderId == model.ProviderId &&
+                m.ModelId.ToLower() == cleanId);
+
+            if (alreadyExists)
+            {
+                return;
+            }
+
             _context.Models.Add(model);
             await _context.SaveChangesAsync();
         }
@@ -72,7 +106,12 @@ namespace FileFormatAIStudio.Services.Settings
             var existing = await _context.Models.FirstOrDefaultAsync(m => m.Id == modelId);
             if (existing != null)
             {
-                _context.Models.Remove(existing);
+                // Remove existing and any duplicates of this model under this provider
+                var allMatches = await _context.Models
+                    .Where(m => m.ProviderId == existing.ProviderId && m.ModelId.ToLower() == existing.ModelId.ToLower())
+                    .ToListAsync();
+
+                _context.Models.RemoveRange(allMatches);
                 await _context.SaveChangesAsync();
             }
         }
