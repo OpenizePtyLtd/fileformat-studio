@@ -52,6 +52,7 @@ namespace FileFormatAIStudio
             services.AddTransient<MainViewModel>();
             services.AddTransient<ChatViewModel>();
             services.AddTransient<SettingsViewModel>();
+            services.AddTransient<KnowledgebaseViewModel>();
 
             return services.BuildServiceProvider();
         }

@@ -96,6 +96,11 @@ namespace FileFormatAIStudio
                 SessionsListView.SelectedItem = null;
                 ContentFrame.Navigate(typeof(HomePage));
             }
+            else if (args.SelectedItemContainer == KnowledgebaseNavItem || (args.SelectedItem as NavigationViewItem)?.Tag?.ToString() == "Knowledgebase")
+            {
+                SessionsListView.SelectedItem = null;
+                ContentFrame.Navigate(typeof(KnowledgebasePage));
+            }
         }
 
         private void OnBackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
@@ -124,6 +129,15 @@ namespace FileFormatAIStudio
             else if (e.SourcePageType == typeof(HomePage))
             {
                 RootNavigationView.SelectedItem = HomeNavItem;
+                SessionsListView.SelectedItem = null;
+                RootNavigationView.IsBackButtonVisible = ContentFrame.CanGoBack
+                    ? NavigationViewBackButtonVisible.Visible
+                    : NavigationViewBackButtonVisible.Collapsed;
+                RootNavigationView.IsBackEnabled = ContentFrame.CanGoBack;
+            }
+            else if (e.SourcePageType == typeof(KnowledgebasePage))
+            {
+                RootNavigationView.SelectedItem = KnowledgebaseNavItem;
                 SessionsListView.SelectedItem = null;
                 RootNavigationView.IsBackButtonVisible = ContentFrame.CanGoBack
                     ? NavigationViewBackButtonVisible.Visible
