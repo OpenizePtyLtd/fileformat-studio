@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using FileFormatAIStudio.Data.Entities;
 using FileFormatAIStudio.Services.AI;
 using FileFormatAIStudio.Services.Knowledgebase;
+using FileFormatAIStudio.Services.Settings;
 using FileFormatAIStudio.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -15,6 +16,7 @@ namespace FileFormatAIStudio.Views
     {
         public KnowledgebaseViewModel ViewModel { get; }
         private readonly IKnowledgebaseService _knowledgebaseService;
+        private readonly ISettingsService _settingsService;
 
         public KnowledgebasePage()
         {
@@ -22,6 +24,7 @@ namespace FileFormatAIStudio.Views
             var services = ((App)Application.Current).Services;
             ViewModel = services.GetRequiredService<KnowledgebaseViewModel>();
             _knowledgebaseService = services.GetRequiredService<IKnowledgebaseService>();
+            _settingsService = services.GetRequiredService<ISettingsService>();
 
             this.Loaded += OnPageLoaded;
         }
@@ -44,6 +47,21 @@ namespace FileFormatAIStudio.Views
 
         private async Task ShowCreateKnowledgebaseDialogAsync()
         {
+            var configuredProviders = await _settingsService.GetProvidersAsync();
+            if (configuredProviders.Count == 0)
+            {
+                var noProviderDialog = new ContentDialog
+                {
+                    Title = "No AI Providers Configured",
+                    Content = "You do not have any AI providers configured yet. Please open Settings (gear icon in sidebar) to configure an embedding provider (such as Ollama for local embeddings or OpenAI for cloud embeddings).",
+                    CloseButtonText = "OK",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.Content.XamlRoot
+                };
+                await noProviderDialog.ShowAsync();
+                return;
+            }
+
             var nameBox = new TextBox
             {
                 Header = "Knowledgebase Name",
@@ -74,37 +92,90 @@ namespace FileFormatAIStudio.Views
 
             var providerCombo = new ComboBox
             {
-                Header = "Embedding Provider",
+                Header = "Embedding Provider (Configured in Settings)",
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 Margin = new Thickness(0, 0, 0, 12)
             };
-            providerCombo.Items.Add("OpenAI");
-            providerCombo.Items.Add("Ollama (Local)");
+
+            foreach (var p in configuredProviders)
+            {
+                providerCombo.Items.Add(p.Name);
+            }
             providerCombo.SelectedIndex = 0;
 
             var modelCombo = new ComboBox
             {
                 Header = "Embedding Model",
                 HorizontalAlignment = HorizontalAlignment.Stretch,
+                IsEditable = true,
                 Margin = new Thickness(0, 0, 0, 12)
+            };
+
+            var providerWarningText = new TextBlock
+            {
+                FontSize = 11,
+                Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SystemFillColorCautionBrush"],
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 8),
+                Visibility = Visibility.Collapsed
             };
 
             void UpdateModelOptions()
             {
                 modelCombo.Items.Clear();
-                if (providerCombo.SelectedIndex == 0)
+                int selectedIdx = providerCombo.SelectedIndex;
+                if (selectedIdx < 0 || selectedIdx >= configuredProviders.Count) return;
+
+                var selectedProvider = configuredProviders[selectedIdx];
+
+                // Check if API key is missing on cloud providers
+                bool isLocal = !string.IsNullOrWhiteSpace(selectedProvider.EndpointUrl) &&
+                               (selectedProvider.EndpointUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
+                                selectedProvider.EndpointUrl.Contains("127.0.0.1"));
+
+                if (string.IsNullOrWhiteSpace(selectedProvider.ApiKey) && !isLocal)
                 {
-                    modelCombo.Items.Add("text-embedding-3-small (1536 dims)");
-                    modelCombo.Items.Add("text-embedding-3-large (3072 dims)");
-                    modelCombo.Items.Add("text-embedding-ada-002 (1536 dims)");
+                    providerWarningText.Text = $"Warning: '{selectedProvider.Name}' does not have an API key saved in Settings. Indexing may fail.";
+                    providerWarningText.Visibility = Visibility.Visible;
                 }
                 else
                 {
-                    modelCombo.Items.Add("nomic-embed-text (768 dims)");
-                    modelCombo.Items.Add("bge-m3 (1024 dims)");
-                    modelCombo.Items.Add("all-minilm (384 dims)");
+                    providerWarningText.Visibility = Visibility.Collapsed;
                 }
-                modelCombo.SelectedIndex = 0;
+
+                // Populate with models configured on this provider
+                if (selectedProvider.Models != null && selectedProvider.Models.Count > 0)
+                {
+                    foreach (var m in selectedProvider.Models)
+                    {
+                        int dims = EmbeddingModelMetadata.GetKnownDimensions(m.ModelId) ?? 1536;
+                        modelCombo.Items.Add($"{m.ModelId} ({dims} dims)");
+                    }
+                }
+
+                // Add standard known embedding models as suggestions
+                string providerType = selectedProvider.ProviderType.ToLowerInvariant();
+                if (providerType.Contains("openai") || selectedProvider.Name.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!modelCombo.Items.Cast<object>().Any(i => i.ToString()!.StartsWith("text-embedding-3-small")))
+                        modelCombo.Items.Add("text-embedding-3-small (1536 dims)");
+                    if (!modelCombo.Items.Cast<object>().Any(i => i.ToString()!.StartsWith("text-embedding-3-large")))
+                        modelCombo.Items.Add("text-embedding-3-large (3072 dims)");
+                }
+                else
+                {
+                    if (!modelCombo.Items.Cast<object>().Any(i => i.ToString()!.StartsWith("nomic-embed-text")))
+                        modelCombo.Items.Add("nomic-embed-text (768 dims)");
+                    if (!modelCombo.Items.Cast<object>().Any(i => i.ToString()!.StartsWith("bge-m3")))
+                        modelCombo.Items.Add("bge-m3 (1024 dims)");
+                    if (!modelCombo.Items.Cast<object>().Any(i => i.ToString()!.StartsWith("all-minilm")))
+                        modelCombo.Items.Add("all-minilm (384 dims)");
+                }
+
+                if (modelCombo.Items.Count > 0)
+                {
+                    modelCombo.SelectedIndex = 0;
+                }
             }
 
             providerCombo.SelectionChanged += (s, args) => UpdateModelOptions();
@@ -118,6 +189,7 @@ namespace FileFormatAIStudio.Views
             contentStack.Children.Add(descBox);
             contentStack.Children.Add(parserCombo);
             contentStack.Children.Add(providerCombo);
+            contentStack.Children.Add(providerWarningText);
             contentStack.Children.Add(modelCombo);
 
             var dialog = new ContentDialog
@@ -147,8 +219,10 @@ namespace FileFormatAIStudio.Views
                     _ => "Auto"
                 };
 
-                string provider = providerCombo.SelectedIndex == 1 ? "Ollama" : "OpenAI";
-                string selectedModelStr = modelCombo.SelectedItem?.ToString() ?? "text-embedding-3-small";
+                int selectedProvIdx = providerCombo.SelectedIndex >= 0 ? providerCombo.SelectedIndex : 0;
+                string providerName = configuredProviders[selectedProvIdx].Name;
+
+                string selectedModelStr = modelCombo.SelectedItem?.ToString() ?? modelCombo.Text?.Trim() ?? "text-embedding-3-small";
                 string modelId = selectedModelStr.Split(' ')[0];
                 int dims = EmbeddingModelMetadata.GetKnownDimensions(modelId) ?? 1536;
 
@@ -158,12 +232,12 @@ namespace FileFormatAIStudio.Views
                         Name: name,
                         Description: descBox.Text.Trim(),
                         ParserEngine: parserEngine,
-                        EmbeddingProvider: provider,
+                        EmbeddingProvider: providerName,
                         EmbeddingModel: modelId,
                         VectorDimensions: dims));
 
                     await ViewModel.LoadKnowledgebasesAsync();
-                    ViewModel.ShowStatus($"Knowledgebase '{created.Name}' created successfully.", InfoBarSeverity.Success);
+                    ViewModel.ShowStatus($"Knowledgebase '{created.Name}' created successfully with provider '{providerName}'.", InfoBarSeverity.Success);
                 }
                 catch (Exception ex)
                 {
