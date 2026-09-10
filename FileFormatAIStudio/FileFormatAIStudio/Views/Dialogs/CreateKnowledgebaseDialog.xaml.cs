@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using FileFormatAIStudio.Services.Knowledgebase;
 using FileFormatAIStudio.ViewModels;
@@ -17,13 +18,47 @@ namespace FileFormatAIStudio.Views.Dialogs
             ViewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
             this.InitializeComponent();
 
+            UpdatePrimaryButtonState();
+            ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+
             this.Loaded += OnDialogLoaded;
+        }
+
+        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ViewModel.IsValid))
+            {
+                UpdatePrimaryButtonState();
+            }
+        }
+
+        private void UpdatePrimaryButtonState()
+        {
+            this.IsPrimaryButtonEnabled = ViewModel.IsValid;
         }
 
         private async void OnDialogLoaded(object sender, RoutedEventArgs e)
         {
             this.Loaded -= OnDialogLoaded;
             await ViewModel.InitializeAsync();
+            UpdatePrimaryButtonState();
+        }
+
+        private void OnNameTextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is TextBox tb)
+            {
+                ViewModel.Name = tb.Text;
+                UpdatePrimaryButtonState();
+            }
+        }
+
+        private void OnDescriptionTextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is TextBox tb)
+            {
+                ViewModel.Description = tb.Text;
+            }
         }
 
         private async void OnAddFilesClicked(object sender, RoutedEventArgs e)
@@ -65,6 +100,7 @@ namespace FileFormatAIStudio.Views.Dialogs
                         items.Add(new SelectedFileItemViewModel(file.Path, (long)props.Size));
                     }
                     ViewModel.AddFiles(items);
+                    UpdatePrimaryButtonState();
                 }
             }
             catch (Exception ex)
@@ -72,6 +108,21 @@ namespace FileFormatAIStudio.Views.Dialogs
                 // In case of any picker cancellation or COM interop failure
                 System.Diagnostics.Debug.WriteLine($"Error picking files: {ex.Message}");
             }
+        }
+
+        private void OnRemoveFileClicked(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is SelectedFileItemViewModel item)
+            {
+                ViewModel.RemoveFile(item);
+                UpdatePrimaryButtonState();
+            }
+        }
+
+        private void OnClearAllClicked(object sender, RoutedEventArgs e)
+        {
+            ViewModel.ClearAllFiles();
+            UpdatePrimaryButtonState();
         }
 
         public (CreateKnowledgebaseRequest Request, List<string> FilePaths) GetResult()

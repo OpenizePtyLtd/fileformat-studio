@@ -9,150 +9,156 @@
     Title="Create New Knowledgebase"
     PrimaryButtonText="Create Knowledgebase"
     CloseButtonText="Cancel"
-    DefaultButton="Primary"
-    IsPrimaryButtonEnabled="{x:Bind ViewModel.IsValid, Mode=OneWay}">
+    DefaultButton="Primary">
 
-    <ScrollViewer MaxHeight="560" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Spacing="16" Width="500" Padding="0,4,0,4">
+    <StackPanel Spacing="16" MaxWidth="480" MinWidth="440">
 
-            <!-- Section 1: Repository Details -->
-            <StackPanel Spacing="10">
-                <TextBlock Text="REPOSITORY DETAILS"
-                           FontSize="11"
-                           FontWeight="SemiBold"
-                           Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+        <!-- Section 1: Repository Details -->
+        <StackPanel Spacing="10">
+            <TextBlock Text="REPOSITORY DETAILS"
+                       FontSize="11"
+                       FontWeight="SemiBold"
+                       Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
 
-                <TextBox Header="Knowledgebase Name *"
-                         PlaceholderText="e.g. Legal Documents, Financial Reports, HR Policies..."
-                         Text="{x:Bind ViewModel.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox x:Name="NameTextBox"
+                     Header="Knowledgebase Name *"
+                     PlaceholderText="e.g. Legal Documents, Financial Reports, HR Policies..."
+                     Text="{x:Bind ViewModel.Name, Mode=TwoWay}"
+                     TextChanged="OnNameTextChanged" />
 
-                <TextBox Header="Description (Optional)"
-                         PlaceholderText="Brief summary of topics, sources, and scope..."
-                         AcceptsReturn="True"
-                         TextWrapping="Wrap"
-                         Height="56"
-                         Text="{x:Bind ViewModel.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            </StackPanel>
+            <TextBox x:Name="DescriptionTextBox"
+                     Header="Description (Optional)"
+                     PlaceholderText="Brief summary of topics, sources, and scope..."
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     Height="56"
+                     Text="{x:Bind ViewModel.Description, Mode=TwoWay}"
+                     TextChanged="OnDescriptionTextChanged" />
+        </StackPanel>
 
-            <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,2" />
+        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,2" />
 
-            <!-- Section 2: AI & Parsing Configuration -->
-            <StackPanel Spacing="10">
-                <TextBlock Text="AI &amp; PARSING ENGINES"
-                           FontSize="11"
-                           FontWeight="SemiBold"
-                           Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+        <!-- Section 2: AI and Parsing Configuration -->
+        <StackPanel Spacing="10">
+            <TextBlock Text="AI AND PARSING ENGINES"
+                       FontSize="11"
+                       FontWeight="SemiBold"
+                       Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
 
-                <ComboBox Header="Document Parser Engine"
+            <ComboBox x:Name="ParserEngineComboBox"
+                      Header="Document Parser Engine"
+                      HorizontalAlignment="Stretch"
+                      ItemsSource="{x:Bind ViewModel.AvailableParserEngines}"
+                      SelectedItem="{x:Bind ViewModel.SelectedParserEngine, Mode=TwoWay}"
+                      DisplayMemberPath="DisplayName" />
+
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <ComboBox Grid.Column="0"
+                          x:Name="ProviderComboBox"
+                          Header="Embedding Provider"
                           HorizontalAlignment="Stretch"
-                          ItemsSource="{x:Bind ViewModel.AvailableParserEngines}"
-                          SelectedItem="{x:Bind ViewModel.SelectedParserEngine, Mode=TwoWay}"
+                          ItemsSource="{x:Bind ViewModel.ConfiguredProviders, Mode=OneWay}"
+                          SelectedItem="{x:Bind ViewModel.SelectedProvider, Mode=TwoWay}"
+                          DisplayMemberPath="Name" />
+
+                <ComboBox Grid.Column="1"
+                          x:Name="ModelComboBox"
+                          Header="Embedding Model"
+                          HorizontalAlignment="Stretch"
+                          ItemsSource="{x:Bind ViewModel.AvailableEmbeddingModels, Mode=OneWay}"
+                          SelectedItem="{x:Bind ViewModel.SelectedEmbeddingModel, Mode=TwoWay}"
                           DisplayMemberPath="DisplayName" />
+            </Grid>
 
-                <Grid ColumnSpacing="12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+            <InfoBar IsOpen="{x:Bind ViewModel.HasProviderWarning, Mode=OneWay}"
+                     Severity="Warning"
+                     Message="{x:Bind ViewModel.ProviderWarningMessage, Mode=OneWay}"
+                     IsClosable="False"
+                     Margin="0,4,0,0" />
+        </StackPanel>
 
-                    <ComboBox Grid.Column="0"
-                              Header="Embedding Provider"
-                              HorizontalAlignment="Stretch"
-                              ItemsSource="{x:Bind ViewModel.ConfiguredProviders, Mode=OneWay}"
-                              SelectedItem="{x:Bind ViewModel.SelectedProvider, Mode=TwoWay}"
-                              DisplayMemberPath="Name" />
+        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,2" />
 
-                    <ComboBox Grid.Column="1"
-                              Header="Embedding Model"
-                              HorizontalAlignment="Stretch"
-                              ItemsSource="{x:Bind ViewModel.AvailableEmbeddingModels, Mode=OneWay}"
-                              SelectedItem="{x:Bind ViewModel.SelectedEmbeddingModel, Mode=TwoWay}"
-                              DisplayMemberPath="DisplayName" />
-                </Grid>
+        <!-- Section 3: Documents to Index -->
+        <StackPanel Spacing="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-                <InfoBar IsOpen="{x:Bind ViewModel.HasProviderWarning, Mode=OneWay}"
-                         Severity="Warning"
-                         Message="{x:Bind ViewModel.ProviderWarningMessage, Mode=OneWay}"
-                         IsClosable="False"
-                         Margin="0,4,0,0" />
-            </StackPanel>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="DOCUMENTS TO INDEX"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Text="{x:Bind ViewModel.TotalFilesSummary, Mode=OneWay}"
+                               FontSize="11"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
 
-            <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,2" />
-
-            <!-- Section 3: Documents to Index -->
-            <StackPanel Spacing="10">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <TextBlock Text="DOCUMENTS TO INDEX"
-                                   FontSize="11"
-                                   FontWeight="SemiBold"
-                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-                        <TextBlock Text="{x:Bind ViewModel.TotalFilesSummary, Mode=OneWay}"
-                                   FontSize="11"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
-                        <Button Style="{ThemeResource AccentButtonStyle}"
-                                Height="30"
-                                Padding="10,0"
-                                Click="OnAddFilesClicked">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon Glyph="&#xE710;" FontSize="11" />
-                                <TextBlock Text="Add Files..." FontSize="12" FontWeight="SemiBold" />
-                            </StackPanel>
-                        </Button>
-
-                        <Button Height="30"
-                                Padding="10,0"
-                                Command="{x:Bind ViewModel.ClearAllFilesCommand}"
-                                IsEnabled="{x:Bind ViewModel.HasSelectedFiles, Mode=OneWay}"
-                                ToolTipService.ToolTip="Clear all selected files">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon Glyph="&#xE894;" FontSize="11" />
-                                <TextBlock Text="Clear" FontSize="12" />
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
-                </Grid>
-
-                <TextBlock Text="Supported: .docx, .doc, .xlsx, .xls, .pptx, .ppt, .pdf, .txt, .csv, .md"
-                           FontSize="11"
-                           Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-
-                <!-- Files Container -->
-                <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        MinHeight="100"
-                        MaxHeight="170">
-                    <Grid>
-                        <!-- Empty Placeholder -->
-                        <StackPanel VerticalAlignment="Center"
-                                    HorizontalAlignment="Center"
-                                    Spacing="8"
-                                    Padding="16"
-                                    Visibility="{x:Bind ViewModel.HasNoSelectedFiles, Mode=OneWay}">
-                            <FontIcon Glyph="&#xE8E5;" FontSize="24" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-                            <TextBlock Text="No files selected yet. Click 'Add Files...' to choose documents from your computer."
-                                       FontSize="12"
-                                       Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                       TextAlignment="Center"
-                                       TextWrapping="Wrap" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                    <Button Style="{ThemeResource AccentButtonStyle}"
+                            Height="30"
+                            Padding="10,0"
+                            Click="OnAddFilesClicked">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE710;" FontSize="11" />
+                            <TextBlock Text="Add Files..." FontSize="12" FontWeight="SemiBold" />
                         </StackPanel>
+                    </Button>
 
-                        <!-- Selected Files ListView -->
-                        <ListView ItemsSource="{x:Bind ViewModel.SelectedFiles, Mode=OneWay}"
-                                  SelectionMode="None"
-                                  Padding="4,4"
+                    <Button Height="30"
+                            Padding="10,0"
+                            Click="OnClearAllClicked"
+                            IsEnabled="{x:Bind ViewModel.HasSelectedFiles, Mode=OneWay}"
+                            ToolTipService.ToolTip="Clear all selected files">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE894;" FontSize="11" />
+                            <TextBlock Text="Clear" FontSize="12" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Text="Supported: .docx, .doc, .xlsx, .xls, .pptx, .ppt, .pdf, .txt, .csv, .md"
+                       FontSize="11"
+                       Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+
+            <!-- Files Container -->
+            <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    MinHeight="90"
+                    MaxHeight="150">
+                <Grid>
+                    <!-- Empty Placeholder -->
+                    <StackPanel VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                Spacing="6"
+                                Padding="16"
+                                Visibility="{x:Bind ViewModel.HasNoSelectedFiles, Mode=OneWay}">
+                        <FontIcon Glyph="&#xE8E5;" FontSize="22" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                        <TextBlock Text="No files selected yet. Click 'Add Files...' to choose documents from your computer."
+                                   FontSize="12"
+                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <!-- Selected Files List -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
                                   Visibility="{x:Bind ViewModel.HasSelectedFiles, Mode=OneWay}">
-                            <ListView.ItemTemplate>
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.SelectedFiles, Mode=OneWay}"
+                                      Padding="4,4">
+                            <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:SelectedFileItemViewModel">
                                     <Grid Padding="8,4" ColumnSpacing="10">
                                         <Grid.ColumnDefinitions>
@@ -173,8 +179,7 @@
                                                    FontWeight="SemiBold"
                                                    FontSize="12"
                                                    TextTrimming="CharacterEllipsis"
-                                                   VerticalAlignment="Center"
-                                                   ToolTipService.ToolTip="{x:Bind FilePath}" />
+                                                   VerticalAlignment="Center" />
 
                                         <TextBlock Grid.Column="2"
                                                    Text="{x:Bind FormattedFileSize}"
@@ -188,17 +193,18 @@
                                                 Padding="0"
                                                 Background="Transparent"
                                                 BorderThickness="0"
-                                                Command="{x:Bind RemoveCommand}"
+                                                Click="OnRemoveFileClicked"
                                                 ToolTipService.ToolTip="Remove file">
                                             <FontIcon Glyph="&#xE711;" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
                                         </Button>
                                     </Grid>
                                 </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
-                    </Grid>
-                </Border>
-            </StackPanel>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
         </StackPanel>
-    </ScrollViewer>
+    </StackPanel>
 </ContentDialog>
+
