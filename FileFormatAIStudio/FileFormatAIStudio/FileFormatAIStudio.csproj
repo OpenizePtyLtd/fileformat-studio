@@ -59,6 +59,10 @@
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.11" />
+    <PackageReference Include="Aspose.Words" Version="26.9.0" />
+    <PackageReference Include="Aspose.Cells" Version="26.8.0" />
+    <PackageReference Include="Aspose.Slides.NET" Version="26.9.0" />
+    <PackageReference Include="Aspose.PDF" Version="26.8.0" />
   </ItemGroup>
 
     <!-- Publish Properties -->

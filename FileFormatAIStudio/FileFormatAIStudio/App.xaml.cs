@@ -37,6 +37,8 @@ namespace FileFormatAIStudio
             services.AddScoped<IChatExecutionService, ChatExecutionService>();
 
             // Document Parsing
+            services.AddSingleton<IAsposeLicenseService, AsposeLicenseService>();
+            services.AddSingleton<IDocumentParser, AsposeDocumentParser>();
             services.AddSingleton<IDocumentParser, PlainTextParser>();
             services.AddSingleton<IDocumentParserFactory, DocumentParserFactory>();
 
