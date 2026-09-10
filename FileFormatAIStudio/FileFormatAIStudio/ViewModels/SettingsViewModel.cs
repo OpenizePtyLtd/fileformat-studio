@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -319,19 +320,85 @@ namespace FileFormatAIStudio.ViewModels
             IsTestingConnection = true;
             TestStatusMessage = "Testing connection...";
 
-            // Prefer testing a chat model if available; if only embedding models exist, test embedding generation
-            var targetModel = SelectedProviderModels.FirstOrDefault(m => !m.IsEmbeddingModel)
-                              ?? SelectedProviderModels.FirstOrDefault();
+            try
+            {
+                if (SelectedProviderModels == null || SelectedProviderModels.Count == 0)
+                {
+                    var result = await _aiClientFactory.ValidateProviderAsync(SelectedProvider, null);
+                    IsTestingConnection = false;
+                    IsTestSuccess = result.Success;
+                    TestStatusMessage = result.Message;
+                    SaveStatusSeverity = result.Success ? InfoBarSeverity.Success : InfoBarSeverity.Error;
+                    SaveStatusMessage = result.Message;
+                    IsSaveStatusOpen = true;
+                    return;
+                }
 
-            var result = await _aiClientFactory.ValidateProviderAsync(SelectedProvider, targetModel?.ModelId);
+                int totalCount = SelectedProviderModels.Count;
+                var passedModels = new List<string>();
+                var failedModels = new List<(string ModelName, string Error)>();
 
-            IsTestingConnection = false;
-            IsTestSuccess = result.Success;
-            TestStatusMessage = result.Message;
+                for (int i = 0; i < totalCount; i++)
+                {
+                    var model = SelectedProviderModels[i];
+                    string modelLabel = !string.IsNullOrWhiteSpace(model.DisplayName) ? model.DisplayName : model.ModelId;
+                    TestStatusMessage = $"Testing model {i + 1} of {totalCount} ({modelLabel})...";
 
-            SaveStatusSeverity = result.Success ? InfoBarSeverity.Success : InfoBarSeverity.Error;
-            SaveStatusMessage = result.Message;
-            IsSaveStatusOpen = true;
+                    var (success, message) = await _aiClientFactory.ValidateProviderAsync(SelectedProvider, model.ModelId);
+                    if (success)
+                    {
+                        passedModels.Add(modelLabel);
+                    }
+                    else
+                    {
+                        failedModels.Add((modelLabel, message));
+                    }
+                }
+
+                IsTestingConnection = false;
+
+                if (failedModels.Count == 0)
+                {
+                    IsTestSuccess = true;
+                    string summary = totalCount == 1
+                        ? $"Connection successful! Model '{passedModels[0]}' verified."
+                        : $"All {totalCount} models verified successfully ({string.Join(", ", passedModels)}).";
+                    TestStatusMessage = summary;
+                    SaveStatusSeverity = InfoBarSeverity.Success;
+                    SaveStatusMessage = summary;
+                }
+                else if (passedModels.Count == 0)
+                {
+                    IsTestSuccess = false;
+                    string failureDetails = string.Join("; ", failedModels.Select(f => $"{f.ModelName}: {f.Error}"));
+                    string summary = totalCount == 1
+                        ? $"Model test failed: {failureDetails}"
+                        : $"All {totalCount} models failed connection test: {failureDetails}";
+                    TestStatusMessage = summary;
+                    SaveStatusSeverity = InfoBarSeverity.Error;
+                    SaveStatusMessage = summary;
+                }
+                else
+                {
+                    IsTestSuccess = false;
+                    string failureDetails = string.Join("; ", failedModels.Select(f => $"{f.ModelName}: {f.Error}"));
+                    string summary = $"{passedModels.Count} of {totalCount} models verified. Failed: {failureDetails}";
+                    TestStatusMessage = summary;
+                    SaveStatusSeverity = InfoBarSeverity.Warning;
+                    SaveStatusMessage = summary;
+                }
+
+                IsSaveStatusOpen = true;
+            }
+            catch (Exception ex)
+            {
+                IsTestingConnection = false;
+                IsTestSuccess = false;
+                TestStatusMessage = $"Unexpected error during test: {ex.Message}";
+                SaveStatusSeverity = InfoBarSeverity.Error;
+                SaveStatusMessage = TestStatusMessage;
+                IsSaveStatusOpen = true;
+            }
         }
 
         [RelayCommand]

@@ -139,23 +139,68 @@ namespace FileFormatAIStudio.Services.AI
                 return (false, "Endpoint URL must be a valid HTTP or HTTPS address.");
             }
 
-            string? targetModelId = !string.IsNullOrWhiteSpace(modelId)
-                ? modelId
-                : provider.Models != null && provider.Models.Count > 0 ? provider.Models[0].ModelId : null;
-
-            // If a model is available, validate appropriately based on model type (Embedding vs Chat)
-            if (!string.IsNullOrWhiteSpace(targetModelId))
+            // If a specific model is requested, validate it (Embedding vs Chat)
+            if (!string.IsNullOrWhiteSpace(modelId))
             {
-                bool isEmbedding = provider.Models?.FirstOrDefault(m => m.ModelId.Equals(targetModelId, StringComparison.OrdinalIgnoreCase))?.IsEmbeddingModel
-                    ?? EmbeddingModelMetadata.IsEmbeddingModel(targetModelId);
+                bool isEmbedding = provider.Models?.FirstOrDefault(m => m.ModelId.Equals(modelId, StringComparison.OrdinalIgnoreCase))?.IsEmbeddingModel
+                    ?? EmbeddingModelMetadata.IsEmbeddingModel(modelId);
 
                 if (isEmbedding)
                 {
-                    var embedResult = await TestEmbeddingGenerationAsync(provider, targetModelId, ct);
+                    var embedResult = await TestEmbeddingGenerationAsync(provider, modelId, ct);
                     return (embedResult.Success, embedResult.Message);
                 }
 
-                return await TestConnectionAsync(provider, targetModelId, ct);
+                return await TestConnectionAsync(provider, modelId, ct);
+            }
+
+            // If provider has configured models, validate all of them
+            if (provider.Models != null && provider.Models.Count > 0)
+            {
+                var failed = new System.Collections.Generic.List<string>();
+                var passed = new System.Collections.Generic.List<string>();
+
+                foreach (var model in provider.Models)
+                {
+                    bool isEmbedding = model.IsEmbeddingModel || EmbeddingModelMetadata.IsEmbeddingModel(model.ModelId);
+                    bool success;
+                    string message;
+                    if (isEmbedding)
+                    {
+                        var emb = await TestEmbeddingGenerationAsync(provider, model.ModelId, ct);
+                        success = emb.Success;
+                        message = emb.Message;
+                    }
+                    else
+                    {
+                        var chat = await TestConnectionAsync(provider, model.ModelId, ct);
+                        success = chat.Success;
+                        message = chat.Message;
+                    }
+
+                    if (success)
+                    {
+                        passed.Add(model.DisplayName ?? model.ModelId);
+                    }
+                    else
+                    {
+                        failed.Add($"{model.DisplayName ?? model.ModelId}: {message}");
+                    }
+                }
+
+                if (failed.Count == 0)
+                {
+                    return (true, provider.Models.Count == 1
+                        ? $"Connection successful! Model '{passed[0]}' verified."
+                        : $"All {provider.Models.Count} models verified successfully ({string.Join(", ", passed)}).");
+                }
+
+                if (passed.Count == 0)
+                {
+                    return (false, $"All {provider.Models.Count} models failed connection test: {string.Join("; ", failed)}");
+                }
+
+                return (false, $"{passed.Count} of {provider.Models.Count} models verified. Failed: {string.Join("; ", failed)}");
             }
 
             // If no model is configured yet, test provider connectivity via GET /models

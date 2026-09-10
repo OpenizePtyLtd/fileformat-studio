@@ -240,6 +240,81 @@ namespace FileFormatAIStudio.Tests
             remaining.Should().BeEmpty();
             viewModel.SelectedProviderModels.Should().NotContain(m => m.ModelId == "dup-embed");
         }
+
+        [Fact]
+        public async Task TestConnectionAsync_MultipleModels_TestsAllModelsAndPasses()
+        {
+            using var context = new AppDbContext(_options);
+            var settingsService = new SettingsService(context);
+            var aiClientFactory = new FakeAiClientFactory();
+
+            var provider = new ProviderConfigEntity
+            {
+                Name = "OpenRouter",
+                ProviderType = "OpenRouter",
+                EndpointUrl = "https://openrouter.ai/api/v1"
+            };
+            context.Providers.Add(provider);
+            await context.SaveChangesAsync();
+
+            var chatModel = new ModelConfigEntity { ProviderId = provider.Id, ModelId = "openrouter/free", DisplayName = "OpenRouter Free", IsEmbeddingModel = false };
+            var embedModel = new ModelConfigEntity { ProviderId = provider.Id, ModelId = "liquid/lfm-2.5-embedding-350m:free", DisplayName = "Liquid Embedding", IsEmbeddingModel = true };
+            context.Models.AddRange(chatModel, embedModel);
+            await context.SaveChangesAsync();
+
+            var viewModel = new SettingsViewModel(settingsService, aiClientFactory);
+            await viewModel.LoadProvidersAsync();
+            viewModel.SelectedProvider = viewModel.Providers.First();
+
+            await viewModel.TestConnectionCommand.ExecuteAsync(null);
+
+            // Both models must have been tested
+            aiClientFactory.TestedModelIds.Should().Contain("openrouter/free");
+            aiClientFactory.TestedModelIds.Should().Contain("liquid/lfm-2.5-embedding-350m:free");
+            viewModel.IsTestSuccess.Should().BeTrue();
+            viewModel.TestStatusMessage.Should().Contain("All 2 models verified successfully");
+        }
+
+        [Fact]
+        public async Task TestConnectionAsync_OneModelFails_ReportsWarningAndDetails()
+        {
+            using var context = new AppDbContext(_options);
+            var settingsService = new SettingsService(context);
+            var aiClientFactory = new FakeAiClientFactory
+            {
+                ValidateResultFunc = (modelId) =>
+                {
+                    if (modelId == "bad-model")
+                        return (false, "Model not found");
+                    return (true, "OK");
+                }
+            };
+
+            var provider = new ProviderConfigEntity
+            {
+                Name = "OpenRouter",
+                ProviderType = "OpenRouter",
+                EndpointUrl = "https://openrouter.ai/api/v1"
+            };
+            context.Providers.Add(provider);
+            await context.SaveChangesAsync();
+
+            var chatModel = new ModelConfigEntity { ProviderId = provider.Id, ModelId = "good-model", DisplayName = "Good Model", IsEmbeddingModel = false };
+            var badModel = new ModelConfigEntity { ProviderId = provider.Id, ModelId = "bad-model", DisplayName = "Bad Model", IsEmbeddingModel = false };
+            context.Models.AddRange(chatModel, badModel);
+            await context.SaveChangesAsync();
+
+            var viewModel = new SettingsViewModel(settingsService, aiClientFactory);
+            await viewModel.LoadProvidersAsync();
+            viewModel.SelectedProvider = viewModel.Providers.First();
+
+            await viewModel.TestConnectionCommand.ExecuteAsync(null);
+
+            viewModel.IsTestSuccess.Should().BeFalse();
+            viewModel.SaveStatusSeverity.Should().Be(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Warning);
+            viewModel.TestStatusMessage.Should().Contain("1 of 2 models verified");
+            viewModel.TestStatusMessage.Should().Contain("Bad Model: Model not found");
+        }
     }
 }
 

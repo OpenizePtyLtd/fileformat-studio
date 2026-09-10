@@ -393,6 +393,9 @@ namespace FileFormatAIStudio.Tests
 
     internal sealed class FakeAiClientFactory : IAIClientFactory
     {
+        public List<string?> TestedModelIds { get; } = new();
+        public Func<string?, (bool Success, string Message)>? ValidateResultFunc { get; set; }
+
         public IChatClient CreateChatClient(ProviderConfigEntity provider, string modelId) => throw new NotImplementedException();
 
         public IEmbeddingGenerator<string, Embedding<float>> CreateEmbeddingGenerator(ProviderConfigEntity provider, string modelId)
@@ -401,14 +404,30 @@ namespace FileFormatAIStudio.Tests
             return new FakeEmbeddingGenerator(dims);
         }
 
-        public Task<(bool Success, string Message)> TestConnectionAsync(ProviderConfigEntity provider, string modelId, CancellationToken ct = default) =>
-            Task.FromResult((true, "OK"));
+        public Task<(bool Success, string Message)> TestConnectionAsync(ProviderConfigEntity provider, string modelId, CancellationToken ct = default)
+        {
+            TestedModelIds.Add(modelId);
+            if (ValidateResultFunc != null) return Task.FromResult(ValidateResultFunc(modelId));
+            return Task.FromResult((true, "OK"));
+        }
 
-        public Task<(bool Success, string Message, int Dimensions)> TestEmbeddingGenerationAsync(ProviderConfigEntity provider, string modelId, CancellationToken ct = default) =>
-            Task.FromResult((true, "OK", 1536));
+        public Task<(bool Success, string Message, int Dimensions)> TestEmbeddingGenerationAsync(ProviderConfigEntity provider, string modelId, CancellationToken ct = default)
+        {
+            TestedModelIds.Add(modelId);
+            if (ValidateResultFunc != null)
+            {
+                var res = ValidateResultFunc(modelId);
+                return Task.FromResult((res.Success, res.Message, 1536));
+            }
+            return Task.FromResult((true, "OK", 1536));
+        }
 
-        public Task<(bool Success, string Message)> ValidateProviderAsync(ProviderConfigEntity provider, string? modelId = null, CancellationToken ct = default) =>
-            Task.FromResult((true, "OK"));
+        public Task<(bool Success, string Message)> ValidateProviderAsync(ProviderConfigEntity provider, string? modelId = null, CancellationToken ct = default)
+        {
+            TestedModelIds.Add(modelId);
+            if (ValidateResultFunc != null) return Task.FromResult(ValidateResultFunc(modelId));
+            return Task.FromResult((true, "OK"));
+        }
     }
 }
 
