@@ -48,3 +48,4 @@ namespace FileFormatAIStudio.Services.Knowledgebase
         Task<int> GetChunkCountAsync(Guid knowledgebaseId, CancellationToken ct = default);
     }
 }
+

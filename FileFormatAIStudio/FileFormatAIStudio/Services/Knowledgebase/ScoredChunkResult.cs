@@ -17,3 +17,4 @@ namespace FileFormatAIStudio.Services.Knowledgebase
         float Score
     );
 }
+
