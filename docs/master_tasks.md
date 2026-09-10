@@ -19,7 +19,7 @@
 
 | Task ID | Issue | Group / Phase | Task Title | Milestone | Prerequisites | Status |
 | :---: | :---: | :--- | :--- | :--- | :--- | :---: |
-| **TASK-01** | [#24](https://github.com/OpenizePtyLtd/fileformat-studio/issues/24) | 1. Architectural Decisions | `spike(rag): Evaluate & decide Vector DB engine (In-Process SQLite BLOB + SIMD vs sqlite-vec vs Embedded)` | M1 | None | ⏳ Pending |
+| **TASK-01** | [#24](https://github.com/OpenizePtyLtd/fileformat-studio/issues/24) | 1. Architectural Decisions | `spike(rag): Evaluate & decide Vector DB engine (In-Process SQLite BLOB + SIMD vs sqlite-vec vs Embedded)` | M1 | None | ✅ Completed |
 | **TASK-02** | [#25](https://github.com/OpenizePtyLtd/fileformat-studio/issues/25) | 1. Architectural Decisions | `spike(rag): Evaluate & decide Embedding Generation pipeline via Microsoft.Extensions.AI` | M1 | None | ⏳ Pending |
 | **TASK-03** | [#26](https://github.com/OpenizePtyLtd/fileformat-studio/issues/26) | 1. Architectural Decisions | `spike(parser): Design Node.js IPC runner for officeparser / node scripts in WinUI 3` | M1 | None | ⏳ Pending |
 | **TASK-04** | [#27](https://github.com/OpenizePtyLtd/fileformat-studio/issues/27) | 2. Data & Persistence | `feat(data): Implement Knowledgebase and Document Chunk EF Core Entities` | M1 | TASK-01 | ⏳ Pending |
