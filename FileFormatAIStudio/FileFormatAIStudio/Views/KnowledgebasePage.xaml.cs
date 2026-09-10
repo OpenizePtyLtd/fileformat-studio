@@ -107,7 +107,7 @@ namespace FileFormatAIStudio.Views
             {
                 Header = "Embedding Model",
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                IsEditable = true,
+                IsEditable = false,
                 Margin = new Thickness(0, 0, 0, 12)
             };
 
@@ -215,17 +215,19 @@ namespace FileFormatAIStudio.Views
                     .Where(m => m.IsEmbeddingModel || EmbeddingModelMetadata.IsEmbeddingModel(m.ModelId))
                     .ToList() ?? new();
 
-                string selectedModelStr = modelCombo.SelectedItem?.ToString() ?? modelCombo.Text?.Trim() ?? string.Empty;
+                int modelIdx = modelCombo.SelectedIndex;
+                string? selectedItemStr = modelCombo.SelectedItem?.ToString();
+                string modelId = (modelIdx >= 0 && modelIdx < registeredEmbeddingModels.Count)
+                    ? registeredEmbeddingModels[modelIdx].ModelId
+                    : (!string.IsNullOrWhiteSpace(selectedItemStr)
+                        ? selectedItemStr.Split(' ')[0]
+                        : (registeredEmbeddingModels.Count > 0 ? registeredEmbeddingModels[0].ModelId : string.Empty));
 
-                if (string.IsNullOrWhiteSpace(selectedModelStr) && registeredEmbeddingModels.Count == 0)
+                if (string.IsNullOrWhiteSpace(modelId))
                 {
-                    ViewModel.ShowStatus($"Cannot create knowledgebase: No embedding model is registered under '{providerName}'. Please register an embedding model in Settings first.", InfoBarSeverity.Error);
+                    ViewModel.ShowStatus($"Cannot create knowledgebase: Please select a valid embedding model registered under '{providerName}'.", InfoBarSeverity.Error);
                     return;
                 }
-
-                string modelId = !string.IsNullOrWhiteSpace(selectedModelStr)
-                    ? selectedModelStr.Split(' ')[0]
-                    : registeredEmbeddingModels[0].ModelId;
 
                 int dims = EmbeddingModelMetadata.GetKnownDimensions(modelId) ?? 1536;
 
