@@ -14,6 +14,10 @@ namespace FileFormatAIStudio.Data
         public DbSet<ChatSessionEntity> Sessions => Set<ChatSessionEntity>();
         public DbSet<ChatMessageEntity> Messages => Set<ChatMessageEntity>();
         public DbSet<AppSettingEntity> AppSettings => Set<AppSettingEntity>();
+        public DbSet<KnowledgebaseEntity> Knowledgebases => Set<KnowledgebaseEntity>();
+        public DbSet<KnowledgebaseDocumentEntity> KnowledgebaseDocuments => Set<KnowledgebaseDocumentEntity>();
+        public DbSet<DocumentChunkEntity> DocumentChunks => Set<DocumentChunkEntity>();
+        public DbSet<SessionKnowledgebaseEntity> SessionKnowledgebases => Set<SessionKnowledgebaseEntity>();
 
         public AppDbContext()
         {
@@ -69,6 +73,61 @@ namespace FileFormatAIStudio.Data
             // AppSettingEntity
             modelBuilder.Entity<AppSettingEntity>()
                 .HasKey(s => s.Key);
+
+            // Knowledgebase -> Documents (Cascade Delete)
+            modelBuilder.Entity<KnowledgebaseEntity>()
+                .HasMany(k => k.Documents)
+                .WithOne(d => d.Knowledgebase)
+                .HasForeignKey(d => d.KnowledgebaseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Knowledgebase -> Chunks (Cascade Delete)
+            modelBuilder.Entity<KnowledgebaseEntity>()
+                .HasMany(k => k.Chunks)
+                .WithOne(c => c.Knowledgebase)
+                .HasForeignKey(c => c.KnowledgebaseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // KnowledgebaseDocument -> Chunks (Cascade Delete)
+            modelBuilder.Entity<KnowledgebaseDocumentEntity>(entity =>
+            {
+                entity.HasMany(d => d.Chunks)
+                    .WithOne(c => c.Document)
+                    .HasForeignKey(c => c.DocumentId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(d => d.KnowledgebaseId)
+                    .HasDatabaseName("IX_KnowledgebaseDocuments_KnowledgebaseId");
+            });
+
+            // DocumentChunkEntity Configuration & Indexes
+            modelBuilder.Entity<DocumentChunkEntity>(entity =>
+            {
+                entity.HasIndex(c => c.KnowledgebaseId)
+                    .HasDatabaseName("IX_DocumentChunks_KnowledgebaseId");
+
+                entity.HasIndex(c => c.DocumentId)
+                    .HasDatabaseName("IX_DocumentChunks_DocumentId");
+
+                entity.Property(c => c.EmbeddingVector)
+                    .HasColumnType("BLOB");
+            });
+
+            // SessionKnowledgebaseEntity Join Table
+            modelBuilder.Entity<SessionKnowledgebaseEntity>(entity =>
+            {
+                entity.HasKey(sk => new { sk.SessionId, sk.KnowledgebaseId });
+
+                entity.HasOne(sk => sk.Session)
+                    .WithMany(s => s.SessionKnowledgebases)
+                    .HasForeignKey(sk => sk.SessionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(sk => sk.Knowledgebase)
+                    .WithMany(k => k.SessionKnowledgebases)
+                    .HasForeignKey(sk => sk.KnowledgebaseId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }

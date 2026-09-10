@@ -16,6 +16,7 @@ namespace FileFormatAIStudio.Data.Entities
         public Guid? SelectedModelId { get; set; }
 
         public List<ChatMessageEntity> Messages { get; set; } = new();
+        public List<SessionKnowledgebaseEntity> SessionKnowledgebases { get; set; } = new();
     }
 }
 

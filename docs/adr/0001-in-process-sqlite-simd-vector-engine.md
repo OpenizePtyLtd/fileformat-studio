@@ -120,3 +120,4 @@ Specifically:
       Task DeleteByKnowledgebaseIdAsync(Guid knowledgebaseId, CancellationToken ct = default);
   }
   ```
+

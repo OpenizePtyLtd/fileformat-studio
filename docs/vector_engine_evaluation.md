@@ -150,3 +150,4 @@ Because `System.Numerics.Tensors.TensorPrimitives` is an official Microsoft libr
 1. **TASK-04 ([#27](https://github.com/OpenizePtyLtd/fileformat-studio/issues/27)):** Define `KnowledgebaseEntity`, `KnowledgebaseDocumentEntity`, and `DocumentChunkEntity` with `byte[] EmbeddingVector` mapped to SQLite `BLOB`.
 2. **TASK-05 ([#28](https://github.com/OpenizePtyLtd/fileformat-studio/issues/28)):** Add EF Core code-first migration creating the Knowledgebase and Document Chunk tables with indexes on `KnowledgebaseId` and `DocumentId`.
 3. **TASK-11 ([#34](https://github.com/OpenizePtyLtd/fileformat-studio/issues/34)):** Implement `VectorStoreService` encapsulating `TensorPrimitives.CosineSimilarity`, `PriorityQueue` Top-K ranking, and `MemoryMarshal` zero-copy spans.
+
