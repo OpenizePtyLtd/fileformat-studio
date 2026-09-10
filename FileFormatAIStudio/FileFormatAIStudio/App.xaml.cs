@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using FileFormatAIStudio.Data;
 using FileFormatAIStudio.Services.AI;
 using FileFormatAIStudio.Services.Chat;
+using FileFormatAIStudio.Services.Knowledgebase;
 using FileFormatAIStudio.Services.Parsing;
 using FileFormatAIStudio.Services.Settings;
 using FileFormatAIStudio.ViewModels;
@@ -36,12 +37,13 @@ namespace FileFormatAIStudio
             services.AddScoped<IChatSessionService, ChatSessionService>();
             services.AddScoped<IChatExecutionService, ChatExecutionService>();
 
-            // Document Parsing
+            // Document Parsing & Chunking
             services.AddSingleton<IAsposeLicenseService, AsposeLicenseService>();
             services.AddSingleton<IDocumentParser, AsposeDocumentParser>();
             services.AddSingleton<IDocumentParser, DotNetOssDocumentParser>();
             services.AddSingleton<IDocumentParser, PlainTextParser>();
             services.AddSingleton<IDocumentParserFactory, DocumentParserFactory>();
+            services.AddSingleton<ITextChunker, TextChunker>();
 
             // ViewModels
             services.AddTransient<HomeViewModel>();
