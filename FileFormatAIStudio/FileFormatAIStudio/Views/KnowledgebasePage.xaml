@@ -156,8 +156,7 @@
                                                     Spacing="4"
                                                     VerticalAlignment="Center"
                                                     Background="Transparent"
-                                                    Tapped="OnToggleDocumentsClicked"
-                                                    ToolTipService.ToolTip="Click to show or hide documents">
+                                                    Tapped="OnToggleDocumentsClicked">
                                             <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                                                 <TextBlock Text="{x:Bind Name}"
                                                            Style="{ThemeResource SubtitleTextBlockStyle}"
@@ -204,7 +203,6 @@
                                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                                     BorderThickness="1"
                                                     CornerRadius="6"
-                                                    ToolTipService.ToolTip="Show/Hide Documents"
                                                     Command="{x:Bind ToggleExpandedCommand}">
                                                 <FontIcon Glyph="{x:Bind ExpandIconGlyph, Mode=OneWay}" FontSize="13" />
                                             </Button>
@@ -227,8 +225,7 @@
                                           BorderThickness="1"
                                           CornerRadius="6"
                                           Padding="14,8"
-                                          Tapped="OnToggleDocumentsClicked"
-                                          ToolTipService.ToolTip="Click to show or hide documents">
+                                          Tapped="OnToggleDocumentsClicked">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="*" />
