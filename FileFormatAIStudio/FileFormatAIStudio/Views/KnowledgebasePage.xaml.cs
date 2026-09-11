@@ -173,6 +173,51 @@ namespace FileFormatAIStudio.Views
                 }
             }
         }
+
+        private async void OnAddDocumentsClicked(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is KnowledgebaseItemViewModel kb)
+            {
+                try
+                {
+                    var picker = new Windows.Storage.Pickers.FileOpenPicker();
+
+                    var hwnd = App.MainWindowInstance != null
+                        ? WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindowInstance)
+                        : IntPtr.Zero;
+
+                    if (hwnd != IntPtr.Zero)
+                    {
+                        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+                    }
+
+                    picker.ViewMode = Windows.Storage.Pickers.PickerViewMode.List;
+                    picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+
+                    picker.FileTypeFilter.Add(".docx");
+                    picker.FileTypeFilter.Add(".doc");
+                    picker.FileTypeFilter.Add(".xlsx");
+                    picker.FileTypeFilter.Add(".xls");
+                    picker.FileTypeFilter.Add(".pptx");
+                    picker.FileTypeFilter.Add(".ppt");
+                    picker.FileTypeFilter.Add(".pdf");
+                    picker.FileTypeFilter.Add(".txt");
+                    picker.FileTypeFilter.Add(".csv");
+                    picker.FileTypeFilter.Add(".md");
+
+                    var files = await picker.PickMultipleFilesAsync();
+                    if (files != null && files.Count > 0)
+                    {
+                        var filePaths = files.Select(f => f.Path).ToList();
+                        await ViewModel.AddDocumentsAsync(kb, filePaths);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ViewModel.ShowStatus($"Failed to pick documents: {ex.Message}", InfoBarSeverity.Error);
+                }
+            }
+        }
     }
 }
 

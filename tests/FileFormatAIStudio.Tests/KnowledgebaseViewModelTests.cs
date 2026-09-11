@@ -168,11 +168,91 @@ namespace FileFormatAIStudio.Tests
         {
             KnowledgebaseItemViewModel.FormatBytes(bytes).Should().Be(expected);
         }
+
+        [Fact]
+        public async Task AddDocumentsAsync_AppendsNewDocumentsAndRefreshesCounts()
+        {
+            var kb = new KnowledgebaseEntity
+            {
+                Id = Guid.NewGuid(),
+                Name = "Engineering Docs",
+                Documents = []
+            };
+            _fakeService.Knowledgebases.Add(kb);
+            await _viewModel.LoadKnowledgebasesAsync();
+
+            var item = _viewModel.Knowledgebases[0];
+            item.DocumentCount.Should().Be(0);
+            item.ChunkCount.Should().Be(0);
+
+            var files = new[] { @"C:\test\spec1.pdf", @"C:\test\spec2.docx" };
+            await _viewModel.AddDocumentsAsync(item, files);
+
+            item.Documents.Should().HaveCount(2);
+            item.DocumentCount.Should().Be(2);
+            item.ChunkCount.Should().Be(10); // 2 docs * 5 chunks
+            _viewModel.IsStatusOpen.Should().BeTrue();
+            _viewModel.StatusSeverity.Should().Be(InfoBarSeverity.Success);
+            _viewModel.StatusMessage.Should().Contain("Successfully indexed 2 document(s)");
+        }
+
+        [Fact]
+        public async Task AddDocumentsAsync_EmptyFileList_DoesNothing()
+        {
+            var kb = new KnowledgebaseEntity { Id = Guid.NewGuid(), Name = "Empty Test" };
+            _fakeService.Knowledgebases.Add(kb);
+            await _viewModel.LoadKnowledgebasesAsync();
+
+            var item = _viewModel.Knowledgebases[0];
+            await _viewModel.AddDocumentsAsync(item, Array.Empty<string>());
+
+            item.Documents.Should().BeEmpty();
+            _viewModel.IsStatusOpen.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task AddDocumentsAsync_WhenIngestionThrows_ShowsErrorStatus()
+        {
+            var kb = new KnowledgebaseEntity { Id = Guid.NewGuid(), Name = "Failing KB" };
+            _fakeService.Knowledgebases.Add(kb);
+            _fakeService.IngestFunc = (_, _) => throw new InvalidOperationException("Embedding provider offline");
+            await _viewModel.LoadKnowledgebasesAsync();
+
+            var item = _viewModel.Knowledgebases[0];
+            await _viewModel.AddDocumentsAsync(item, new[] { @"C:\test\doc.pdf" });
+
+            item.Documents.Should().BeEmpty();
+            _viewModel.IsStatusOpen.Should().BeTrue();
+            _viewModel.StatusSeverity.Should().Be(InfoBarSeverity.Error);
+            _viewModel.StatusMessage.Should().Contain("Embedding provider offline");
+        }
+
+        [Fact]
+        public async Task AddDocumentsAsync_PartialFailure_ShowsWarningStatus()
+        {
+            var kb = new KnowledgebaseEntity { Id = Guid.NewGuid(), Name = "Partial KB" };
+            _fakeService.Knowledgebases.Add(kb);
+            _fakeService.IngestFunc = (id, _) => Task.FromResult(new List<KnowledgebaseDocumentEntity>
+            {
+                new() { Id = Guid.NewGuid(), KnowledgebaseId = id, FileName = "good.pdf", Status = "Indexed", ChunkCount = 3 },
+                new() { Id = Guid.NewGuid(), KnowledgebaseId = id, FileName = "bad.pdf", Status = "Failed", ErrorMessage = "Corrupt file" }
+            });
+            await _viewModel.LoadKnowledgebasesAsync();
+
+            var item = _viewModel.Knowledgebases[0];
+            await _viewModel.AddDocumentsAsync(item, new[] { "good.pdf", "bad.pdf" });
+
+            item.Documents.Should().HaveCount(2);
+            _viewModel.IsStatusOpen.Should().BeTrue();
+            _viewModel.StatusSeverity.Should().Be(InfoBarSeverity.Warning);
+            _viewModel.StatusMessage.Should().Contain("1 document(s) failed");
+        }
     }
 
     internal sealed class FakeKnowledgebaseService : IKnowledgebaseService
     {
         public List<KnowledgebaseEntity> Knowledgebases { get; } = [];
+        public Func<Guid, IEnumerable<string>, Task<List<KnowledgebaseDocumentEntity>>>? IngestFunc { get; set; }
 
         public Task<List<KnowledgebaseEntity>> GetKnowledgebasesAsync(CancellationToken ct = default)
         {
@@ -244,7 +324,21 @@ namespace FileFormatAIStudio.Tests
             IProgress<IndexingProgressReport>? progress = null,
             CancellationToken ct = default)
         {
-            return Task.FromResult(new List<KnowledgebaseDocumentEntity>());
+            if (IngestFunc != null) return IngestFunc(knowledgebaseId, filePaths);
+
+            var results = filePaths.Select(f => new KnowledgebaseDocumentEntity
+            {
+                Id = Guid.NewGuid(),
+                KnowledgebaseId = knowledgebaseId,
+                FileName = System.IO.Path.GetFileName(f),
+                FileSize = 1024,
+                ChunkCount = 5,
+                Status = "Indexed"
+            }).ToList();
+
+            var kb = Knowledgebases.FirstOrDefault(k => k.Id == knowledgebaseId);
+            kb?.Documents.AddRange(results);
+            return Task.FromResult(results);
         }
     }
 }

@@ -30,6 +30,12 @@ namespace FileFormatAIStudio.ViewModels
         [ObservableProperty]
         private bool _isExpanded;
 
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanAddDocuments))]
+        private bool _isAddingDocuments;
+
+        public bool CanAddDocuments => !IsAddingDocuments;
+
         partial void OnIsExpandedChanged(bool value)
         {
             OnPropertyChanged(nameof(ExpandIconGlyph));

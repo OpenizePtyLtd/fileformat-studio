@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -120,6 +121,46 @@ namespace FileFormatAIStudio.ViewModels
             catch (Exception ex)
             {
                 ShowStatus($"Failed to delete document: {ex.Message}", InfoBarSeverity.Error);
+            }
+        }
+
+        public async Task AddDocumentsAsync(KnowledgebaseItemViewModel kb, IEnumerable<string> filePaths)
+        {
+            if (kb == null) return;
+            var fileList = filePaths?.ToList() ?? new List<string>();
+            if (fileList.Count == 0) return;
+
+            kb.IsAddingDocuments = true;
+            ShowStatus($"Indexing {fileList.Count} document(s) into '{kb.Name}'...", InfoBarSeverity.Informational);
+
+            try
+            {
+                var addedDocs = await _knowledgebaseService.IngestDocumentsAsync(kb.Id, fileList);
+                foreach (var doc in addedDocs)
+                {
+                    kb.Documents.Add(doc);
+                }
+                kb.RefreshCounts();
+
+                int indexedCount = addedDocs.Count(d => d.Status == "Indexed");
+                int failedCount = addedDocs.Count(d => d.Status == "Failed");
+
+                if (failedCount > 0)
+                {
+                    ShowStatus($"Indexed {indexedCount} document(s) into '{kb.Name}'. {failedCount} document(s) failed.", InfoBarSeverity.Warning);
+                }
+                else
+                {
+                    ShowStatus($"Successfully indexed {addedDocs.Count} document(s) into '{kb.Name}'.", InfoBarSeverity.Success);
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Failed to index documents into '{kb.Name}': {ex.Message}", InfoBarSeverity.Error);
+            }
+            finally
+            {
+                kb.IsAddingDocuments = false;
             }
         }
 
