@@ -16,6 +16,9 @@ namespace FileFormatAIStudio.Data.Entities
 
         // Navigation properties
         public List<BenchmarkDocumentEntity> Documents { get; set; } = new();
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public string FormattedDate => CreatedAt.ToLocalTime().ToString("g");
     }
 }
 
