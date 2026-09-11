@@ -15,6 +15,7 @@ namespace FileFormatAIStudio.Data.Entities
         public string? ParserEngineUsed { get; set; }
         public string? ErrorMessage { get; set; }
         public int ChunkCount { get; set; }
+        public string? RawExtractedText { get; set; }
         public DateTime? IndexedAt { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

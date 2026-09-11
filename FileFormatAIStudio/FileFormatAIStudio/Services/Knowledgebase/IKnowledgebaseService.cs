@@ -103,6 +103,17 @@ namespace FileFormatAIStudio.Services.Knowledgebase
             IngestionOptions? options = null,
             IProgress<IndexingProgressReport>? progress = null,
             CancellationToken ct = default);
+
+        /// <summary>
+        /// Retrieves the extracted plain text for a document. If verbatim raw extracted text is stored,
+        /// it is returned; otherwise, chunks stored in SQLite are concatenated in sequence order.
+        /// </summary>
+        Task<string> GetDocumentExtractedTextAsync(Guid documentId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Retrieves all chunks for a document ordered by ChunkIndex.
+        /// </summary>
+        Task<List<DocumentChunkEntity>> GetDocumentChunksAsync(Guid documentId, CancellationToken ct = default);
     }
 }
 

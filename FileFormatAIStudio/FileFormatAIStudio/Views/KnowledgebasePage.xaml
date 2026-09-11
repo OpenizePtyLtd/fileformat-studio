@@ -424,14 +424,14 @@
                                                     <ColumnDefinition Width="110" />
                                                     <ColumnDefinition Width="95" />
                                                     <ColumnDefinition Width="90" />
-                                                    <ColumnDefinition Width="40" />
+                                                    <ColumnDefinition Width="75" />
                                                 </Grid.ColumnDefinitions>
 
                                                 <TextBlock Grid.Column="0" Text="DOCUMENT" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
                                                 <TextBlock Grid.Column="1" Text="PARSER" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
                                                 <TextBlock Grid.Column="2" Text="CHUNKS" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
                                                 <TextBlock Grid.Column="3" Text="STATUS" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-                                                <TextBlock Grid.Column="4" Text="ACTION" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorTertiaryBrush}" HorizontalAlignment="Center" />
+                                                <TextBlock Grid.Column="4" Text="ACTIONS" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorTertiaryBrush}" HorizontalAlignment="Center" />
                                             </Grid>
                                         </Border>
 
@@ -454,7 +454,7 @@
                                                             <ColumnDefinition Width="110" />
                                                             <ColumnDefinition Width="95" />
                                                             <ColumnDefinition Width="90" />
-                                                            <ColumnDefinition Width="40" />
+                                                            <ColumnDefinition Width="75" />
                                                         </Grid.ColumnDefinitions>
 
                                                         <!-- Document Info -->
@@ -506,19 +506,32 @@
                                                                        Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
                                                         </Border>
 
-                                                        <!-- Delete Document Button -->
-                                                        <Button Grid.Column="4"
-                                                                Width="30"
-                                                                Height="30"
-                                                                Padding="0"
-                                                                Background="Transparent"
-                                                                BorderThickness="0"
-                                                                HorizontalAlignment="Center"
-                                                                VerticalAlignment="Center"
-                                                                ToolTipService.ToolTip="Delete Document"
-                                                                Click="OnDeleteDocumentClicked">
-                                                            <FontIcon Glyph="&#xE74D;" FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-                                                        </Button>
+                                                        <!-- Actions (View Extracted Text + Delete Document) -->
+                                                        <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                            <Button Width="30"
+                                                                    Height="30"
+                                                                    Padding="0"
+                                                                    Background="Transparent"
+                                                                    BorderThickness="0"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center"
+                                                                    ToolTipService.ToolTip="View Extracted Text"
+                                                                    Click="OnViewExtractedTextClicked">
+                                                                <FontIcon Glyph="&#xE7B3;" FontSize="13" Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
+                                                            </Button>
+
+                                                            <Button Width="30"
+                                                                    Height="30"
+                                                                    Padding="0"
+                                                                    Background="Transparent"
+                                                                    BorderThickness="0"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center"
+                                                                    ToolTipService.ToolTip="Delete Document"
+                                                                    Click="OnDeleteDocumentClicked">
+                                                                <FontIcon Glyph="&#xE74D;" FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                                            </Button>
+                                                        </StackPanel>
                                                     </Grid>
                                                 </DataTemplate>
                                             </ListView.ItemTemplate>

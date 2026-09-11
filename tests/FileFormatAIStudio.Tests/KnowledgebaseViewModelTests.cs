@@ -402,6 +402,22 @@ namespace FileFormatAIStudio.Tests
             kb?.Documents.AddRange(results);
             return Task.FromResult(results);
         }
+
+        public Task<string> GetDocumentExtractedTextAsync(Guid documentId, CancellationToken ct = default)
+        {
+            var doc = Knowledgebases.SelectMany(k => k.Documents).FirstOrDefault(d => d.Id == documentId);
+            if (doc != null && !string.IsNullOrEmpty(doc.RawExtractedText))
+            {
+                return Task.FromResult(doc.RawExtractedText);
+            }
+            return Task.FromResult(string.Empty);
+        }
+
+        public Task<List<DocumentChunkEntity>> GetDocumentChunksAsync(Guid documentId, CancellationToken ct = default)
+        {
+            var doc = Knowledgebases.SelectMany(k => k.Documents).FirstOrDefault(d => d.Id == documentId);
+            return Task.FromResult(doc?.Chunks ?? []);
+        }
     }
 }
 

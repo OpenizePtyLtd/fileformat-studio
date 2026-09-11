@@ -316,6 +316,7 @@ namespace FileFormatAIStudio.Services.Knowledgebase
                     string extractedText = await _parserFactory.ExtractTextAsync(doc.FilePath, preferredEngine, ct);
                     var resolvedParser = _parserFactory.ResolveParser(doc.FilePath, preferredEngine);
                     doc.ParserEngineUsed = resolvedParser?.EngineId ?? preferredEngine ?? "Auto";
+                    doc.RawExtractedText = extractedText;
 
                     // Stage B: Chunking
                     progress?.Report(new IndexingProgressReport
@@ -504,6 +505,40 @@ namespace FileFormatAIStudio.Services.Knowledgebase
             });
 
             return documents;
+        }
+
+        public async Task<string> GetDocumentExtractedTextAsync(Guid documentId, CancellationToken ct = default)
+        {
+            var doc = await _context.KnowledgebaseDocuments.AsNoTracking()
+                .FirstOrDefaultAsync(d => d.Id == documentId, ct);
+
+            if (doc == null)
+            {
+                return string.Empty;
+            }
+
+            if (!string.IsNullOrEmpty(doc.RawExtractedText))
+            {
+                return doc.RawExtractedText;
+            }
+
+            // Fallback for documents indexed prior to RawExtractedText column:
+            // Reconstruct plain text by ordering stored vector chunks by ChunkIndex.
+            var chunkTexts = await _context.DocumentChunks.AsNoTracking()
+                .Where(c => c.DocumentId == documentId)
+                .OrderBy(c => c.ChunkIndex)
+                .Select(c => c.TextContent)
+                .ToListAsync(ct);
+
+            return string.Join(Environment.NewLine + Environment.NewLine, chunkTexts);
+        }
+
+        public async Task<List<DocumentChunkEntity>> GetDocumentChunksAsync(Guid documentId, CancellationToken ct = default)
+        {
+            return await _context.DocumentChunks.AsNoTracking()
+                .Where(c => c.DocumentId == documentId)
+                .OrderBy(c => c.ChunkIndex)
+                .ToListAsync(ct);
         }
 
         private IEmbeddingGenerator<string, Embedding<float>> ResolveEmbeddingGenerator(

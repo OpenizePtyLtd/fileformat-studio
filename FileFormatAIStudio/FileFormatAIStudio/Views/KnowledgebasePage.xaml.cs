@@ -143,6 +143,22 @@ namespace FileFormatAIStudio.Views
             }
         }
 
+        private async void OnViewExtractedTextClicked(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is KnowledgebaseDocumentEntity doc)
+            {
+                var services = ((App)Application.Current).Services;
+                var vm = services.GetRequiredService<ViewExtractedTextViewModel>();
+                var dialog = new ViewExtractedTextDialog(vm)
+                {
+                    XamlRoot = this.Content.XamlRoot
+                };
+
+                _ = dialog.InitializeAsync(doc.Id, doc);
+                await dialog.ShowAsync();
+            }
+        }
+
         private async void OnDeleteDocumentClicked(object sender, RoutedEventArgs e)
         {
             if (sender is FrameworkElement element && element.DataContext is KnowledgebaseDocumentEntity doc)
