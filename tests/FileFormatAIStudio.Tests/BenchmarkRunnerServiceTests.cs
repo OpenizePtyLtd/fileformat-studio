@@ -282,7 +282,7 @@ namespace FileFormatAIStudio.Tests
             var runner = new BenchmarkRunnerService(dbContext, factory, _categoryRegistry);
 
             var progressReports = new List<BenchmarkProgressReport>();
-            var progress = new Progress<BenchmarkProgressReport>(r => progressReports.Add(r));
+            var progress = new DirectProgress<BenchmarkProgressReport>(r => progressReports.Add(r));
 
             await runner.RunBenchmarkAsync(tempFile, progress: progress);
 
@@ -292,6 +292,13 @@ namespace FileFormatAIStudio.Tests
             progressReports.Should().Contain(r => r.Stage == "Evaluating Metrics");
             progressReports.Should().Contain(r => r.Stage == "Completed");
             progressReports.Last().PercentComplete.Should().Be(100.0);
+        }
+
+        private class DirectProgress<T> : IProgress<T>
+        {
+            private readonly Action<T> _handler;
+            public DirectProgress(Action<T> handler) => _handler = handler;
+            public void Report(T value) => _handler(value);
         }
     }
 }
