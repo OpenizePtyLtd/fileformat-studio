@@ -241,6 +241,14 @@ namespace FileFormatAIStudio.Views
                 }
             }
         }
+
+        private void OnToggleDocumentsClicked(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is KnowledgebaseItemViewModel kb)
+            {
+                kb.ToggleExpandedCommand.Execute(null);
+            }
+        }
     }
 }
 

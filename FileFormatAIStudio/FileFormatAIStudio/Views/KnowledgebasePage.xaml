@@ -151,8 +151,13 @@
                                             <FontIcon Glyph="&#xE8F1;" FontSize="20" Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
                                         </Border>
 
-                                        <!-- Title & Parser Badge -->
-                                        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                        <!-- Title & Parser Badge (Clickable to toggle documents) -->
+                                        <StackPanel Grid.Column="1"
+                                                    Spacing="4"
+                                                    VerticalAlignment="Center"
+                                                    Background="Transparent"
+                                                    Tapped="OnToggleDocumentsClicked"
+                                                    ToolTipService.ToolTip="Click to show or hide documents">
                                             <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                                                 <TextBlock Text="{x:Bind Name}"
                                                            Style="{ThemeResource SubtitleTextBlockStyle}"
@@ -191,15 +196,17 @@
                                         </StackPanel>
 
                                         <!-- Card Actions -->
-                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Top">
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
                                             <Button Width="36"
                                                     Height="36"
                                                     Padding="0"
-                                                    Background="Transparent"
-                                                    BorderThickness="0"
-                                                    ToolTipService.ToolTip="Toggle Document List"
+                                                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6"
+                                                    ToolTipService.ToolTip="Show/Hide Documents"
                                                     Command="{x:Bind ToggleExpandedCommand}">
-                                                <FontIcon Glyph="{x:Bind ExpandIconGlyph, Mode=OneWay}" FontSize="12" />
+                                                <FontIcon Glyph="{x:Bind ExpandIconGlyph, Mode=OneWay}" FontSize="13" />
                                             </Button>
 
                                             <Button Width="36"
@@ -214,12 +221,14 @@
                                         </StackPanel>
                                     </Grid>
 
-                                    <!-- Metadata Metrics Bar -->
+                                    <!-- Metadata Metrics Bar (Clickable to toggle documents) -->
                                     <Grid Background="{ThemeResource LayerFillColorDefaultBrush}"
                                           BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                           BorderThickness="1"
                                           CornerRadius="6"
-                                          Padding="14,8">
+                                          Padding="14,8"
+                                          Tapped="OnToggleDocumentsClicked"
+                                          ToolTipService.ToolTip="Click to show or hide documents">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="*" />
