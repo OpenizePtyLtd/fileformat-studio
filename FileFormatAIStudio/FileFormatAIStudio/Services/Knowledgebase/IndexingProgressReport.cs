@@ -1,3 +1,5 @@
+using System;
+
 namespace FileFormatAIStudio.Services.Knowledgebase
 {
     /// <summary>
@@ -62,6 +64,42 @@ namespace FileFormatAIStudio.Services.Knowledgebase
         /// Human-readable message describing the current progress.
         /// </summary>
         public string Message { get; init; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Thread-safe progress reporter that dispatches to the WinUI 3 DispatcherQueue if on a background thread,
+    /// or invokes the callback synchronously if on the UI thread or in a unit testing environment.
+    /// </summary>
+    public sealed class AppProgress<T> : IProgress<T>
+    {
+        private readonly Action<T> _handler;
+        private readonly Microsoft.UI.Dispatching.DispatcherQueue? _dispatcherQueue;
+
+        public AppProgress(Action<T> handler)
+        {
+            _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+            try
+            {
+                _dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+            }
+            catch
+            {
+                // In non-WinUI / unit test environments, DispatcherQueue is not registered
+                _dispatcherQueue = null;
+            }
+        }
+
+        public void Report(T value)
+        {
+            if (_dispatcherQueue != null && !_dispatcherQueue.HasThreadAccess)
+            {
+                _dispatcherQueue.TryEnqueue(() => _handler(value));
+            }
+            else
+            {
+                _handler(value);
+            }
+        }
     }
 }
 

@@ -17,6 +17,33 @@ namespace FileFormatAIStudio.ViewModels
         public string FormattedFileSize { get; }
         public string FileIconGlyph { get; }
 
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(StatusGlyph))]
+        [NotifyPropertyChangedFor(nameof(IsProcessing))]
+        [NotifyPropertyChangedFor(nameof(IsIndexed))]
+        [NotifyPropertyChangedFor(nameof(IsFailed))]
+        private string _status = "Pending";
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasError))]
+        private string? _errorMessage;
+
+        public bool IsProcessing => Status is "Extracting" or "Chunking" or "Embedding" or "Generating Embeddings" or "Storing";
+        public bool IsIndexed => Status == "Indexed";
+        public bool IsFailed => Status == "Failed";
+        public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage) || IsFailed;
+
+        public string StatusGlyph => Status switch
+        {
+            "Indexed" => "\uE73E",              // Checkmark
+            "Failed" => "\uE783",               // Warning / Error
+            "Extracting" => "\uE896",           // Document / Magnifier
+            "Chunking" => "\uE943",             // Segments
+            "Embedding" or "Generating Embeddings" => "\uE945", // Spark / Model
+            "Storing" => "\uE8B7",              // Database / Storage
+            _ => "\uE823"                       // Clock / Waiting
+        };
+
         public event Action<SelectedFileItemViewModel>? RemoveRequested;
 
         public SelectedFileItemViewModel(string filePath, long fileSizeBytes)

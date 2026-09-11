@@ -94,58 +94,29 @@ namespace FileFormatAIStudio.Views
             };
 
             var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary)
+            if (createVm.CreatedKnowledgebase != null)
             {
-                try
+                await ViewModel.LoadKnowledgebasesAsync();
+
+                if (createVm.IsCancelled)
                 {
-                    var (request, filePaths) = dialog.GetResult();
-
-                    var created = await _knowledgebaseService.CreateKnowledgebaseAsync(request);
-
-                    if (filePaths != null && filePaths.Count > 0)
-                    {
-                        ViewModel.ShowStatus($"Knowledgebase '{created.Name}' created. Indexing {filePaths.Count} document(s)...", InfoBarSeverity.Informational);
-                        var ingestedDocs = await _knowledgebaseService.IngestDocumentsAsync(created.Id, filePaths);
-
-                        await ViewModel.LoadKnowledgebasesAsync();
-
-                        var failedDocs = ingestedDocs.Where(d => d.Status == "Failed").ToList();
-                        var succeededDocs = ingestedDocs.Where(d => d.Status == "Indexed").ToList();
-
-                        if (failedDocs.Count == 0)
-                        {
-                            ViewModel.ShowStatus(
-                                $"Knowledgebase '{created.Name}' created and {succeededDocs.Count} document(s) indexed successfully.",
-                                InfoBarSeverity.Success);
-                        }
-                        else if (succeededDocs.Count == 0)
-                        {
-                            string err = !string.IsNullOrWhiteSpace(failedDocs[0].ErrorMessage)
-                                ? failedDocs[0].ErrorMessage!
-                                : "Document indexing failed.";
-                            ViewModel.ShowStatus(
-                                $"Knowledgebase '{created.Name}' created, but document indexing failed: {err}",
-                                InfoBarSeverity.Error);
-                        }
-                        else
-                        {
-                            string err = !string.IsNullOrWhiteSpace(failedDocs[0].ErrorMessage)
-                                ? failedDocs[0].ErrorMessage!
-                                : "unknown error";
-                            ViewModel.ShowStatus(
-                                $"Knowledgebase '{created.Name}' created. {succeededDocs.Count} indexed successfully, {failedDocs.Count} failed: {err}",
-                                InfoBarSeverity.Warning);
-                        }
-                    }
-                    else
-                    {
-                        await ViewModel.LoadKnowledgebasesAsync();
-                        ViewModel.ShowStatus($"Knowledgebase '{created.Name}' created successfully.", InfoBarSeverity.Success);
-                    }
+                    ViewModel.ShowStatus(
+                        $"Knowledgebase '{createVm.CreatedKnowledgebase.Name}' created with partial documents (indexing was cancelled by user).",
+                        InfoBarSeverity.Warning);
                 }
-                catch (Exception ex)
+                else if (!string.IsNullOrWhiteSpace(createVm.IndexingErrorMessage))
                 {
-                    ViewModel.ShowStatus($"Failed to create knowledgebase: {ex.Message}", InfoBarSeverity.Error);
+                    ViewModel.ShowStatus(
+                        $"Knowledgebase '{createVm.CreatedKnowledgebase.Name}' created, but errors occurred: {createVm.IndexingErrorMessage}",
+                        InfoBarSeverity.Warning);
+                }
+                else
+                {
+                    ViewModel.ShowStatus(
+                        !string.IsNullOrWhiteSpace(createVm.IndexingMessage)
+                            ? createVm.IndexingMessage
+                            : $"Knowledgebase '{createVm.CreatedKnowledgebase.Name}' created successfully.",
+                        InfoBarSeverity.Success);
                 }
             }
         }

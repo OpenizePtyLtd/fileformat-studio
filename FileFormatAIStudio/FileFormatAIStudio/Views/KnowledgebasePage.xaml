@@ -288,6 +288,129 @@
                                             </StackPanel>
                                         </Grid>
 
+                                        <!-- In-Flight Indexing Progress Banner -->
+                                        <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="14,10"
+                                                Margin="0,4,0,4"
+                                                Visibility="{x:Bind IndexingProgressVisibility, Mode=OneWay}">
+                                            <StackPanel Spacing="8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                                        <ProgressRing IsActive="True" Width="14" Height="14" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{x:Bind IndexingMessage, Mode=OneWay}"
+                                                                   FontSize="12"
+                                                                   FontWeight="SemiBold"
+                                                                   VerticalAlignment="Center" />
+                                                    </StackPanel>
+
+                                                    <Button Grid.Column="1"
+                                                            Height="26"
+                                                            Padding="8,0"
+                                                            Command="{x:Bind CancelIndexingCommand}"
+                                                            ToolTipService.ToolTip="Cancel in-flight indexing">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <FontIcon Glyph="&#xE711;" FontSize="10" Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                                                            <TextBlock Text="Cancel" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </Grid>
+
+                                                <!-- 4-Stage Stepper Pill Bar -->
+                                                <Grid ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <!-- Step 1: Extract -->
+                                                    <StackPanel Grid.Column="0" HorizontalAlignment="Center" Orientation="Horizontal" Spacing="4">
+                                                        <Border Width="16" Height="16" CornerRadius="8"
+                                                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                                Visibility="{x:Bind Step1ActiveVisibility, Mode=OneWay}">
+                                                            <FontIcon Glyph="&#xE896;" FontSize="8" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                        <Border Width="16" Height="16" CornerRadius="8"
+                                                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                                Visibility="{x:Bind Step1CompletedVisibility, Mode=OneWay}">
+                                                            <FontIcon Glyph="&#xE73E;" FontSize="8" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                        <TextBlock Text="1. Extract" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                                    </StackPanel>
+
+                                                    <FontIcon Grid.Column="1" Glyph="&#xE76C;" FontSize="8" Foreground="{ThemeResource TextFillColorTertiaryBrush}" VerticalAlignment="Center" />
+
+                                                    <!-- Step 2: Chunk -->
+                                                    <StackPanel Grid.Column="2" HorizontalAlignment="Center" Orientation="Horizontal" Spacing="4">
+                                                        <Border Width="16" Height="16" CornerRadius="8"
+                                                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                                Visibility="{x:Bind Step2ActiveVisibility, Mode=OneWay}">
+                                                            <FontIcon Glyph="&#xE943;" FontSize="8" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                        <Border Width="16" Height="16" CornerRadius="8"
+                                                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                                Visibility="{x:Bind Step2CompletedVisibility, Mode=OneWay}">
+                                                            <FontIcon Glyph="&#xE73E;" FontSize="8" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                        <TextBlock Text="2. Chunk" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                                    </StackPanel>
+
+                                                    <FontIcon Grid.Column="3" Glyph="&#xE76C;" FontSize="8" Foreground="{ThemeResource TextFillColorTertiaryBrush}" VerticalAlignment="Center" />
+
+                                                    <!-- Step 3: Embed -->
+                                                    <StackPanel Grid.Column="4" HorizontalAlignment="Center" Orientation="Horizontal" Spacing="4">
+                                                        <Border Width="16" Height="16" CornerRadius="8"
+                                                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                                Visibility="{x:Bind Step3ActiveVisibility, Mode=OneWay}">
+                                                            <FontIcon Glyph="&#xE945;" FontSize="8" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                        <Border Width="16" Height="16" CornerRadius="8"
+                                                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                                Visibility="{x:Bind Step3CompletedVisibility, Mode=OneWay}">
+                                                            <FontIcon Glyph="&#xE73E;" FontSize="8" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                        <TextBlock Text="3. Embed" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                                    </StackPanel>
+
+                                                    <FontIcon Grid.Column="5" Glyph="&#xE76C;" FontSize="8" Foreground="{ThemeResource TextFillColorTertiaryBrush}" VerticalAlignment="Center" />
+
+                                                    <!-- Step 4: Store -->
+                                                    <StackPanel Grid.Column="6" HorizontalAlignment="Center" Orientation="Horizontal" Spacing="4">
+                                                        <Border Width="16" Height="16" CornerRadius="8"
+                                                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                                Visibility="{x:Bind Step4ActiveVisibility, Mode=OneWay}">
+                                                            <FontIcon Glyph="&#xE8B7;" FontSize="8" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                        <Border Width="16" Height="16" CornerRadius="8"
+                                                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                                Visibility="{x:Bind Step4CompletedVisibility, Mode=OneWay}">
+                                                            <FontIcon Glyph="&#xE73E;" FontSize="8" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                        <TextBlock Text="4. Store" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Grid>
+
+                                                <!-- Progress Bar -->
+                                                <ProgressBar Value="{x:Bind IndexingPercentage, Mode=OneWay}"
+                                                             Minimum="0"
+                                                             Maximum="100"
+                                                             Height="4"
+                                                             CornerRadius="2" />
+                                            </StackPanel>
+                                        </Border>
+
                                         <!-- Table Column Headers -->
                                         <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
                                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"

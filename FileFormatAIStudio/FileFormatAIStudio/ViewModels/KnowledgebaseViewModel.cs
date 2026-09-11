@@ -131,13 +131,61 @@ namespace FileFormatAIStudio.ViewModels
             if (fileList.Count == 0) return;
 
             kb.IsAddingDocuments = true;
+            kb.IsIndexing = true;
+            kb.CurrentStageStep = 0;
+            kb.IndexingPercentage = 0.0;
+            kb.TotalDocuments = fileList.Count;
+            kb.ProcessedDocuments = 0;
+            kb.TotalChunksIndexed = 0;
+            kb.CurrentDocumentName = string.Empty;
+            kb.IndexingMessage = $"Initializing ingestion for {fileList.Count} document(s)...";
+
+            var cts = new System.Threading.CancellationTokenSource();
+            kb.IndexingCts = cts;
+
             ShowStatus($"Indexing {fileList.Count} document(s) into '{kb.Name}'...", InfoBarSeverity.Informational);
+
+            var progress = new AppProgress<IndexingProgressReport>(report =>
+            {
+                kb.IndexingPercentage = report.Percentage;
+                kb.IndexingMessage = report.Message;
+                kb.CurrentDocumentName = report.CurrentDocumentName;
+                kb.ProcessedDocuments = report.ProcessedDocuments;
+                kb.TotalChunksIndexed = report.TotalChunksIndexed;
+
+                switch (report.Stage)
+                {
+                    case IndexingStage.Starting:
+                    case IndexingStage.CopyingFiles:
+                        kb.CurrentStageStep = 0;
+                        break;
+                    case IndexingStage.Extracting:
+                        kb.CurrentStageStep = 1;
+                        break;
+                    case IndexingStage.Chunking:
+                        kb.CurrentStageStep = 2;
+                        break;
+                    case IndexingStage.GeneratingEmbeddings:
+                        kb.CurrentStageStep = 3;
+                        break;
+                    case IndexingStage.StoringVectors:
+                    case IndexingStage.DocumentCompleted:
+                    case IndexingStage.Completed:
+                        kb.CurrentStageStep = 4;
+                        break;
+                }
+            });
 
             try
             {
-                var addedDocs = await _knowledgebaseService.IngestDocumentsAsync(kb.Id, fileList);
+                var addedDocs = await _knowledgebaseService.IngestDocumentsAsync(kb.Id, fileList, null, progress, cts.Token);
                 foreach (var doc in addedDocs)
                 {
+                    var existing = kb.Documents.FirstOrDefault(d => d.Id == doc.Id);
+                    if (existing != null)
+                    {
+                        kb.Documents.Remove(existing);
+                    }
                     kb.Documents.Add(doc);
                 }
                 kb.RefreshCounts();
@@ -154,13 +202,33 @@ namespace FileFormatAIStudio.ViewModels
                     ShowStatus($"Successfully indexed {addedDocs.Count} document(s) into '{kb.Name}'.", InfoBarSeverity.Success);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // Reload partial documents from service
+                try
+                {
+                    var existingDocs = await _knowledgebaseService.GetDocumentsAsync(kb.Id);
+                    kb.Documents.Clear();
+                    foreach (var d in existingDocs)
+                    {
+                        kb.Documents.Add(d);
+                    }
+                    kb.RefreshCounts();
+                }
+                catch { }
+
+                ShowStatus($"Indexing into '{kb.Name}' was cancelled by user. Partially indexed documents remain saved.", InfoBarSeverity.Warning);
+            }
             catch (Exception ex)
             {
                 ShowStatus($"Failed to index documents into '{kb.Name}': {ex.Message}", InfoBarSeverity.Error);
             }
             finally
             {
+                kb.IsIndexing = false;
                 kb.IsAddingDocuments = false;
+                kb.IndexingCts = null;
+                cts.Dispose();
             }
         }
 

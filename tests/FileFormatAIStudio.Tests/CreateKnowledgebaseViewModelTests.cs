@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FileFormatAIStudio.Data.Entities;
+using FileFormatAIStudio.Services.Knowledgebase;
 using FileFormatAIStudio.Services.Settings;
 using FileFormatAIStudio.ViewModels;
 using FluentAssertions;
@@ -211,6 +212,140 @@ namespace FileFormatAIStudio.Tests
             var item = new SelectedFileItemViewModel($"test{ext}", 1024);
             item.FileIconGlyph.Should().Be(expectedGlyph);
             item.FormattedFileSize.Should().Be("1.0 KB");
+            item.Status.Should().Be("Pending");
+            item.StatusGlyph.Should().Be("\uE823");
+        }
+
+        [Fact]
+        public async Task CreateAndIngestAsync_NoFiles_CreatesEmptyKnowledgebaseInstantly()
+        {
+            var fakeKb = new FakeKnowledgebaseService();
+            var vm = new CreateKnowledgebaseViewModel(_settingsService, fakeKb);
+
+            vm.Name = "Empty KB";
+            vm.SelectedProvider = new ProviderConfigEntity { Name = "Ollama" };
+            vm.SelectedEmbeddingModel = new EmbeddingModelOption("nomic-embed-text", "Nomic Embed", 768);
+
+            bool result = await vm.CreateAndIngestAsync();
+
+            result.Should().BeTrue();
+            vm.IsCompleted.Should().BeTrue();
+            vm.IsIndexing.Should().BeFalse();
+            vm.CreatedKnowledgebase.Should().NotBeNull();
+            vm.CreatedKnowledgebase!.Name.Should().Be("Empty KB");
+            vm.IndexingPercentage.Should().Be(100.0);
+            fakeKb.Knowledgebases.Should().HaveCount(1);
+        }
+
+        [Fact]
+        public async Task CreateAndIngestAsync_WithFiles_UpdatesProgressAndPerDocumentStatuses()
+        {
+            var fakeKb = new FakeKnowledgebaseService();
+            fakeKb.ProgressAction = progress =>
+            {
+                progress?.Report(new IndexingProgressReport
+                {
+                    Stage = IndexingStage.Extracting,
+                    CurrentDocumentName = "doc1.pdf",
+                    CurrentDocumentIndex = 1,
+                    TotalDocuments = 2,
+                    Percentage = 25.0,
+                    Message = "Extracting doc1.pdf..."
+                });
+                progress?.Report(new IndexingProgressReport
+                {
+                    Stage = IndexingStage.DocumentCompleted,
+                    CurrentDocumentName = "doc1.pdf",
+                    CurrentDocumentIndex = 1,
+                    TotalDocuments = 2,
+                    Percentage = 50.0,
+                    TotalChunksIndexed = 10,
+                    Message = "Completed doc1.pdf"
+                });
+            };
+
+            var vm = new CreateKnowledgebaseViewModel(_settingsService, fakeKb);
+            vm.Name = "Docs KB";
+            vm.SelectedProvider = new ProviderConfigEntity { Name = "OpenAI" };
+            vm.SelectedEmbeddingModel = new EmbeddingModelOption("text-embedding-3-small", "Small", 1536);
+
+            var file1 = new SelectedFileItemViewModel("doc1.pdf", 1024);
+            var file2 = new SelectedFileItemViewModel("doc2.pdf", 2048);
+            vm.AddFiles(new[] { file1, file2 });
+
+            bool result = await vm.CreateAndIngestAsync();
+
+            result.Should().BeTrue();
+            vm.IsCompleted.Should().BeTrue();
+            vm.IsIndexing.Should().BeFalse();
+            file1.Status.Should().Be("Indexed");
+            file1.StatusGlyph.Should().Be("\uE73E");
+            vm.CurrentStageStep.Should().Be(4);
+            vm.IsStep4Completed.Should().BeTrue();
+            fakeKb.Knowledgebases.Should().HaveCount(1);
+        }
+
+        [Fact]
+        public async Task CreateAndIngestAsync_WhenCancelled_SetsCancelledState()
+        {
+            var fakeKb = new FakeKnowledgebaseService();
+            fakeKb.IngestFuncWithToken = (id, files, opt, prog, ct) =>
+            {
+                throw new OperationCanceledException(ct);
+            };
+
+            var vm = new CreateKnowledgebaseViewModel(_settingsService, fakeKb);
+            vm.Name = "Cancelled KB";
+            vm.SelectedProvider = new ProviderConfigEntity { Name = "OpenAI" };
+            vm.SelectedEmbeddingModel = new EmbeddingModelOption("text-embedding-3-small", "Small", 1536);
+            vm.AddFiles(new[] { new SelectedFileItemViewModel("doc.pdf", 1024) });
+
+            bool result = await vm.CreateAndIngestAsync();
+
+            result.Should().BeFalse();
+            vm.IsCancelled.Should().BeTrue();
+            vm.IsIndexing.Should().BeFalse();
+            vm.IndexingMessage.Should().Contain("cancelled by user");
+        }
+
+        [Fact]
+        public void StepperProperties_ReflectStageTransitions()
+        {
+            var vm = new CreateKnowledgebaseViewModel(_settingsService);
+
+            // Initial: step 0
+            vm.CurrentStageStep = 0;
+            vm.IsStep1Active.Should().BeFalse();
+            vm.IsStep1Completed.Should().BeFalse();
+
+            // Step 1: Extracting
+            vm.CurrentStageStep = 1;
+            vm.IsStep1Active.Should().BeTrue();
+            vm.IsStep1Completed.Should().BeFalse();
+            vm.Step1ActiveVisibility.Should().Be(Microsoft.UI.Xaml.Visibility.Visible);
+            vm.Step1CompletedVisibility.Should().Be(Microsoft.UI.Xaml.Visibility.Collapsed);
+
+            // Step 2: Chunking
+            vm.CurrentStageStep = 2;
+            vm.IsStep1Active.Should().BeFalse();
+            vm.IsStep1Completed.Should().BeTrue();
+            vm.IsStep2Active.Should().BeTrue();
+            vm.IsStep2Completed.Should().BeFalse();
+
+            // Step 3: Embedding
+            vm.CurrentStageStep = 3;
+            vm.IsStep2Completed.Should().BeTrue();
+            vm.IsStep3Active.Should().BeTrue();
+
+            // Step 4: Storing
+            vm.CurrentStageStep = 4;
+            vm.IsStep3Completed.Should().BeTrue();
+            vm.IsStep4Active.Should().BeTrue();
+
+            // Completed
+            vm.IsCompleted = true;
+            vm.IsStep4Completed.Should().BeTrue();
+            vm.Step4CompletedVisibility.Should().Be(Microsoft.UI.Xaml.Visibility.Visible);
         }
     }
 

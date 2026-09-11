@@ -247,12 +247,72 @@ namespace FileFormatAIStudio.Tests
             _viewModel.StatusSeverity.Should().Be(InfoBarSeverity.Warning);
             _viewModel.StatusMessage.Should().Contain("1 document(s) failed");
         }
+
+        [Fact]
+        public async Task AddDocumentsAsync_ReportsProgressToItemViewModel()
+        {
+            var kb = new KnowledgebaseEntity { Id = Guid.NewGuid(), Name = "Progress KB" };
+            _fakeService.Knowledgebases.Add(kb);
+            _fakeService.ProgressAction = progress =>
+            {
+                progress?.Report(new IndexingProgressReport
+                {
+                    Stage = IndexingStage.GeneratingEmbeddings,
+                    Percentage = 65.0,
+                    CurrentDocumentName = "doc.pdf",
+                    CurrentDocumentIndex = 1,
+                    TotalDocuments = 1,
+                    ProcessedDocuments = 0,
+                    TotalChunksIndexed = 12,
+                    Message = "Generating embeddings..."
+                });
+            };
+
+            await _viewModel.LoadKnowledgebasesAsync();
+            var item = _viewModel.Knowledgebases[0];
+
+            await _viewModel.AddDocumentsAsync(item, new[] { "doc.pdf" });
+
+            item.CurrentStageStep.Should().Be(3); // GeneratingEmbeddings = step 3
+            item.IndexingPercentage.Should().Be(65.0);
+            item.TotalChunksIndexed.Should().Be(12);
+            item.CurrentDocumentName.Should().Be("doc.pdf");
+            item.IsStep3Active.Should().BeTrue();
+            item.IsStep1Completed.Should().BeTrue();
+            item.IsStep2Completed.Should().BeTrue();
+            item.IsIndexing.Should().BeFalse(); // Reset after completion
+        }
+
+        [Fact]
+        public async Task AddDocumentsAsync_WhenCancelled_ShowsWarningAndCleansUp()
+        {
+            var kb = new KnowledgebaseEntity { Id = Guid.NewGuid(), Name = "Cancel KB" };
+            _fakeService.Knowledgebases.Add(kb);
+            _fakeService.IngestFuncWithToken = (id, files, opt, prog, ct) =>
+            {
+                throw new OperationCanceledException(ct);
+            };
+
+            await _viewModel.LoadKnowledgebasesAsync();
+            var item = _viewModel.Knowledgebases[0];
+
+            await _viewModel.AddDocumentsAsync(item, new[] { "cancel.pdf" });
+
+            item.IsIndexing.Should().BeFalse();
+            item.CanAddDocuments.Should().BeTrue();
+            item.IndexingCts.Should().BeNull();
+            _viewModel.IsStatusOpen.Should().BeTrue();
+            _viewModel.StatusSeverity.Should().Be(InfoBarSeverity.Warning);
+            _viewModel.StatusMessage.Should().Contain("was cancelled by user");
+        }
     }
 
     internal sealed class FakeKnowledgebaseService : IKnowledgebaseService
     {
         public List<KnowledgebaseEntity> Knowledgebases { get; } = [];
         public Func<Guid, IEnumerable<string>, Task<List<KnowledgebaseDocumentEntity>>>? IngestFunc { get; set; }
+        public Action<IProgress<IndexingProgressReport>?>? ProgressAction { get; set; }
+        public Func<Guid, IEnumerable<string>, IngestionOptions?, IProgress<IndexingProgressReport>?, CancellationToken, Task<List<KnowledgebaseDocumentEntity>>>? IngestFuncWithToken { get; set; }
 
         public Task<List<KnowledgebaseEntity>> GetKnowledgebasesAsync(CancellationToken ct = default)
         {
@@ -324,6 +384,8 @@ namespace FileFormatAIStudio.Tests
             IProgress<IndexingProgressReport>? progress = null,
             CancellationToken ct = default)
         {
+            ProgressAction?.Invoke(progress);
+            if (IngestFuncWithToken != null) return IngestFuncWithToken(knowledgebaseId, filePaths, options, progress, ct);
             if (IngestFunc != null) return IngestFunc(knowledgebaseId, filePaths);
 
             var results = filePaths.Select(f => new KnowledgebaseDocumentEntity

@@ -21,12 +21,21 @@ namespace FileFormatAIStudio.Views.Dialogs
             UpdatePrimaryButtonState();
             ViewModel.PropertyChanged += OnViewModelPropertyChanged;
 
+            this.PrimaryButtonClick += OnPrimaryButtonClick;
+            this.CloseButtonClick += OnCloseButtonClick;
             this.Loaded += OnDialogLoaded;
         }
 
+        public static string FormatPercentage(double p) => $"{Math.Round(p):0}%";
+        public static string FormatDocCount(int processed, int total) => $"{processed} of {total} document(s) processed";
+        public static string FormatChunks(int count) => count == 1 ? "1 chunk indexed" : $"{count} chunks indexed";
+
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(ViewModel.IsValid))
+            if (e.PropertyName == nameof(ViewModel.IsValid) ||
+                e.PropertyName == nameof(ViewModel.IsIndexing) ||
+                e.PropertyName == nameof(ViewModel.IsCompleted) ||
+                e.PropertyName == nameof(ViewModel.IsCancelled))
             {
                 UpdatePrimaryButtonState();
             }
@@ -34,7 +43,69 @@ namespace FileFormatAIStudio.Views.Dialogs
 
         private void UpdatePrimaryButtonState()
         {
+            if (ViewModel.IsCompleted || ViewModel.IsCancelled)
+            {
+                this.PrimaryButtonText = ViewModel.IsCancelled ? "Close" : "Done";
+                this.IsPrimaryButtonEnabled = true;
+                this.CloseButtonText = "";
+                this.DefaultButton = ContentDialogButton.Primary;
+                return;
+            }
+
+            if (ViewModel.IsIndexing)
+            {
+                this.PrimaryButtonText = "";
+                this.IsPrimaryButtonEnabled = false;
+                this.CloseButtonText = "";
+                return;
+            }
+
+            this.PrimaryButtonText = "Create Knowledgebase";
+            this.CloseButtonText = "Cancel";
             this.IsPrimaryButtonEnabled = ViewModel.IsValid;
+        }
+
+        private async void OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        {
+            if (ViewModel.IsCompleted || ViewModel.IsCancelled)
+            {
+                // Finished, allow dialog to close
+                return;
+            }
+
+            if (ViewModel.IsIndexing)
+            {
+                args.Cancel = true;
+                return;
+            }
+
+            // Defer closing and execute creation & ingestion
+            var deferral = args.GetDeferral();
+            args.Cancel = true;
+
+            try
+            {
+                UpdatePrimaryButtonState();
+                await ViewModel.CreateAndIngestAsync();
+                UpdatePrimaryButtonState();
+            }
+            catch
+            {
+                UpdatePrimaryButtonState();
+            }
+            finally
+            {
+                deferral.Complete();
+            }
+        }
+
+        private void OnCloseButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        {
+            if (ViewModel.IsIndexing)
+            {
+                args.Cancel = true;
+                ViewModel.CancelIndexing();
+            }
         }
 
         private async void OnDialogLoaded(object sender, RoutedEventArgs e)

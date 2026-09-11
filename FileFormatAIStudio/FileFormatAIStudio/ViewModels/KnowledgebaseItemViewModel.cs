@@ -34,7 +34,86 @@ namespace FileFormatAIStudio.ViewModels
         [NotifyPropertyChangedFor(nameof(CanAddDocuments))]
         private bool _isAddingDocuments;
 
-        public bool CanAddDocuments => !IsAddingDocuments;
+        // --- Indexing Progress State ---
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanAddDocuments))]
+        [NotifyPropertyChangedFor(nameof(IndexingProgressVisibility))]
+        private bool _isIndexing;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsStep1Active))]
+        [NotifyPropertyChangedFor(nameof(IsStep1Completed))]
+        [NotifyPropertyChangedFor(nameof(IsStep2Active))]
+        [NotifyPropertyChangedFor(nameof(IsStep2Completed))]
+        [NotifyPropertyChangedFor(nameof(IsStep3Active))]
+        [NotifyPropertyChangedFor(nameof(IsStep3Completed))]
+        [NotifyPropertyChangedFor(nameof(IsStep4Active))]
+        [NotifyPropertyChangedFor(nameof(IsStep4Completed))]
+        private int _currentStageStep;
+
+        [ObservableProperty]
+        private double _indexingPercentage;
+
+        [ObservableProperty]
+        private string _indexingMessage = string.Empty;
+
+        [ObservableProperty]
+        private string _currentDocumentName = string.Empty;
+
+        [ObservableProperty]
+        private int _processedDocuments;
+
+        [ObservableProperty]
+        private int _totalDocuments;
+
+        [ObservableProperty]
+        private int _totalChunksIndexed;
+
+        public System.Threading.CancellationTokenSource? IndexingCts { get; set; }
+
+        public bool CanAddDocuments => !IsAddingDocuments && !IsIndexing;
+
+        public Microsoft.UI.Xaml.Visibility IndexingProgressVisibility =>
+            IsIndexing ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        // Step indicators for 4-stage pipeline
+        public bool IsStep1Active => CurrentStageStep == 1;
+        public bool IsStep1Completed => CurrentStageStep > 1;
+
+        public bool IsStep2Active => CurrentStageStep == 2;
+        public bool IsStep2Completed => CurrentStageStep > 2;
+
+        public bool IsStep3Active => CurrentStageStep == 3;
+        public bool IsStep3Completed => CurrentStageStep > 3;
+
+        public bool IsStep4Active => CurrentStageStep == 4;
+        public bool IsStep4Completed => CurrentStageStep == 4 && IndexingPercentage >= 100.0;
+
+        public Microsoft.UI.Xaml.Visibility Step1ActiveVisibility => IsStep1Active ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public Microsoft.UI.Xaml.Visibility Step1CompletedVisibility => IsStep1Completed ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        public Microsoft.UI.Xaml.Visibility Step2ActiveVisibility => IsStep2Active ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public Microsoft.UI.Xaml.Visibility Step2CompletedVisibility => IsStep2Completed ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        public Microsoft.UI.Xaml.Visibility Step3ActiveVisibility => IsStep3Active ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public Microsoft.UI.Xaml.Visibility Step3CompletedVisibility => IsStep3Completed ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        public Microsoft.UI.Xaml.Visibility Step4ActiveVisibility => IsStep4Active ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+        public Microsoft.UI.Xaml.Visibility Step4CompletedVisibility => IsStep4Completed ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        [RelayCommand]
+        public void CancelIndexing()
+        {
+            if (IndexingCts != null && !IndexingCts.IsCancellationRequested)
+            {
+                try
+                {
+                    IndexingCts.Cancel();
+                    IndexingMessage = "Cancelling indexing operation...";
+                }
+                catch (ObjectDisposedException) { }
+            }
+        }
 
         partial void OnIsExpandedChanged(bool value)
         {
