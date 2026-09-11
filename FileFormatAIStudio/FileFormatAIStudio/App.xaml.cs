@@ -48,6 +48,8 @@ namespace FileFormatAIStudio
             services.AddSingleton<IDocumentParserFactory, DocumentParserFactory>();
             services.AddSingleton<ITextChunker, TextChunker>();
             services.AddSingleton<IDocumentCategoryRegistry, DocumentCategoryRegistry>();
+            services.AddSingleton<IBenchmarkMetric, FileFormatAIStudio.Services.Benchmarking.Metrics.CharacterCountMetric>();
+            services.AddScoped<IBenchmarkRunnerService, BenchmarkRunnerService>();
             services.AddScoped<IVectorStoreService, VectorStoreService>();
             services.AddScoped<IKnowledgebaseService, KnowledgebaseService>();
 

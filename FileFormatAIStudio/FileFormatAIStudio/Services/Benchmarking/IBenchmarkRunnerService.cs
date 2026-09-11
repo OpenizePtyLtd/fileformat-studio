@@ -47,6 +47,27 @@ namespace FileFormatAIStudio.Services.Benchmarking
             BenchmarkOptions? options = null,
             IProgress<BenchmarkProgressReport>? progress = null,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Retrieves past benchmark session runs from the database, optionally filtered by document category.
+        /// </summary>
+        Task<IReadOnlyList<FileFormatAIStudio.Data.Entities.BenchmarkSessionEntity>> GetBenchmarkHistoryAsync(
+            DocumentCategory? category = null,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Retrieves a specific benchmark session and its full document runs and metric score results.
+        /// </summary>
+        Task<FileFormatAIStudio.Data.Entities.BenchmarkSessionEntity?> GetBenchmarkSessionAsync(
+            Guid sessionId,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Deletes a benchmark session and cascades deletion of all associated documents, runs, and metric records.
+        /// </summary>
+        Task<bool> DeleteBenchmarkSessionAsync(
+            Guid sessionId,
+            CancellationToken cancellationToken = default);
     }
 }
 
