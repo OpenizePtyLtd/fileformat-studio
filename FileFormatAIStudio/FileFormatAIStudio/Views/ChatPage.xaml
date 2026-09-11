@@ -12,6 +12,7 @@
     <Grid RowSpacing="12" Padding="20,16,20,16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -43,8 +44,131 @@
             </StackPanel>
         </Grid>
 
+        <!-- Knowledgebase Attachments Bar -->
+        <Grid Grid.Row="1" ColumnSpacing="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Attach Knowledgebase Button with Flyout -->
+            <Button x:Name="AttachKbButton"
+                    Grid.Column="0"
+                    Padding="10,6"
+                    CornerRadius="6"
+                    ToolTipService.ToolTip="Attach Knowledgebase to ground this chat">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon Glyph="&#xE710;" FontSize="11" />
+                    <TextBlock Text="Attach Knowledgebase" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
+                <Button.Flyout>
+                    <Flyout x:Name="AttachKbFlyout" Placement="BottomEdgeAlignedLeft">
+                        <StackPanel Width="320" Spacing="10">
+                            <TextBlock Text="Attach Knowledgebase" FontWeight="SemiBold" FontSize="14" />
+                            <TextBlock Text="Select a knowledgebase to ground your conversation with its indexed documents."
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                            <!-- No available KBs notice -->
+                            <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="12"
+                                    Visibility="{x:Bind local:ChatPage.ToInvertedVisibility(ViewModel.HasAvailableKnowledgebases), Mode=OneWay}">
+                                <TextBlock Text="No additional knowledgebases available to attach. Create or index new knowledgebases in the Knowledgebase tab."
+                                           FontSize="12"
+                                           TextWrapping="Wrap"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </Border>
+
+                            <!-- Available KBs ListView -->
+                            <ListView ItemsSource="{x:Bind ViewModel.AvailableKnowledgebasesToAttach, Mode=OneWay}"
+                                      SelectionMode="None"
+                                      IsItemClickEnabled="True"
+                                      ItemClick="OnAvailableKbItemClick"
+                                      MaxHeight="260"
+                                      Visibility="{x:Bind local:ChatPage.ToVisibility(ViewModel.HasAvailableKnowledgebases), Mode=OneWay}">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="entities:KnowledgebaseEntity">
+                                        <Grid Padding="6,6" ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <FontIcon Grid.Column="0" Glyph="&#xE82D;" FontSize="16" Foreground="{ThemeResource AccentAAFillColorDefaultBrush}" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{x:Bind EmbeddingModel}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+
+            <!-- Attached KB Chips Bar / Empty Label -->
+            <ScrollViewer Grid.Column="1"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Disabled"
+                          HorizontalScrollMode="Enabled"
+                          VerticalScrollMode="Disabled">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <!-- Placeholder when no KBs attached -->
+                    <TextBlock Text="No knowledgebases attached (general chat)"
+                               FontStyle="Italic"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                               Visibility="{x:Bind local:ChatPage.ToInvertedVisibility(ViewModel.HasAttachedKnowledgebases), Mode=OneWay}" />
+
+                    <!-- Chips List -->
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.AttachedKnowledgebases, Mode=OneWay}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="6" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="entities:KnowledgebaseEntity">
+                                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="14"
+                                        Padding="10,4,4,4">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <FontIcon Glyph="&#xE82D;" FontSize="11" Foreground="{ThemeResource AccentAAFillColorDefaultBrush}" />
+                                        <TextBlock Text="{x:Bind Name}"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center"
+                                                   MaxWidth="180"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <Button Style="{ThemeResource SubtleButtonStyle}"
+                                                Padding="4"
+                                                Height="22"
+                                                Width="22"
+                                                CornerRadius="11"
+                                                Click="OnDetachKbClick"
+                                                Tag="{x:Bind}"
+                                                ToolTipService.ToolTip="Detach knowledgebase">
+                                            <FontIcon Glyph="&#xE711;" FontSize="9" />
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
         <!-- Message History List -->
-        <Border Grid.Row="1"
+        <Border Grid.Row="2"
                 Background="{ThemeResource LayerFillColorDefaultBrush}"
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
@@ -115,7 +239,7 @@
         </Border>
 
         <!-- Bottom Prompt Input Area -->
-        <Grid Grid.Row="2" ColumnSpacing="10">
+        <Grid Grid.Row="3" ColumnSpacing="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />

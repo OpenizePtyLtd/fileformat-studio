@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FileFormatAIStudio.Data.Entities;
 using FileFormatAIStudio.Services.Chat;
+using FileFormatAIStudio.Services.Knowledgebase;
 using FileFormatAIStudio.Services.Settings;
 using Microsoft.Extensions.AI;
 
@@ -18,6 +19,7 @@ namespace FileFormatAIStudio.ViewModels
         private readonly IChatSessionService _sessionService;
         private readonly IChatExecutionService _chatExecutionService;
         private readonly ISettingsService _settingsService;
+        private readonly IKnowledgebaseService _knowledgebaseService;
 
         private CancellationTokenSource? _cts;
 
@@ -34,6 +36,18 @@ namespace FileFormatAIStudio.ViewModels
         private ModelConfigEntity? _selectedModel;
 
         [ObservableProperty]
+        private ObservableCollection<KnowledgebaseEntity> _attachedKnowledgebases = new();
+
+        [ObservableProperty]
+        private ObservableCollection<KnowledgebaseEntity> _availableKnowledgebasesToAttach = new();
+
+        public bool HasAttachedKnowledgebases => AttachedKnowledgebases.Count > 0;
+        public bool HasAvailableKnowledgebases => AvailableKnowledgebasesToAttach.Count > 0;
+        public string AttachedKnowledgebasesCountText => AttachedKnowledgebases.Count == 1
+            ? "1 knowledgebase attached"
+            : $"{AttachedKnowledgebases.Count} knowledgebases attached";
+
+        [ObservableProperty]
         private string _inputText = string.Empty;
 
         [ObservableProperty]
@@ -47,11 +61,13 @@ namespace FileFormatAIStudio.ViewModels
         public ChatViewModel(
             IChatSessionService sessionService,
             IChatExecutionService chatExecutionService,
-            ISettingsService settingsService)
+            ISettingsService settingsService,
+            IKnowledgebaseService knowledgebaseService)
         {
             _sessionService = sessionService;
             _chatExecutionService = chatExecutionService;
             _settingsService = settingsService;
+            _knowledgebaseService = knowledgebaseService;
         }
 
         public async Task InitializeAsync(Guid? sessionId = null)
@@ -118,6 +134,14 @@ namespace FileFormatAIStudio.ViewModels
                         Timestamp = msg.Timestamp
                     });
                 }
+
+                await RefreshKnowledgebasesAsync();
+            }
+            else
+            {
+                AttachedKnowledgebases.Clear();
+                AvailableKnowledgebasesToAttach.Clear();
+                UpdateKnowledgebaseVisibilityFlags();
             }
 
             MessageAdded?.Invoke();
@@ -237,6 +261,87 @@ namespace FileFormatAIStudio.ViewModels
             {
                 _cts.Cancel();
             }
+        }
+
+        public void UpdateKnowledgebaseVisibilityFlags()
+        {
+            OnPropertyChanged(nameof(HasAttachedKnowledgebases));
+            OnPropertyChanged(nameof(HasAvailableKnowledgebases));
+            OnPropertyChanged(nameof(AttachedKnowledgebasesCountText));
+        }
+
+        public async Task RefreshKnowledgebasesAsync()
+        {
+            if (CurrentSession == null)
+            {
+                AttachedKnowledgebases.Clear();
+                AvailableKnowledgebasesToAttach.Clear();
+                UpdateKnowledgebaseVisibilityFlags();
+                return;
+            }
+
+            var attached = await _sessionService.GetAttachedKnowledgebasesAsync(CurrentSession.Id);
+            AttachedKnowledgebases.Clear();
+            var attachedIds = new HashSet<Guid>();
+            foreach (var kb in attached)
+            {
+                AttachedKnowledgebases.Add(kb);
+                attachedIds.Add(kb.Id);
+            }
+
+            var allKbs = await _knowledgebaseService.GetKnowledgebasesAsync();
+            AvailableKnowledgebasesToAttach.Clear();
+            foreach (var kb in allKbs)
+            {
+                if (!attachedIds.Contains(kb.Id))
+                {
+                    AvailableKnowledgebasesToAttach.Add(kb);
+                }
+            }
+
+            UpdateKnowledgebaseVisibilityFlags();
+        }
+
+        [RelayCommand]
+        public async Task AttachKnowledgebaseAsync(KnowledgebaseEntity? kb)
+        {
+            if (kb == null || CurrentSession == null) return;
+
+            await _sessionService.AttachKnowledgebaseAsync(CurrentSession.Id, kb.Id);
+
+            var toRemove = AvailableKnowledgebasesToAttach.FirstOrDefault(x => x.Id == kb.Id);
+            if (toRemove != null)
+            {
+                AvailableKnowledgebasesToAttach.Remove(toRemove);
+            }
+
+            if (!AttachedKnowledgebases.Any(x => x.Id == kb.Id))
+            {
+                AttachedKnowledgebases.Add(kb);
+            }
+
+            UpdateKnowledgebaseVisibilityFlags();
+        }
+
+        [RelayCommand]
+        public async Task DetachKnowledgebaseAsync(KnowledgebaseEntity? kb)
+        {
+            if (kb == null || CurrentSession == null) return;
+
+            await _sessionService.DetachKnowledgebaseAsync(CurrentSession.Id, kb.Id);
+
+            var toRemove = AttachedKnowledgebases.FirstOrDefault(x => x.Id == kb.Id);
+            if (toRemove != null)
+            {
+                AttachedKnowledgebases.Remove(toRemove);
+            }
+
+            if (!AvailableKnowledgebasesToAttach.Any(x => x.Id == kb.Id))
+            {
+                AvailableKnowledgebasesToAttach.Add(kb);
+            }
+
+            UpdateKnowledgebaseVisibilityFlags();
         }
     }
 }

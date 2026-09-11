@@ -1,4 +1,5 @@
 using System;
+using FileFormatAIStudio.Data.Entities;
 using FileFormatAIStudio.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -11,6 +12,9 @@ namespace FileFormatAIStudio.Views
 {
     public sealed partial class ChatPage : Page
     {
+        public static Visibility ToVisibility(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
+        public static Visibility ToInvertedVisibility(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
+
         public ChatViewModel ViewModel { get; }
 
         public ChatPage()
@@ -57,6 +61,23 @@ namespace FileFormatAIStudio.Views
                         await ViewModel.SendMessageCommand.ExecuteAsync(null);
                     }
                 }
+            }
+        }
+
+        private async void OnAvailableKbItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is KnowledgebaseEntity kb)
+            {
+                AttachKbFlyout?.Hide();
+                await ViewModel.AttachKnowledgebaseCommand.ExecuteAsync(kb);
+            }
+        }
+
+        private async void OnDetachKbClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is KnowledgebaseEntity kb)
+            {
+                await ViewModel.DetachKnowledgebaseCommand.ExecuteAsync(kb);
             }
         }
     }

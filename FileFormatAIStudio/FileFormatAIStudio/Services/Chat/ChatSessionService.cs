@@ -58,6 +58,8 @@ namespace FileFormatAIStudio.Services.Chat
         {
             return await _context.Sessions
                 .Include(s => s.Messages.OrderBy(m => m.Timestamp))
+                .Include(s => s.SessionKnowledgebases)
+                    .ThenInclude(sk => sk.Knowledgebase)
                 .FirstOrDefaultAsync(s => s.Id == sessionId);
         }
 
@@ -123,6 +125,47 @@ namespace FileFormatAIStudio.Services.Chat
 
             await _context.SaveChangesAsync();
             return message;
+        }
+
+        public async Task<List<KnowledgebaseEntity>> GetAttachedKnowledgebasesAsync(Guid sessionId)
+        {
+            return await _context.SessionKnowledgebases
+                .Where(sk => sk.SessionId == sessionId)
+                .Include(sk => sk.Knowledgebase)
+                .Select(sk => sk.Knowledgebase)
+                .OrderBy(k => k.Name)
+                .ToListAsync();
+        }
+
+        public async Task AttachKnowledgebaseAsync(Guid sessionId, Guid knowledgebaseId)
+        {
+            var exists = await _context.SessionKnowledgebases
+                .AnyAsync(sk => sk.SessionId == sessionId && sk.KnowledgebaseId == knowledgebaseId);
+
+            if (!exists)
+            {
+                var link = new SessionKnowledgebaseEntity
+                {
+                    SessionId = sessionId,
+                    KnowledgebaseId = knowledgebaseId,
+                    AttachedAt = DateTime.UtcNow
+                };
+
+                _context.SessionKnowledgebases.Add(link);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task DetachKnowledgebaseAsync(Guid sessionId, Guid knowledgebaseId)
+        {
+            var link = await _context.SessionKnowledgebases
+                .FirstOrDefaultAsync(sk => sk.SessionId == sessionId && sk.KnowledgebaseId == knowledgebaseId);
+
+            if (link != null)
+            {
+                _context.SessionKnowledgebases.Remove(link);
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

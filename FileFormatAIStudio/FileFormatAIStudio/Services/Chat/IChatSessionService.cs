@@ -15,6 +15,10 @@ namespace FileFormatAIStudio.Services.Chat
         Task UpdateSessionModelAsync(Guid sessionId, Guid modelId);
         Task DeleteSessionAsync(Guid sessionId);
         Task<ChatMessageEntity> AddMessageAsync(Guid sessionId, string role, string content);
+
+        Task<List<KnowledgebaseEntity>> GetAttachedKnowledgebasesAsync(Guid sessionId);
+        Task AttachKnowledgebaseAsync(Guid sessionId, Guid knowledgebaseId);
+        Task DetachKnowledgebaseAsync(Guid sessionId, Guid knowledgebaseId);
     }
 }
 
