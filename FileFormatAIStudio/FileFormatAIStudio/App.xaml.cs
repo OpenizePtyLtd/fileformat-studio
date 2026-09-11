@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using FileFormatAIStudio.Data;
 using FileFormatAIStudio.Services.AI;
+using FileFormatAIStudio.Services.Benchmarking;
 using FileFormatAIStudio.Services.Chat;
 using FileFormatAIStudio.Services.Knowledgebase;
 using FileFormatAIStudio.Services.Parsing;
@@ -46,6 +47,7 @@ namespace FileFormatAIStudio
             services.AddSingleton<IDocumentParser, PlainTextParser>();
             services.AddSingleton<IDocumentParserFactory, DocumentParserFactory>();
             services.AddSingleton<ITextChunker, TextChunker>();
+            services.AddSingleton<IDocumentCategoryRegistry, DocumentCategoryRegistry>();
             services.AddScoped<IVectorStoreService, VectorStoreService>();
             services.AddScoped<IKnowledgebaseService, KnowledgebaseService>();
 
