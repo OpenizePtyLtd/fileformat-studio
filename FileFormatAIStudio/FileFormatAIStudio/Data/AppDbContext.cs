@@ -18,6 +18,10 @@ namespace FileFormatAIStudio.Data
         public DbSet<KnowledgebaseDocumentEntity> KnowledgebaseDocuments => Set<KnowledgebaseDocumentEntity>();
         public DbSet<DocumentChunkEntity> DocumentChunks => Set<DocumentChunkEntity>();
         public DbSet<SessionKnowledgebaseEntity> SessionKnowledgebases => Set<SessionKnowledgebaseEntity>();
+        public DbSet<BenchmarkSessionEntity> BenchmarkSessions => Set<BenchmarkSessionEntity>();
+        public DbSet<BenchmarkDocumentEntity> BenchmarkDocuments => Set<BenchmarkDocumentEntity>();
+        public DbSet<BenchmarkRunResultEntity> BenchmarkRunResults => Set<BenchmarkRunResultEntity>();
+        public DbSet<BenchmarkMetricResultEntity> BenchmarkMetricResults => Set<BenchmarkMetricResultEntity>();
 
         public AppDbContext()
         {
@@ -127,6 +131,46 @@ namespace FileFormatAIStudio.Data
                     .WithMany(k => k.SessionKnowledgebases)
                     .HasForeignKey(sk => sk.KnowledgebaseId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // BenchmarkSession -> BenchmarkDocuments (Cascade Delete)
+            modelBuilder.Entity<BenchmarkSessionEntity>(entity =>
+            {
+                entity.HasMany(s => s.Documents)
+                    .WithOne(d => d.Session)
+                    .HasForeignKey(d => d.SessionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // BenchmarkDocument -> BenchmarkRunResults (Cascade Delete)
+            modelBuilder.Entity<BenchmarkDocumentEntity>(entity =>
+            {
+                entity.HasMany(d => d.RunResults)
+                    .WithOne(r => r.Document)
+                    .HasForeignKey(r => r.DocumentId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(d => d.SessionId)
+                    .HasDatabaseName("IX_BenchmarkDocuments_SessionId");
+            });
+
+            // BenchmarkRunResult -> BenchmarkMetricResults (Cascade Delete)
+            modelBuilder.Entity<BenchmarkRunResultEntity>(entity =>
+            {
+                entity.HasMany(r => r.MetricResults)
+                    .WithOne(m => m.RunResult)
+                    .HasForeignKey(m => m.RunResultId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(r => r.DocumentId)
+                    .HasDatabaseName("IX_BenchmarkRunResults_DocumentId");
+            });
+
+            // BenchmarkMetricResult Indexes
+            modelBuilder.Entity<BenchmarkMetricResultEntity>(entity =>
+            {
+                entity.HasIndex(m => m.RunResultId)
+                    .HasDatabaseName("IX_BenchmarkMetricResults_RunResultId");
             });
         }
     }
