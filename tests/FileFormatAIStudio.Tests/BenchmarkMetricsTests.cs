@@ -196,6 +196,120 @@ namespace FileFormatAIStudio.Tests
             memMetric.Evaluate(failedCtx, competitors).NormalizedScore.Should().Be(0.0);
             cleanMetric.Evaluate(failedCtx, competitors).NormalizedScore.Should().Be(0.0);
         }
+
+        [Fact]
+        public void AllFailedCompetitors_EvaluatesZeroScoresWithoutException()
+        {
+            var failedCtx1 = CreateContext("crashed1", "", TimeSpan.FromMilliseconds(10), isSuccess: false, ex: new Exception("OOM"));
+            var failedCtx2 = CreateContext("crashed2", "", TimeSpan.FromMilliseconds(20), isSuccess: false, ex: new Exception("Timeout"));
+            var competitors = new List<BenchmarkExecutionContext> { failedCtx1, failedCtx2 };
+
+            var charMetric = new CharacterCountMetric();
+            var latencyMetric = new ExecutionLatencyMetric();
+            var cleanMetric = new TextCleanlinessMetric();
+
+            var score1 = charMetric.Evaluate(failedCtx1, competitors);
+            var score2 = latencyMetric.Evaluate(failedCtx2, competitors);
+            var score3 = cleanMetric.Evaluate(failedCtx1, competitors);
+
+            score1.NormalizedScore.Should().Be(0.0);
+            score2.NormalizedScore.Should().Be(0.0);
+            score3.NormalizedScore.Should().Be(0.0);
+        }
+
+        [Fact]
+        public void SingleCompetitor_ReceivesFullScoreAndRank1()
+        {
+            var ctx = CreateContext("sole-engine", "Standalone extracted text", TimeSpan.FromMilliseconds(45));
+            var competitors = new List<BenchmarkExecutionContext> { ctx };
+
+            var charMetric = new CharacterCountMetric();
+            var latencyMetric = new ExecutionLatencyMetric();
+            var memMetric = new MemoryAllocationMetric();
+            var cleanMetric = new TextCleanlinessMetric();
+
+            var charScore = charMetric.Evaluate(ctx, competitors);
+            var latencyScore = latencyMetric.Evaluate(ctx, competitors);
+            var memScore = memMetric.Evaluate(ctx, competitors);
+            var cleanScore = cleanMetric.Evaluate(ctx, competitors);
+
+            charScore.Rank.Should().Be(1);
+            charScore.NormalizedScore.Should().Be(100.0);
+
+            latencyScore.Rank.Should().Be(1);
+            latencyScore.NormalizedScore.Should().Be(100.0);
+
+            memScore.Rank.Should().Be(1);
+            memScore.NormalizedScore.Should().Be(100.0);
+
+            cleanScore.Rank.Should().Be(1);
+            cleanScore.NormalizedScore.Should().Be(100.0);
+        }
+
+        [Fact]
+        public void TiesInCharacterCount_BothGetRank1And100Score()
+        {
+            var ctx1 = CreateContext("engine1", "Identical length", TimeSpan.FromMilliseconds(40));
+            var ctx2 = CreateContext("engine2", "Identical length", TimeSpan.FromMilliseconds(60));
+            var competitors = new List<BenchmarkExecutionContext> { ctx1, ctx2 };
+
+            var charMetric = new CharacterCountMetric();
+
+            var score1 = charMetric.Evaluate(ctx1, competitors);
+            var score2 = charMetric.Evaluate(ctx2, competitors);
+
+            score1.Rank.Should().Be(1);
+            score1.NormalizedScore.Should().Be(100.0);
+            score2.Rank.Should().Be(1);
+            score2.NormalizedScore.Should().Be(100.0);
+        }
+
+        [Fact]
+        public void TiesInLatency_BothGetRank1And100Score()
+        {
+            var ctx1 = CreateContext("engine1", "Some text", TimeSpan.FromMilliseconds(50));
+            var ctx2 = CreateContext("engine2", "Some text", TimeSpan.FromMilliseconds(50));
+            var competitors = new List<BenchmarkExecutionContext> { ctx1, ctx2 };
+
+            var latencyMetric = new ExecutionLatencyMetric();
+
+            var score1 = latencyMetric.Evaluate(ctx1, competitors);
+            var score2 = latencyMetric.Evaluate(ctx2, competitors);
+
+            score1.Rank.Should().Be(1);
+            score1.NormalizedScore.Should().Be(100.0);
+            score2.Rank.Should().Be(1);
+            score2.NormalizedScore.Should().Be(100.0);
+        }
+
+        [Fact]
+        public void MemoryAllocationMetric_ZeroOrNegativeAllocatedBytes_HandlesGracefully()
+        {
+            var ctx1 = CreateContext("engine1", "Text", TimeSpan.FromMilliseconds(30), allocatedBytes: 0);
+            var ctx2 = CreateContext("engine2", "Text", TimeSpan.FromMilliseconds(30), allocatedBytes: 1024);
+            var competitors = new List<BenchmarkExecutionContext> { ctx1, ctx2 };
+
+            var memMetric = new MemoryAllocationMetric();
+
+            var score1 = memMetric.Evaluate(ctx1, competitors);
+            var score2 = memMetric.Evaluate(ctx2, competitors);
+
+            score1.NormalizedScore.Should().BeGreaterThanOrEqualTo(0.0);
+            score2.NormalizedScore.Should().BeGreaterThanOrEqualTo(0.0);
+        }
+
+        [Fact]
+        public void TextCleanlinessMetric_CompletelyCorruptedText_ScoresZeroOrNearZero()
+        {
+            var corrupted = "\uFFFD\uFFFD\uFFFD\0\0\0(cid:1)(cid:2)";
+            var ctx = CreateContext("corrupted", corrupted, TimeSpan.FromMilliseconds(30));
+            var competitors = new List<BenchmarkExecutionContext> { ctx };
+
+            var cleanMetric = new TextCleanlinessMetric();
+            var score = cleanMetric.Evaluate(ctx, competitors);
+
+            score.NormalizedScore.Should().BeLessThan(50.0);
+        }
     }
 }
 

@@ -294,6 +294,182 @@ namespace FileFormatAIStudio.Tests
             progressReports.Last().PercentComplete.Should().Be(100.0);
         }
 
+        [Fact]
+        public async Task RunBatchBenchmarkAsync_WithMultipleFiles_AggregatesResultsAndCalculatesOverallWinner()
+        {
+            var file1 = CreateTempFile(".docx", "Doc 1 text");
+            var file2 = CreateTempFile(".docx", "Doc 2 text");
+
+            var p1 = new MockParser
+            {
+                EngineId = "aspose",
+                DisplayName = "Aspose",
+                SupportedExtensions = new HashSet<string>(new[] { ".docx" }, StringComparer.OrdinalIgnoreCase),
+                ExtractFunc = path => path == file1 ? new string('A', 5000) : new string('A', 6000)
+            };
+
+            var p2 = new MockParser
+            {
+                EngineId = "dotnet-oss",
+                DisplayName = ".NET OSS",
+                SupportedExtensions = new HashSet<string>(new[] { ".docx" }, StringComparer.OrdinalIgnoreCase),
+                ExtractFunc = path => path == file1 ? new string('B', 2000) : new string('B', 3000)
+            };
+
+            var factory = new DocumentParserFactory(new[] { p1, p2 });
+
+            using var dbContext = new AppDbContext(_options);
+            var runner = new BenchmarkRunnerService(dbContext, factory, _categoryRegistry);
+
+            var batchResult = await runner.RunBatchBenchmarkAsync(new[] { file1, file2 });
+
+            batchResult.Should().NotBeNull();
+            batchResult.DocumentResults.Should().HaveCount(2);
+            batchResult.OverallWinnerEngineId.Should().Be("aspose");
+            batchResult.OverallWinnerDisplayName.Should().Be("Aspose");
+
+            // Document 1 winner
+            batchResult.DocumentResults[0].WinnerEngine!.EngineId.Should().Be("aspose");
+            // Document 2 winner
+            batchResult.DocumentResults[1].WinnerEngine!.EngineId.Should().Be("aspose");
+        }
+
+        [Fact]
+        public async Task RunBenchmarkAsync_WithCancellationToken_ThrowsOperationCanceledException()
+        {
+            var tempFile = CreateTempFile(".docx", "Cancelled doc");
+
+            var p1 = new MockParser
+            {
+                EngineId = "aspose",
+                SupportedExtensions = new HashSet<string>(new[] { ".docx" }, StringComparer.OrdinalIgnoreCase)
+            };
+
+            var factory = new DocumentParserFactory(new[] { p1 });
+
+            using var dbContext = new AppDbContext(_options);
+            var runner = new BenchmarkRunnerService(dbContext, factory, _categoryRegistry);
+
+            using var cts = new CancellationTokenSource();
+            cts.Cancel(); // Cancel immediately
+
+            Func<Task> act = async () => await runner.RunBenchmarkAsync(tempFile, cancellationToken: cts.Token);
+            await act.Should().ThrowAsync<OperationCanceledException>();
+        }
+
+        [Fact]
+        public async Task RunBenchmarkAsync_WithSaveToDatabaseFalse_DoesNotCreateEntitiesInDatabase()
+        {
+            var tempFile = CreateTempFile(".docx", "In-memory benchmark doc");
+
+            var p1 = new MockParser
+            {
+                EngineId = "aspose",
+                SupportedExtensions = new HashSet<string>(new[] { ".docx" }, StringComparer.OrdinalIgnoreCase),
+                ExtractFunc = _ => "In memory extraction"
+            };
+
+            var factory = new DocumentParserFactory(new[] { p1 });
+
+            using var dbContext = new AppDbContext(_options);
+            var runner = new BenchmarkRunnerService(dbContext, factory, _categoryRegistry);
+
+            var options = new BenchmarkOptions(SaveToDatabase: false);
+            var result = await runner.RunBenchmarkAsync(tempFile, options);
+
+            result.Should().NotBeNull();
+
+            // Verify database has no records for this session
+            var saved = await dbContext.BenchmarkSessions.FindAsync(result.SessionId);
+            saved.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task RunBenchmarkAsync_WithCustomTitle_PersistsCustomTitleProperly()
+        {
+            var tempFile = CreateTempFile(".docx", "Custom title doc");
+
+            var p1 = new MockParser
+            {
+                EngineId = "aspose",
+                SupportedExtensions = new HashSet<string>(new[] { ".docx" }, StringComparer.OrdinalIgnoreCase)
+            };
+
+            var factory = new DocumentParserFactory(new[] { p1 });
+
+            using var dbContext = new AppDbContext(_options);
+            var runner = new BenchmarkRunnerService(dbContext, factory, _categoryRegistry);
+
+            var options = new BenchmarkOptions(CustomSessionTitle: "Q3 Executive Document Parsing Audit");
+            var result = await runner.RunBenchmarkAsync(tempFile, options);
+
+            result.Title.Should().Be("Q3 Executive Document Parsing Audit");
+
+            var sessionEntity = await dbContext.BenchmarkSessions.FindAsync(result.SessionId);
+            sessionEntity.Should().NotBeNull();
+            sessionEntity!.Title.Should().Be("Q3 Executive Document Parsing Audit");
+        }
+
+        [Fact]
+        public async Task GetBenchmarkHistoryAsync_WithCategoryFilter_FiltersSessionsCorrectly()
+        {
+            var wordFile = CreateTempFile(".docx", "Word document");
+            var excelFile = CreateTempFile(".xlsx", "Excel sheet");
+
+            var p1 = new MockParser
+            {
+                EngineId = "aspose",
+                SupportedExtensions = new HashSet<string>(new[] { ".docx", ".xlsx" }, StringComparer.OrdinalIgnoreCase)
+            };
+
+            var factory = new DocumentParserFactory(new[] { p1 });
+
+            using var dbContext = new AppDbContext(_options);
+            var runner = new BenchmarkRunnerService(dbContext, factory, _categoryRegistry);
+
+            var wordResult = await runner.RunBenchmarkAsync(wordFile);
+            var excelResult = await runner.RunBenchmarkAsync(excelFile);
+
+            var wordHistory = await runner.GetBenchmarkHistoryAsync(DocumentCategory.Word);
+            wordHistory.Should().Contain(s => s.Id == wordResult.SessionId);
+            wordHistory.Should().NotContain(s => s.Id == excelResult.SessionId);
+
+            var excelHistory = await runner.GetBenchmarkHistoryAsync(DocumentCategory.Excel);
+            excelHistory.Should().Contain(s => s.Id == excelResult.SessionId);
+            excelHistory.Should().NotContain(s => s.Id == wordResult.SessionId);
+        }
+
+        [Fact]
+        public async Task RunBenchmarkAsync_WithSelectedMetricIds_OnlyEvaluatesSelectedMetrics()
+        {
+            var tempFile = CreateTempFile(".docx", "Selective metrics doc");
+
+            var p1 = new MockParser
+            {
+                EngineId = "aspose",
+                DisplayName = "Aspose",
+                SupportedExtensions = new HashSet<string>(new[] { ".docx" }, StringComparer.OrdinalIgnoreCase),
+                ExtractFunc = _ => "Selective text"
+            };
+
+            var factory = new DocumentParserFactory(new[] { p1 });
+
+            using var dbContext = new AppDbContext(_options);
+            var metrics = new IBenchmarkMetric[] { new CharacterCountMetric(), new ExecutionLatencyMetric(), new MemoryAllocationMetric() };
+            var runner = new BenchmarkRunnerService(dbContext, factory, _categoryRegistry, metrics);
+
+            var options = new BenchmarkOptions(
+                SelectedMetricIds: new[] { "char_count", "latency_ms" }
+            );
+
+            var result = await runner.RunBenchmarkAsync(tempFile, options);
+
+            var run = result.DocumentResults[0].EngineRuns[0];
+            run.MetricScores.Should().HaveCount(2);
+            run.MetricScores.Select(m => m.MetricId).Should().Contain(new[] { "char_count", "latency_ms" });
+            run.MetricScores.Select(m => m.MetricId).Should().NotContain("mem_alloc_mb");
+        }
+
         private class DirectProgress<T> : IProgress<T>
         {
             private readonly Action<T> _handler;
