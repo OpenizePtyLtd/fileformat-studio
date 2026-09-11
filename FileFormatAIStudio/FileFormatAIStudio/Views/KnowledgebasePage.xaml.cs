@@ -41,6 +41,29 @@ namespace FileFormatAIStudio.Views
             await ViewModel.LoadKnowledgebasesAsync();
         }
 
+        public static string FormatChunks(int count) => count == 1 ? "1 chunk" : $"{count} chunks";
+
+        public static string FormatParser(string? parser)
+        {
+            if (string.IsNullOrWhiteSpace(parser)) return "Auto";
+            return parser.Trim().ToLowerInvariant() switch
+            {
+                "aspose" => "Aspose",
+                "dotnet_oss" => ".NET OSS",
+                "dotnetoss" => ".NET OSS",
+                "officeparser" => "Node.js",
+                "nodejs" => "Node.js",
+                _ => parser
+            };
+        }
+
+        public static string FormatDocumentMeta(string fileType, long fileSize)
+        {
+            string size = KnowledgebaseItemViewModel.FormatBytes(fileSize);
+            string ext = fileType?.TrimStart('.').ToUpperInvariant() ?? "";
+            return string.IsNullOrWhiteSpace(ext) ? size : $"{ext} - {size}";
+        }
+
         private async void OnNewKnowledgebaseClicked(object sender, RoutedEventArgs e)
         {
             await ShowCreateKnowledgebaseDialogAsync();

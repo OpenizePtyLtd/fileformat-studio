@@ -282,52 +282,94 @@
                                             </StackPanel>
                                         </Grid>
 
+                                        <!-- Table Column Headers -->
+                                        <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Padding="12,6"
+                                                Margin="0,4,0,0">
+                                            <Grid ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="110" />
+                                                    <ColumnDefinition Width="95" />
+                                                    <ColumnDefinition Width="90" />
+                                                    <ColumnDefinition Width="40" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <TextBlock Grid.Column="0" Text="DOCUMENT" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                                <TextBlock Grid.Column="1" Text="PARSER" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                                <TextBlock Grid.Column="2" Text="CHUNKS" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                                <TextBlock Grid.Column="3" Text="STATUS" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                                <TextBlock Grid.Column="4" Text="ACTION" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorTertiaryBrush}" HorizontalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+
                                         <!-- Document List -->
                                         <ListView ItemsSource="{x:Bind Documents, Mode=OneWay}"
                                                   SelectionMode="None"
                                                   IsItemClickEnabled="False">
+                                            <ListView.ItemContainerStyle>
+                                                <Style TargetType="ListViewItem">
+                                                    <Setter Property="Padding" Value="0" />
+                                                    <Setter Property="MinHeight" Value="42" />
+                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                                </Style>
+                                            </ListView.ItemContainerStyle>
                                             <ListView.ItemTemplate>
                                                 <DataTemplate x:DataType="entities:KnowledgebaseDocumentEntity">
-                                                    <Grid Padding="8,8" ColumnSpacing="12">
+                                                    <Grid Padding="12,8" ColumnSpacing="12">
                                                         <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto" />
                                                             <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="110" />
+                                                            <ColumnDefinition Width="95" />
+                                                            <ColumnDefinition Width="90" />
+                                                            <ColumnDefinition Width="40" />
                                                         </Grid.ColumnDefinitions>
 
-                                                        <FontIcon Grid.Column="0" Glyph="&#xE8A5;" FontSize="14" Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
-
-                                                        <StackPanel Grid.Column="1" Spacing="2">
-                                                            <TextBlock Text="{x:Bind FileName}" FontWeight="SemiBold" FontSize="13" />
-                                                            <TextBlock Text="{x:Bind FileType}" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                                        <!-- Document Info -->
+                                                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                                            <FontIcon Glyph="&#xE8A5;" FontSize="14" Foreground="{ThemeResource AccentFillColorDefaultBrush}" VerticalAlignment="Center" />
+                                                            <StackPanel Spacing="2" VerticalAlignment="Center">
+                                                                <TextBlock Text="{x:Bind FileName}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" />
+                                                                <TextBlock Text="{x:Bind local:KnowledgebasePage.FormatDocumentMeta(FileType, FileSize)}"
+                                                                           FontSize="11"
+                                                                           Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                                            </StackPanel>
                                                         </StackPanel>
 
                                                         <!-- Parser Engine Badge -->
-                                                        <Border Grid.Column="2"
-                                                                Background="{ThemeResource LayerFillColorDefaultBrush}"
-                                                                CornerRadius="4"
-                                                                Padding="6,2"
-                                                                VerticalAlignment="Center">
-                                                            <TextBlock Text="{x:Bind ParserEngineUsed}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                                        </Border>
-
-                                                        <!-- Chunk Count Badge -->
-                                                        <TextBlock Grid.Column="3"
-                                                                   Text="{x:Bind ChunkCount}"
-                                                                   VerticalAlignment="Center"
-                                                                   FontSize="12"
-                                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-
-                                                        <!-- Status Pill -->
-                                                        <Border Grid.Column="4"
+                                                        <Border Grid.Column="1"
                                                                 Background="{ThemeResource LayerFillColorDefaultBrush}"
                                                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                                                 BorderThickness="1"
                                                                 CornerRadius="4"
                                                                 Padding="8,2"
+                                                                HorizontalAlignment="Left"
+                                                                VerticalAlignment="Center">
+                                                            <TextBlock Text="{x:Bind local:KnowledgebasePage.FormatParser(ParserEngineUsed)}"
+                                                                       FontSize="11"
+                                                                       FontWeight="Medium"
+                                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                        </Border>
+
+                                                        <!-- Chunk Count Badge -->
+                                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                                            <FontIcon Glyph="&#xE943;" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                                            <TextBlock Text="{x:Bind local:KnowledgebasePage.FormatChunks(ChunkCount)}"
+                                                                       FontSize="12"
+                                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                        </StackPanel>
+
+                                                        <!-- Status Pill -->
+                                                        <Border Grid.Column="3"
+                                                                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                BorderThickness="1"
+                                                                CornerRadius="4"
+                                                                Padding="8,2"
+                                                                HorizontalAlignment="Left"
                                                                 VerticalAlignment="Center">
                                                             <TextBlock Text="{x:Bind Status}"
                                                                        FontSize="11"
@@ -336,12 +378,14 @@
                                                         </Border>
 
                                                         <!-- Delete Document Button -->
-                                                        <Button Grid.Column="5"
+                                                        <Button Grid.Column="4"
                                                                 Width="30"
                                                                 Height="30"
                                                                 Padding="0"
                                                                 Background="Transparent"
                                                                 BorderThickness="0"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
                                                                 ToolTipService.ToolTip="Delete Document"
                                                                 Click="OnDeleteDocumentClicked">
                                                             <FontIcon Glyph="&#xE74D;" FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
