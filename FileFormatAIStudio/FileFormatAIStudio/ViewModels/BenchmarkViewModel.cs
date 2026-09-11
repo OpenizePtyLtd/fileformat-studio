@@ -69,13 +69,91 @@ namespace FileFormatAIStudio.ViewModels
     }
 
     /// <summary>
+    /// Item for document selector dropdown when inspecting benchmark results.
+    /// </summary>
+    public class BenchmarkDocumentSelectionItem
+    {
+        public string DisplayName { get; }
+        public string FileName { get; }
+        public string Extension { get; }
+        public long FileSizeBytes { get; }
+        public BenchmarkDocumentResult DocumentResult { get; }
+
+        public BenchmarkDocumentSelectionItem(BenchmarkDocumentResult documentResult)
+        {
+            DocumentResult = documentResult ?? throw new ArgumentNullException(nameof(documentResult));
+            FileName = documentResult.FileName;
+            Extension = documentResult.Extension;
+            FileSizeBytes = documentResult.FileSizeBytes;
+
+            var sizeStr = FileSizeBytes switch
+            {
+                >= 1024 * 1024 => $"{FileSizeBytes / (1024.0 * 1024.0):N1} MB",
+                >= 1024 => $"{FileSizeBytes / 1024.0:N0} KB",
+                _ => $"{FileSizeBytes} bytes"
+            };
+            DisplayName = $"{FileName} ({sizeStr})";
+        }
+    }
+
+    /// <summary>
+    /// Scorecard summary for a parser engine evaluated on a document.
+    /// </summary>
+    public class BenchmarkScorecardItemViewModel
+    {
+        public string EngineId { get; set; } = string.Empty;
+        public string EngineDisplayName { get; set; } = string.Empty;
+        public int Rank { get; set; } = 1;
+        public string RankBadgeText { get; set; } = string.Empty;
+        public bool IsWinner { get; set; }
+        public double OverallScore { get; set; }
+        public string FormattedScore { get; set; } = string.Empty;
+        public long CharacterCount { get; set; }
+        public string FormattedCharacterCount { get; set; } = string.Empty;
+        public long WordCount { get; set; }
+        public string FormattedWordCount { get; set; } = string.Empty;
+        public TimeSpan ElapsedTime { get; set; }
+        public string FormattedLatency { get; set; } = string.Empty;
+        public long AllocatedBytes { get; set; }
+        public string FormattedMemory { get; set; } = string.Empty;
+        public string CleanlinessScore { get; set; } = string.Empty;
+        public bool IsSuccess { get; set; }
+        public string? ErrorMessage { get; set; }
+    }
+
+    /// <summary>
+    /// An individual metric cell in the comparison matrix.
+    /// </summary>
+    public class BenchmarkMatrixCellViewModel
+    {
+        public string EngineId { get; set; } = string.Empty;
+        public string EngineDisplayName { get; set; } = string.Empty;
+        public string FormattedValue { get; set; } = string.Empty;
+        public double RawValue { get; set; }
+        public bool IsBest { get; set; }
+        public int Rank { get; set; }
+    }
+
+    /// <summary>
+    /// A row in the comparison matrix table representing a metric across all engines.
+    /// </summary>
+    public class BenchmarkMatrixRowViewModel
+    {
+        public string MetricName { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public ObservableCollection<BenchmarkMatrixCellViewModel> Cells { get; set; } = new();
+    }
+
+    /// <summary>
     /// ViewModel driving the BenchmarkPage UI: category selection, document uploading,
-    /// benchmark execution, real-time progress reporting, and historical results retrieval.
+    /// benchmark execution, real-time progress reporting, comparison matrix, and scorecard.
     /// </summary>
     public partial class BenchmarkViewModel : ObservableObject
     {
         private readonly IBenchmarkRunnerService _benchmarkRunner;
         private readonly IDocumentCategoryRegistry _categoryRegistry;
+        private readonly IBenchmarkExportService _exportService;
         private CancellationTokenSource? _runCts;
 
         [ObservableProperty]
@@ -109,6 +187,33 @@ namespace FileFormatAIStudio.ViewModels
         private BenchmarkSessionResult? _latestResult;
 
         [ObservableProperty]
+        private BenchmarkSessionResult? _activeResult;
+
+        [ObservableProperty]
+        private BenchmarkScorecardItemViewModel? _winnerScorecard;
+
+        [ObservableProperty]
+        private string _winnerBannerTitle = string.Empty;
+
+        [ObservableProperty]
+        private string _winnerBannerSubtitle = string.Empty;
+
+        [ObservableProperty]
+        private ObservableCollection<BenchmarkScorecardItemViewModel> _engineScorecards = new();
+
+        [ObservableProperty]
+        private ObservableCollection<string> _matrixEngineHeaders = new();
+
+        [ObservableProperty]
+        private ObservableCollection<BenchmarkMatrixRowViewModel> _matrixRows = new();
+
+        [ObservableProperty]
+        private ObservableCollection<BenchmarkDocumentSelectionItem> _documentSelections = new();
+
+        [ObservableProperty]
+        private BenchmarkDocumentSelectionItem? _selectedDocumentView;
+
+        [ObservableProperty]
         private ObservableCollection<BenchmarkSessionEntity> _recentSessions = new();
 
         [ObservableProperty]
@@ -129,12 +234,18 @@ namespace FileFormatAIStudio.ViewModels
 
         public bool HasLatestResult => LatestResult != null;
 
+        public bool HasActiveResult => ActiveResult != null;
+
+        public bool HasMultipleDocuments => DocumentSelections.Count > 1;
+
         public BenchmarkViewModel(
             IBenchmarkRunnerService benchmarkRunner,
-            IDocumentCategoryRegistry categoryRegistry)
+            IDocumentCategoryRegistry categoryRegistry,
+            IBenchmarkExportService? exportService = null)
         {
             _benchmarkRunner = benchmarkRunner ?? throw new ArgumentNullException(nameof(benchmarkRunner));
             _categoryRegistry = categoryRegistry ?? throw new ArgumentNullException(nameof(categoryRegistry));
+            _exportService = exportService ?? new BenchmarkExportService();
 
             InitializeCategories();
         }
@@ -165,6 +276,316 @@ namespace FileFormatAIStudio.ViewModels
         partial void OnIsRunningChanged(bool value)
         {
             OnPropertyChanged(nameof(CanRunBenchmark));
+        }
+
+        partial void OnActiveResultChanged(BenchmarkSessionResult? value)
+        {
+            OnPropertyChanged(nameof(HasActiveResult));
+
+            DocumentSelections.Clear();
+            if (value != null && value.DocumentResults.Count > 0)
+            {
+                foreach (var doc in value.DocumentResults)
+                {
+                    DocumentSelections.Add(new BenchmarkDocumentSelectionItem(doc));
+                }
+
+                SelectedDocumentView = DocumentSelections.FirstOrDefault();
+            }
+            else
+            {
+                SelectedDocumentView = null;
+                RefreshPresentationForDocument(null);
+            }
+
+            OnPropertyChanged(nameof(HasMultipleDocuments));
+        }
+
+        partial void OnSelectedDocumentViewChanged(BenchmarkDocumentSelectionItem? value)
+        {
+            RefreshPresentationForDocument(value?.DocumentResult);
+        }
+
+        private void RefreshPresentationForDocument(BenchmarkDocumentResult? docResult)
+        {
+            EngineScorecards.Clear();
+            MatrixEngineHeaders.Clear();
+            MatrixRows.Clear();
+
+            if (docResult == null || docResult.EngineRuns.Count == 0)
+            {
+                WinnerScorecard = null;
+                WinnerBannerTitle = string.Empty;
+                WinnerBannerSubtitle = string.Empty;
+                return;
+            }
+
+            var sortedRuns = docResult.EngineRuns.OrderBy(r => r.Rank).ToList();
+
+            foreach (var run in sortedRuns)
+            {
+                string rankBadge = run.Rank switch
+                {
+                    1 => "🥇 Rank #1 (Winner)",
+                    2 => "🥈 Rank #2",
+                    3 => "🥉 Rank #3",
+                    _ => $"Rank #{run.Rank}"
+                };
+
+                string latency = run.ElapsedTime.TotalMilliseconds < 1000
+                    ? $"{run.ElapsedTime.TotalMilliseconds:N0} ms"
+                    : $"{run.ElapsedTime.TotalSeconds:N2} s";
+
+                string memory = run.AllocatedBytes switch
+                {
+                    >= 1024 * 1024 => $"{run.AllocatedBytes / (1024.0 * 1024.0):N1} MB",
+                    >= 1024 => $"{run.AllocatedBytes / 1024.0:N0} KB",
+                    _ => $"{run.AllocatedBytes} bytes"
+                };
+
+                var cleanMetric = run.MetricScores.FirstOrDefault(m => m.MetricId == "cleanliness_score");
+                string cleanliness = cleanMetric != null ? $"{cleanMetric.RawValue:F1}%" : "100.0%";
+
+                var scorecard = new BenchmarkScorecardItemViewModel
+                {
+                    EngineId = run.EngineId,
+                    EngineDisplayName = run.EngineDisplayName,
+                    Rank = run.Rank,
+                    RankBadgeText = rankBadge,
+                    IsWinner = run.Rank == 1,
+                    OverallScore = run.OverallScore,
+                    FormattedScore = $"{run.OverallScore:F1} / 100",
+                    CharacterCount = run.CharacterCount,
+                    FormattedCharacterCount = $"{run.CharacterCount:N0} chars",
+                    WordCount = run.WordCount,
+                    FormattedWordCount = $"{run.WordCount:N0} words",
+                    ElapsedTime = run.ElapsedTime,
+                    FormattedLatency = latency,
+                    AllocatedBytes = run.AllocatedBytes,
+                    FormattedMemory = memory,
+                    CleanlinessScore = cleanliness,
+                    IsSuccess = run.IsSuccess,
+                    ErrorMessage = run.ErrorMessage
+                };
+
+                EngineScorecards.Add(scorecard);
+                MatrixEngineHeaders.Add(run.EngineDisplayName);
+            }
+
+            // Determine winner scorecard
+            WinnerScorecard = EngineScorecards.FirstOrDefault(s => s.Rank == 1) ?? EngineScorecards.FirstOrDefault();
+            if (WinnerScorecard != null)
+            {
+                WinnerBannerTitle = $"Winner: {WinnerScorecard.EngineDisplayName} (Rank #1)";
+                WinnerBannerSubtitle = $"Extracted {WinnerScorecard.FormattedCharacterCount} in {WinnerScorecard.FormattedLatency} with {WinnerScorecard.CleanlinessScore} text cleanliness • Composite Score: {WinnerScorecard.FormattedScore}";
+            }
+
+            // Build Matrix Rows
+            BuildMatrixRows(sortedRuns);
+        }
+
+        private void BuildMatrixRows(IReadOnlyList<BenchmarkEngineRunResult> engines)
+        {
+            if (engines.Count == 0) return;
+
+            long maxChars = engines.Max(e => e.CharacterCount);
+            long maxWords = engines.Max(e => e.WordCount);
+            var successfulEngines = engines.Where(e => e.IsSuccess).ToList();
+            TimeSpan minLatency = successfulEngines.Count > 0 ? successfulEngines.Min(e => e.ElapsedTime) : TimeSpan.MaxValue;
+            long minMemory = successfulEngines.Count > 0 ? successfulEngines.Min(e => e.AllocatedBytes) : long.MaxValue;
+
+            // 1. Total Characters (Baseline)
+            var rowChars = new BenchmarkMatrixRowViewModel
+            {
+                MetricName = "Total Characters Extracted",
+                Description = "Primary extraction baseline (highest volume = highest score)",
+                Category = "Extraction Volume"
+            };
+            foreach (var e in engines)
+            {
+                rowChars.Cells.Add(new BenchmarkMatrixCellViewModel
+                {
+                    EngineId = e.EngineId,
+                    EngineDisplayName = e.EngineDisplayName,
+                    FormattedValue = $"{e.CharacterCount:N0} chars",
+                    RawValue = e.CharacterCount,
+                    IsBest = e.CharacterCount == maxChars && maxChars > 0,
+                    Rank = e.Rank
+                });
+            }
+            MatrixRows.Add(rowChars);
+
+            // 2. Content Characters (Density)
+            var rowContentChars = new BenchmarkMatrixRowViewModel
+            {
+                MetricName = "Content Characters (Density)",
+                Description = "Total non-whitespace character volume",
+                Category = "Extraction Volume"
+            };
+            double maxContentChars = engines.Max(e => e.MetricScores.FirstOrDefault(m => m.MetricId == "content_char_count")?.RawValue ?? 0);
+            foreach (var e in engines)
+            {
+                var m = e.MetricScores.FirstOrDefault(x => x.MetricId == "content_char_count");
+                double val = m?.RawValue ?? 0;
+                rowContentChars.Cells.Add(new BenchmarkMatrixCellViewModel
+                {
+                    EngineId = e.EngineId,
+                    EngineDisplayName = e.EngineDisplayName,
+                    FormattedValue = m?.FormattedValue ?? $"{val:N0} chars",
+                    RawValue = val,
+                    IsBest = val == maxContentChars && maxContentChars > 0,
+                    Rank = e.Rank
+                });
+            }
+            MatrixRows.Add(rowContentChars);
+
+            // 3. Word Count
+            var rowWords = new BenchmarkMatrixRowViewModel
+            {
+                MetricName = "Extracted Words",
+                Description = "Total words detected in extracted document content",
+                Category = "Extraction Volume"
+            };
+            foreach (var e in engines)
+            {
+                rowWords.Cells.Add(new BenchmarkMatrixCellViewModel
+                {
+                    EngineId = e.EngineId,
+                    EngineDisplayName = e.EngineDisplayName,
+                    FormattedValue = $"{e.WordCount:N0} words",
+                    RawValue = e.WordCount,
+                    IsBest = e.WordCount == maxWords && maxWords > 0,
+                    Rank = e.Rank
+                });
+            }
+            MatrixRows.Add(rowWords);
+
+            // 4. Latency
+            var rowLatency = new BenchmarkMatrixRowViewModel
+            {
+                MetricName = "Execution Latency",
+                Description = "Elapsed parsing time (lower is better)",
+                Category = "Performance"
+            };
+            foreach (var e in engines)
+            {
+                var latencyMetric = e.MetricScores.FirstOrDefault(m => m.MetricId == "latency_ms");
+                string formatted = latencyMetric?.FormattedValue ?? (e.ElapsedTime.TotalMilliseconds < 1000
+                    ? $"{e.ElapsedTime.TotalMilliseconds:N0} ms"
+                    : $"{e.ElapsedTime.TotalSeconds:N2} s");
+                rowLatency.Cells.Add(new BenchmarkMatrixCellViewModel
+                {
+                    EngineId = e.EngineId,
+                    EngineDisplayName = e.EngineDisplayName,
+                    FormattedValue = formatted,
+                    RawValue = e.ElapsedTime.TotalMilliseconds,
+                    IsBest = e.ElapsedTime == minLatency && e.IsSuccess,
+                    Rank = e.Rank
+                });
+            }
+            MatrixRows.Add(rowLatency);
+
+            // 5. Memory
+            var rowMemory = new BenchmarkMatrixRowViewModel
+            {
+                MetricName = "Memory Allocated",
+                Description = "Thread memory allocated during parsing (lower is better)",
+                Category = "Performance"
+            };
+            foreach (var e in engines)
+            {
+                var memMetric = e.MetricScores.FirstOrDefault(m => m.MetricId == "memory_allocated_bytes");
+                string formatted = memMetric?.FormattedValue ?? (e.AllocatedBytes switch
+                {
+                    >= 1024 * 1024 => $"{e.AllocatedBytes / (1024.0 * 1024.0):N1} MB",
+                    >= 1024 => $"{e.AllocatedBytes / 1024.0:N0} KB",
+                    _ => $"{e.AllocatedBytes} bytes"
+                });
+                rowMemory.Cells.Add(new BenchmarkMatrixCellViewModel
+                {
+                    EngineId = e.EngineId,
+                    EngineDisplayName = e.EngineDisplayName,
+                    FormattedValue = formatted,
+                    RawValue = e.AllocatedBytes,
+                    IsBest = e.AllocatedBytes == minMemory && e.IsSuccess,
+                    Rank = e.Rank
+                });
+            }
+            MatrixRows.Add(rowMemory);
+
+            // 6. Text Cleanliness
+            var rowClean = new BenchmarkMatrixRowViewModel
+            {
+                MetricName = "Text Cleanliness Score",
+                Description = "Penalizes replacement artifacts, CID codes, and unprintable characters",
+                Category = "Quality"
+            };
+            double maxClean = engines.Max(e => e.MetricScores.FirstOrDefault(m => m.MetricId == "cleanliness_score")?.RawValue ?? 100.0);
+            foreach (var e in engines)
+            {
+                var cleanM = e.MetricScores.FirstOrDefault(m => m.MetricId == "cleanliness_score");
+                double val = cleanM?.RawValue ?? 100.0;
+                rowClean.Cells.Add(new BenchmarkMatrixCellViewModel
+                {
+                    EngineId = e.EngineId,
+                    EngineDisplayName = e.EngineDisplayName,
+                    FormattedValue = $"{val:F1}%",
+                    RawValue = val,
+                    IsBest = val == maxClean && val >= 95.0,
+                    Rank = e.Rank
+                });
+            }
+            MatrixRows.Add(rowClean);
+
+            // 7. Overall Composite Score
+            var rowScore = new BenchmarkMatrixRowViewModel
+            {
+                MetricName = "Overall Composite Score",
+                Description = "Weighted aggregate score across all evaluated metrics (0-100)",
+                Category = "Final Result"
+            };
+            foreach (var e in engines)
+            {
+                rowScore.Cells.Add(new BenchmarkMatrixCellViewModel
+                {
+                    EngineId = e.EngineId,
+                    EngineDisplayName = e.EngineDisplayName,
+                    FormattedValue = $"{e.OverallScore:F1} / 100",
+                    RawValue = e.OverallScore,
+                    IsBest = e.Rank == 1,
+                    Rank = e.Rank
+                });
+            }
+            MatrixRows.Add(rowScore);
+
+            // 8. Overall Rank
+            var rowRank = new BenchmarkMatrixRowViewModel
+            {
+                MetricName = "Overall Rank",
+                Description = "Final benchmark position",
+                Category = "Final Result"
+            };
+            foreach (var e in engines)
+            {
+                string rankText = e.Rank switch
+                {
+                    1 => "🥇 Rank #1 (Winner)",
+                    2 => "🥈 Rank #2",
+                    3 => "🥉 Rank #3",
+                    _ => $"Rank #{e.Rank}"
+                };
+
+                rowRank.Cells.Add(new BenchmarkMatrixCellViewModel
+                {
+                    EngineId = e.EngineId,
+                    EngineDisplayName = e.EngineDisplayName,
+                    FormattedValue = rankText,
+                    RawValue = e.Rank,
+                    IsBest = e.Rank == 1,
+                    Rank = e.Rank
+                });
+            }
+            MatrixRows.Add(rowRank);
         }
 
         public void AddFiles(IEnumerable<string> filePaths)
@@ -251,6 +672,7 @@ namespace FileFormatAIStudio.ViewModels
                     cancellationToken: _runCts.Token);
 
                 LatestResult = result;
+                ActiveResult = result;
                 OnPropertyChanged(nameof(HasLatestResult));
 
                 ShowStatus($"Benchmark completed! Winner: {result.OverallWinnerDisplayName ?? "N/A"}", InfoBarSeverity.Success);
@@ -283,6 +705,34 @@ namespace FileFormatAIStudio.ViewModels
         }
 
         [RelayCommand]
+        public async Task ViewSessionAsync(BenchmarkSessionEntity? session)
+        {
+            if (session == null) return;
+            await ViewSessionByIdAsync(session.Id);
+        }
+
+        public async Task ViewSessionByIdAsync(Guid sessionId)
+        {
+            try
+            {
+                var fullSession = await _benchmarkRunner.GetBenchmarkSessionAsync(sessionId);
+                if (fullSession == null)
+                {
+                    ShowStatus("Benchmark session not found in database.", InfoBarSeverity.Error);
+                    return;
+                }
+
+                var result = _exportService.MapEntityToResult(fullSession);
+                ActiveResult = result;
+                ShowStatus($"Loaded benchmark results for '{result.Title}'. Winner: {result.OverallWinnerDisplayName ?? "N/A"}", InfoBarSeverity.Success);
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Failed to load benchmark session: {ex.Message}", InfoBarSeverity.Error);
+            }
+        }
+
+        [RelayCommand]
         public async Task DeleteSessionAsync(BenchmarkSessionEntity? session)
         {
             if (session == null) return;
@@ -295,11 +745,55 @@ namespace FileFormatAIStudio.ViewModels
                 {
                     SelectedRecentSession = null;
                 }
+                if (ActiveResult?.SessionId == session.Id)
+                {
+                    ActiveResult = null;
+                }
                 ShowStatus("Benchmark session deleted.", InfoBarSeverity.Informational);
             }
             catch (Exception ex)
             {
                 ShowStatus($"Failed to delete session: {ex.Message}", InfoBarSeverity.Error);
+            }
+        }
+
+        public string ExportCsvContent()
+        {
+            if (ActiveResult == null) return string.Empty;
+            return _exportService.ExportToCsv(ActiveResult);
+        }
+
+        public string ExportJsonContent()
+        {
+            if (ActiveResult == null) return string.Empty;
+            return _exportService.ExportToJson(ActiveResult);
+        }
+
+        public async Task<bool> ExportToFileAsync(string filePath, string format)
+        {
+            if (ActiveResult == null || string.IsNullOrWhiteSpace(filePath))
+                return false;
+
+            try
+            {
+                string content = string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase)
+                    ? ExportCsvContent()
+                    : ExportJsonContent();
+
+                var dir = System.IO.Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(dir) && !System.IO.Directory.Exists(dir))
+                {
+                    System.IO.Directory.CreateDirectory(dir);
+                }
+
+                await System.IO.File.WriteAllTextAsync(filePath, content, System.Text.Encoding.UTF8);
+                ShowStatus($"Successfully exported benchmark results to {System.IO.Path.GetFileName(filePath)}", InfoBarSeverity.Success);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Failed to export benchmark results: {ex.Message}", InfoBarSeverity.Error);
+                return false;
             }
         }
 
