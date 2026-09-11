@@ -154,6 +154,25 @@ namespace FileFormatAIStudio.Views
             }
         }
 
+        private async void OnInspectDiffClicked(object sender, RoutedEventArgs e)
+        {
+            var currentDoc = ViewModel.SelectedDocumentView?.DocumentResult
+                ?? ViewModel.ActiveResult?.DocumentResults.FirstOrDefault();
+
+            if (currentDoc == null || currentDoc.EngineRuns.Count == 0)
+            {
+                ViewModel.ShowStatus("No benchmark runs available to compare for this document.", InfoBarSeverity.Warning);
+                return;
+            }
+
+            var dialog = new Views.Dialogs.BenchmarkTextDiffDialog(currentDoc)
+            {
+                XamlRoot = this.XamlRoot
+            };
+
+            await dialog.ShowAsync();
+        }
+
         private async void OnExportCsvClicked(object sender, RoutedEventArgs e)
         {
             await ExportBenchmarkAsync("csv");

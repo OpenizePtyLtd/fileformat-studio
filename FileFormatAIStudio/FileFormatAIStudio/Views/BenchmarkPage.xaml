@@ -280,8 +280,16 @@
                                   MinWidth="220" />
                     </StackPanel>
 
-                    <!-- Export Buttons -->
+                    <!-- Export & Diff Buttons -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Button Style="{ThemeResource AccentButtonStyle}"
+                                Click="OnInspectDiffClicked"
+                                ToolTipService.ToolTip="Inspect side-by-side text diff between parsers">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE8D2;" FontSize="12" />
+                                <TextBlock Text="Inspect Text Diff" />
+                            </StackPanel>
+                        </Button>
                         <Button Content="Export CSV"
                                 Style="{ThemeResource DefaultButtonStyle}"
                                 Click="OnExportCsvClicked" />
