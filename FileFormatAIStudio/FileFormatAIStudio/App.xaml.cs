@@ -55,6 +55,7 @@ namespace FileFormatAIStudio
             services.AddSingleton<IBenchmarkMetric, ExecutionLatencyMetric>();
             services.AddSingleton<IBenchmarkMetric, MemoryAllocationMetric>();
             services.AddSingleton<IBenchmarkMetric, TextCleanlinessMetric>();
+            services.AddSingleton<IBenchmarkExportService, BenchmarkExportService>();
             services.AddScoped<IBenchmarkRunnerService, BenchmarkRunnerService>();
             services.AddScoped<IVectorStoreService, VectorStoreService>();
             services.AddScoped<IKnowledgebaseService, KnowledgebaseService>();

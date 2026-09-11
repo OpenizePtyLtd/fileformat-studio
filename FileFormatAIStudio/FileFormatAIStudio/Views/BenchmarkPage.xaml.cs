@@ -145,6 +145,65 @@ namespace FileFormatAIStudio.Views
                 await ViewModel.DeleteSessionCommand.ExecuteAsync(session);
             }
         }
+
+        private async void OnViewSessionClicked(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is BenchmarkSessionEntity session)
+            {
+                await ViewModel.ViewSessionAsync(session);
+            }
+        }
+
+        private async void OnExportCsvClicked(object sender, RoutedEventArgs e)
+        {
+            await ExportBenchmarkAsync("csv");
+        }
+
+        private async void OnExportJsonClicked(object sender, RoutedEventArgs e)
+        {
+            await ExportBenchmarkAsync("json");
+        }
+
+        private async Task ExportBenchmarkAsync(string format)
+        {
+            if (!ViewModel.HasActiveResult)
+            {
+                ViewModel.ShowStatus("No benchmark results are currently loaded to export.", InfoBarSeverity.Warning);
+                return;
+            }
+
+            try
+            {
+                var savePicker = new Windows.Storage.Pickers.FileSavePicker();
+                var window = App.MainWindowInstance;
+                var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+                WinRT.Interop.InitializeWithWindow.Initialize(savePicker, hWnd);
+
+                savePicker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+                string cleanTitle = string.Join("_", (ViewModel.ActiveResult?.Title ?? "Benchmark").Split(Path.GetInvalidFileNameChars()));
+
+                if (string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase))
+                {
+                    savePicker.FileTypeChoices.Add("CSV Spreadsheet", new List<string> { ".csv" });
+                    savePicker.SuggestedFileName = $"{cleanTitle}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                }
+                else
+                {
+                    savePicker.FileTypeChoices.Add("JSON File", new List<string> { ".json" });
+                    savePicker.SuggestedFileName = $"{cleanTitle}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
+                }
+
+                var file = await savePicker.PickSaveFileAsync();
+                if (file != null)
+                {
+                    await ViewModel.ExportToFileAsync(file.Path, format);
+                }
+            }
+            catch (Exception ex)
+            {
+                ViewModel.ShowStatus($"Error during export: {ex.Message}", InfoBarSeverity.Error);
+            }
+        }
     }
 }
 
