@@ -67,6 +67,7 @@ namespace FileFormatAIStudio
             services.AddTransient<KnowledgebaseViewModel>();
             services.AddTransient<CreateKnowledgebaseViewModel>();
             services.AddTransient<ViewExtractedTextViewModel>();
+            services.AddTransient<BenchmarkViewModel>();
 
             return services.BuildServiceProvider();
         }
