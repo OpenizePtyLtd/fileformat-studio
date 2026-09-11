@@ -12,9 +12,15 @@
     PrimaryButtonText="Copy to Clipboard"
     CloseButtonText="Close"
     DefaultButton="Close"
+    MaxWidth="960"
     PrimaryButtonClick="OnPrimaryButtonClick">
 
-    <Grid MinWidth="680" MaxWidth="820" MinHeight="500" MaxHeight="680" RowSpacing="12">
+    <ContentDialog.Resources>
+        <x:Double x:Key="ContentDialogMaxWidth">960</x:Double>
+        <x:Double x:Key="ContentDialogMinWidth">720</x:Double>
+    </ContentDialog.Resources>
+
+    <Grid MinWidth="680" MaxWidth="920" MinHeight="520" MaxHeight="720" RowSpacing="12" HorizontalAlignment="Stretch">
         <Grid.RowDefinitions>
             <!-- Document Meta Header -->
             <RowDefinition Height="Auto" />
@@ -191,12 +197,22 @@
                 </Button>
             </StackPanel>
 
-            <TextBlock Grid.Column="1"
-                       Text="Stored in SQLite (fileformat_studio.db)"
-                       FontSize="11"
-                       Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                       HorizontalAlignment="Right"
-                       VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <ToggleButton IsChecked="{x:Bind ViewModel.IsWordWrap, Mode=TwoWay}"
+                              Padding="8,4"
+                              CornerRadius="4"
+                              ToolTipService.ToolTip="Toggle Word Wrap (turn off to enable horizontal scrollbar for wide text and tables)">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE765;" FontSize="11" />
+                        <TextBlock Text="Word Wrap" FontSize="11" />
+                    </StackPanel>
+                </ToggleButton>
+
+                <TextBlock Text="Stored in SQLite"
+                           FontSize="11"
+                           Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                           VerticalAlignment="Center" />
+            </StackPanel>
         </Grid>
 
         <!-- Row 3: Content Body -->
@@ -242,11 +258,11 @@
                                    HorizontalAlignment="Center" />
                     </StackPanel>
 
-                    <!-- Scrollable Plain Text Box -->
+                    <!-- Scrollable Plain Text Box with full horizontal and vertical scroll support -->
                     <TextBox Text="{x:Bind ViewModel.ExtractedText, Mode=OneWay}"
                              IsReadOnly="True"
                              AcceptsReturn="True"
-                             TextWrapping="Wrap"
+                             TextWrapping="{x:Bind ViewModel.TextWrappingMode, Mode=OneWay}"
                              FontFamily="Consolas, 'Cascadia Code', 'Segoe UI Mono', monospace"
                              FontSize="12"
                              BorderThickness="0"
@@ -255,7 +271,9 @@
                              VerticalAlignment="Stretch"
                              HorizontalAlignment="Stretch"
                              ScrollViewer.VerticalScrollBarVisibility="Auto"
-                             ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                             ScrollViewer.HorizontalScrollMode="Enabled"
+                             ScrollViewer.VerticalScrollMode="Enabled" />
                 </Grid>
             </Border>
 
@@ -336,7 +354,9 @@
                                                  FontSize="11"
                                                  BorderThickness="0"
                                                  Background="Transparent"
-                                                 Padding="0" />
+                                                 Padding="0"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                                 ScrollViewer.HorizontalScrollMode="Enabled" />
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>

@@ -355,5 +355,22 @@ namespace FileFormatAIStudio.Tests
             vm.Chunks.Should().HaveCount(1);
             vm.Chunks[0].TokenCount.Should().Be(20);
         }
+
+        [Fact]
+        public void ViewExtractedTextViewModel_WordWrapToggle_SwitchesTextWrappingMode()
+        {
+            using var context = new AppDbContext(_options);
+            var service = CreateService(context);
+            var vm = new ViewExtractedTextViewModel(service);
+
+            vm.IsWordWrap.Should().BeTrue();
+            vm.TextWrappingMode.Should().Be(Microsoft.UI.Xaml.TextWrapping.Wrap);
+
+            vm.IsWordWrap = false;
+            vm.TextWrappingMode.Should().Be(Microsoft.UI.Xaml.TextWrapping.NoWrap);
+
+            vm.IsWordWrap = true;
+            vm.TextWrappingMode.Should().Be(Microsoft.UI.Xaml.TextWrapping.Wrap);
+        }
     }
 }

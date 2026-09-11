@@ -16,6 +16,7 @@ namespace FileFormatAIStudio.Views.Dialogs
         {
             InitializeComponent();
             ViewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+            this.MaxWidth = 960;
             UpdateTabStyles();
         }
 

@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FileFormatAIStudio.Data.Entities;
 using FileFormatAIStudio.Services.Knowledgebase;
+using Microsoft.UI.Xaml;
 using Windows.ApplicationModel.DataTransfer;
 
 namespace FileFormatAIStudio.ViewModels
@@ -71,6 +72,12 @@ namespace FileFormatAIStudio.ViewModels
 
         [ObservableProperty]
         private string _copyFeedbackMessage = string.Empty;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(TextWrappingMode))]
+        private bool _isWordWrap = true;
+
+        public TextWrapping TextWrappingMode => IsWordWrap ? TextWrapping.Wrap : TextWrapping.NoWrap;
 
         public ObservableCollection<DocumentChunkEntity> Chunks { get; } = new();
 
