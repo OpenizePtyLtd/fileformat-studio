@@ -32,7 +32,7 @@ namespace FileFormatAIStudio.Tests
                 Models = new List<ModelConfigEntity>
                 {
                     new() { ModelId = "llama3.2:latest", DisplayName = "Llama 3.2", IsEmbeddingModel = false },
-                    new() { ModelId = "nomic-embed-text", DisplayName = "Nomic Embed", IsEmbeddingModel = true }
+                    new() { ModelId = "nomic-embed-text", DisplayName = "Nomic Embed", IsEmbeddingModel = true, Dimensions = 768 }
                 }
             };
             _settingsService.Providers.Add(provider);

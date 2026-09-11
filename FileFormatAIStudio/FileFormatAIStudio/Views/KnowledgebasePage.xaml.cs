@@ -82,16 +82,43 @@ namespace FileFormatAIStudio.Views
                     if (filePaths != null && filePaths.Count > 0)
                     {
                         ViewModel.ShowStatus($"Knowledgebase '{created.Name}' created. Indexing {filePaths.Count} document(s)...", InfoBarSeverity.Informational);
-                        await _knowledgebaseService.IngestDocumentsAsync(created.Id, filePaths);
+                        var ingestedDocs = await _knowledgebaseService.IngestDocumentsAsync(created.Id, filePaths);
+
+                        await ViewModel.LoadKnowledgebasesAsync();
+
+                        var failedDocs = ingestedDocs.Where(d => d.Status == "Failed").ToList();
+                        var succeededDocs = ingestedDocs.Where(d => d.Status == "Indexed").ToList();
+
+                        if (failedDocs.Count == 0)
+                        {
+                            ViewModel.ShowStatus(
+                                $"Knowledgebase '{created.Name}' created and {succeededDocs.Count} document(s) indexed successfully.",
+                                InfoBarSeverity.Success);
+                        }
+                        else if (succeededDocs.Count == 0)
+                        {
+                            string err = !string.IsNullOrWhiteSpace(failedDocs[0].ErrorMessage)
+                                ? failedDocs[0].ErrorMessage!
+                                : "Document indexing failed.";
+                            ViewModel.ShowStatus(
+                                $"Knowledgebase '{created.Name}' created, but document indexing failed: {err}",
+                                InfoBarSeverity.Error);
+                        }
+                        else
+                        {
+                            string err = !string.IsNullOrWhiteSpace(failedDocs[0].ErrorMessage)
+                                ? failedDocs[0].ErrorMessage!
+                                : "unknown error";
+                            ViewModel.ShowStatus(
+                                $"Knowledgebase '{created.Name}' created. {succeededDocs.Count} indexed successfully, {failedDocs.Count} failed: {err}",
+                                InfoBarSeverity.Warning);
+                        }
                     }
-
-                    await ViewModel.LoadKnowledgebasesAsync();
-
-                    string successMsg = (filePaths != null && filePaths.Count > 0)
-                        ? $"Knowledgebase '{created.Name}' created and {filePaths.Count} document(s) indexed successfully."
-                        : $"Knowledgebase '{created.Name}' created successfully.";
-
-                    ViewModel.ShowStatus(successMsg, InfoBarSeverity.Success);
+                    else
+                    {
+                        await ViewModel.LoadKnowledgebasesAsync();
+                        ViewModel.ShowStatus($"Knowledgebase '{created.Name}' created successfully.", InfoBarSeverity.Success);
+                    }
                 }
                 catch (Exception ex)
                 {

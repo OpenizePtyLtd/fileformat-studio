@@ -10,6 +10,7 @@ namespace FileFormatAIStudio.Data.Entities
         public string DisplayName { get; set; } = string.Empty;
         public bool IsDefault { get; set; }
         public bool IsEmbeddingModel { get; set; }
+        public int? Dimensions { get; set; }
 
         public ProviderConfigEntity? Provider { get; set; }
     }

@@ -400,7 +400,7 @@ namespace FileFormatAIStudio.Tests
 
         public IEmbeddingGenerator<string, Embedding<float>> CreateEmbeddingGenerator(ProviderConfigEntity provider, string modelId)
         {
-            int dims = EmbeddingModelMetadata.GetKnownDimensions(modelId) ?? 1536;
+            int dims = modelId.Contains("384") ? 384 : (modelId.Contains("1024") ? 1024 : 1536);
             return new FakeEmbeddingGenerator(dims);
         }
 
@@ -411,15 +411,18 @@ namespace FileFormatAIStudio.Tests
             return Task.FromResult((true, "OK"));
         }
 
+        public int EmbeddingDimensionsToReturn { get; set; } = 1536;
+
         public Task<(bool Success, string Message, int Dimensions)> TestEmbeddingGenerationAsync(ProviderConfigEntity provider, string modelId, CancellationToken ct = default)
         {
             TestedModelIds.Add(modelId);
+            int dims = EmbeddingDimensionsToReturn;
             if (ValidateResultFunc != null)
             {
                 var res = ValidateResultFunc(modelId);
-                return Task.FromResult((res.Success, res.Message, 1536));
+                return Task.FromResult((res.Success, res.Message, dims));
             }
-            return Task.FromResult((true, "OK", 1536));
+            return Task.FromResult((true, "OK", dims));
         }
 
         public Task<(bool Success, string Message)> ValidateProviderAsync(ProviderConfigEntity provider, string? modelId = null, CancellationToken ct = default)

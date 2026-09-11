@@ -70,6 +70,12 @@ namespace FileFormatAIStudio.ViewModels
         [ObservableProperty]
         private int _newModelTypeIndex;
 
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanAddModel))]
+        private bool _isAddingModel;
+
+        public bool CanAddModel => !IsAddingModel;
+
         partial void OnNewModelIdChanged(string value)
         {
             if (!string.IsNullOrWhiteSpace(value) && EmbeddingModelMetadata.IsEmbeddingModel(value))
@@ -271,27 +277,80 @@ namespace FileFormatAIStudio.ViewModels
             }
 
             bool isEmbedding = NewModelTypeIndex == 1;
+            int? dimensions = null;
 
-            var model = new ModelConfigEntity
+            IsAddingModel = true;
+            SaveStatusSeverity = InfoBarSeverity.Informational;
+            SaveStatusMessage = isEmbedding
+                ? $"Testing connection and detecting dimensions for embedding model '{cleanModelId}'..."
+                : $"Testing connection for chat model '{cleanModelId}'...";
+            IsSaveStatusOpen = true;
+
+            try
             {
-                ProviderId = SelectedProvider.Id,
-                ModelId = cleanModelId,
-                DisplayName = string.IsNullOrWhiteSpace(NewModelDisplayName) ? cleanModelId : NewModelDisplayName.Trim(),
-                IsDefault = !isEmbedding && SelectedProviderModels.Count(m => !m.IsEmbeddingModel) == 0,
-                IsEmbeddingModel = isEmbedding
-            };
+                if (isEmbedding)
+                {
+                    var embedResult = await _aiClientFactory.TestEmbeddingGenerationAsync(SelectedProvider, cleanModelId);
+                    if (!embedResult.Success || embedResult.Dimensions <= 0)
+                    {
+                        SaveStatusSeverity = InfoBarSeverity.Error;
+                        SaveStatusMessage = $"Cannot add embedding model '{cleanModelId}': Connection test failed. {embedResult.Message}";
+                        IsSaveStatusOpen = true;
+                        return;
+                    }
 
-            await _settingsService.AddModelAsync(model);
-            SelectedProviderModels.Add(model);
+                    dimensions = embedResult.Dimensions;
+                }
+                else
+                {
+                    var chatResult = await _aiClientFactory.TestConnectionAsync(SelectedProvider, cleanModelId);
+                    if (!chatResult.Success)
+                    {
+                        SaveStatusSeverity = InfoBarSeverity.Error;
+                        SaveStatusMessage = $"Cannot add chat model '{cleanModelId}': Connection test failed. {chatResult.Message}";
+                        IsSaveStatusOpen = true;
+                        return;
+                    }
+                }
 
-            if (!SelectedProvider.Models.Any(m => m.Id == model.Id || m.ModelId.Equals(cleanModelId, StringComparison.OrdinalIgnoreCase)))
-            {
-                SelectedProvider.Models.Add(model);
+                var model = new ModelConfigEntity
+                {
+                    ProviderId = SelectedProvider.Id,
+                    ModelId = cleanModelId,
+                    DisplayName = string.IsNullOrWhiteSpace(NewModelDisplayName) ? cleanModelId : NewModelDisplayName.Trim(),
+                    IsDefault = !isEmbedding && SelectedProviderModels.Count(m => !m.IsEmbeddingModel) == 0,
+                    IsEmbeddingModel = isEmbedding,
+                    Dimensions = dimensions
+                };
+
+                await _settingsService.AddModelAsync(model);
+                SelectedProviderModels.Add(model);
+
+                if (!SelectedProvider.Models.Any(m => m.Id == model.Id || m.ModelId.Equals(cleanModelId, StringComparison.OrdinalIgnoreCase)))
+                {
+                    SelectedProvider.Models.Add(model);
+                }
+
+                SaveStatusSeverity = InfoBarSeverity.Success;
+                SaveStatusMessage = isEmbedding
+                    ? $"Embedding model '{cleanModelId}' verified ({dimensions} dimensions) and added successfully."
+                    : $"Chat model '{cleanModelId}' verified and added successfully.";
+                IsSaveStatusOpen = true;
+
+                NewModelId = string.Empty;
+                NewModelDisplayName = string.Empty;
+                NewModelTypeIndex = 0;
             }
-
-            NewModelId = string.Empty;
-            NewModelDisplayName = string.Empty;
-            NewModelTypeIndex = 0;
+            catch (Exception ex)
+            {
+                SaveStatusSeverity = InfoBarSeverity.Error;
+                SaveStatusMessage = $"Failed to verify model '{cleanModelId}': {ex.Message}";
+                IsSaveStatusOpen = true;
+            }
+            finally
+            {
+                IsAddingModel = false;
+            }
         }
 
         [RelayCommand]

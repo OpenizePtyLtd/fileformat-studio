@@ -81,7 +81,7 @@ namespace FileFormatAIStudio.Services.Knowledgebase
 
             int dimensions = request.VectorDimensions > 0
                 ? request.VectorDimensions
-                : EmbeddingModelMetadata.GetDefaultDimensions(request.EmbeddingModel);
+                : 1536;
 
             var entity = new KnowledgebaseEntity
             {

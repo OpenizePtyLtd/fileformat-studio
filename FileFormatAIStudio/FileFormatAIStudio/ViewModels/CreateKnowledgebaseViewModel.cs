@@ -165,7 +165,10 @@ namespace FileFormatAIStudio.ViewModels
             {
                 foreach (var m in embeddingModels)
                 {
-                    int dims = EmbeddingModelMetadata.GetKnownDimensions(m.ModelId) ?? 1536;
+                    int dims = (m.Dimensions.HasValue && m.Dimensions.Value > 0)
+                        ? m.Dimensions.Value
+                        : 1536;
+
                     string displayName = $"{m.ModelId} ({dims} dims)";
                     AvailableEmbeddingModels.Add(new EmbeddingModelOption(m.ModelId, displayName, dims));
                 }

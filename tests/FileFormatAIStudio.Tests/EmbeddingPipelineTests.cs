@@ -12,43 +12,18 @@ namespace FileFormatAIStudio.Tests
     public class EmbeddingPipelineTests
     {
         [Theory]
-        [InlineData("text-embedding-3-small", 1536)]
-        [InlineData("text-embedding-3-large", 3072)]
-        [InlineData("text-embedding-ada-002", 1536)]
-        [InlineData("nomic-embed-text", 768)]
-        [InlineData("bge-m3", 1024)]
-        [InlineData("bge-small-en-v1.5", 384)]
-        [InlineData("all-minilm", 384)]
-        [InlineData("mxbai-embed-large", 1024)]
-        [InlineData("ollama/nomic-embed-text:latest", 768)]
-        public void EmbeddingModelMetadata_ResolvesKnownModelDimensions(string modelId, int expectedDimensions)
+        [InlineData("text-embedding-3-small", true)]
+        [InlineData("nomic-embed-text", true)]
+        [InlineData("liquid/lfm-2.5-embedding-350m:free", true)]
+        [InlineData("bge-small-en-v1.5", true)]
+        [InlineData("gpt-4o", false)]
+        [InlineData("llama3.2", false)]
+        [InlineData("claude-3-5-sonnet", false)]
+        [InlineData("", false)]
+        [InlineData(null, false)]
+        public void EmbeddingModelMetadata_IsEmbeddingModel_ChecksNamePattern(string? modelId, bool expected)
         {
-            var dimensions = EmbeddingModelMetadata.GetKnownDimensions(modelId);
-            dimensions.Should().Be(expectedDimensions);
-            EmbeddingModelMetadata.IsEmbeddingModel(modelId).Should().BeTrue();
-        }
-
-        [Theory]
-        [InlineData("gpt-4o")]
-        [InlineData("llama3.2")]
-        [InlineData("claude-3-5-sonnet")]
-        [InlineData("custom-unknown-model")]
-        public void EmbeddingModelMetadata_ReturnsNullOrFalse_ForNonEmbeddingModels(string modelId)
-        {
-            EmbeddingModelMetadata.GetKnownDimensions(modelId).Should().BeNull();
-            EmbeddingModelMetadata.IsEmbeddingModel(modelId).Should().BeFalse();
-            EmbeddingModelMetadata.GetDefaultDimensions(modelId).Should().Be(1536);
-        }
-
-        [Fact]
-        public void EmbeddingModelMetadata_RecommendedModels_ContainsCloudAndLocalOptions()
-        {
-            var recommended = EmbeddingModelMetadata.RecommendedModels;
-
-            recommended.Should().NotBeEmpty();
-            recommended.Should().Contain(m => m.ProviderType == "OpenAI" && m.ModelId == "text-embedding-3-small");
-            recommended.Should().Contain(m => m.ProviderType == "Ollama" && m.ModelId == "nomic-embed-text");
-            recommended.Should().Contain(m => m.ProviderType == "Ollama" && m.ModelId == "bge-m3");
+            EmbeddingModelMetadata.IsEmbeddingModel(modelId).Should().Be(expected);
         }
 
         [Fact]

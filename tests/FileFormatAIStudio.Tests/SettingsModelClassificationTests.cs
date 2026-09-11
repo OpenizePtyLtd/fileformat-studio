@@ -315,6 +315,112 @@ namespace FileFormatAIStudio.Tests
             viewModel.TestStatusMessage.Should().Contain("1 of 2 models verified");
             viewModel.TestStatusMessage.Should().Contain("Bad Model: Model not found");
         }
+
+        [Fact]
+        public async Task AddModelAsync_EmbeddingModel_AutoProbesDimensionsAndSavesModel()
+        {
+            using var context = new AppDbContext(_options);
+            var settingsService = new SettingsService(context);
+            var aiClientFactory = new FakeAiClientFactory { EmbeddingDimensionsToReturn = 1024 };
+
+            var provider = new ProviderConfigEntity
+            {
+                Name = "OpenRouter",
+                ProviderType = "OpenRouter",
+                EndpointUrl = "https://openrouter.ai/api/v1"
+            };
+            context.Providers.Add(provider);
+            await context.SaveChangesAsync();
+
+            var viewModel = new SettingsViewModel(settingsService, aiClientFactory);
+            await viewModel.LoadProvidersAsync();
+            viewModel.SelectedProvider = viewModel.Providers.First();
+
+            viewModel.NewModelId = "liquid/lfm-2.5-embedding-350m:free";
+            viewModel.NewModelDisplayName = "Liquid Embedding";
+            viewModel.NewModelTypeIndex = 1; // Embedding
+
+            await viewModel.AddModelCommand.ExecuteAsync(null);
+
+            var savedModel = await context.Models.FirstOrDefaultAsync(m => m.ModelId == "liquid/lfm-2.5-embedding-350m:free");
+            savedModel.Should().NotBeNull();
+            savedModel!.IsEmbeddingModel.Should().BeTrue();
+            savedModel.Dimensions.Should().Be(1024);
+            aiClientFactory.TestedModelIds.Should().Contain("liquid/lfm-2.5-embedding-350m:free");
+            viewModel.SaveStatusSeverity.Should().Be(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Success);
+        }
+
+        [Fact]
+        public async Task AddModelAsync_EmbeddingModel_WhenProbeFails_DoesNotAddModel()
+        {
+            using var context = new AppDbContext(_options);
+            var settingsService = new SettingsService(context);
+            var aiClientFactory = new FakeAiClientFactory
+            {
+                ValidateResultFunc = (m) => (false, "Endpoint unreachable")
+            };
+
+            var provider = new ProviderConfigEntity
+            {
+                Name = "OpenRouter",
+                ProviderType = "OpenRouter",
+                EndpointUrl = "https://openrouter.ai/api/v1"
+            };
+            context.Providers.Add(provider);
+            await context.SaveChangesAsync();
+
+            var viewModel = new SettingsViewModel(settingsService, aiClientFactory);
+            await viewModel.LoadProvidersAsync();
+            viewModel.SelectedProvider = viewModel.Providers.First();
+
+            viewModel.NewModelId = "broken-embed";
+            viewModel.NewModelDisplayName = "Broken Embed";
+            viewModel.NewModelTypeIndex = 1; // Embedding
+
+            await viewModel.AddModelCommand.ExecuteAsync(null);
+
+            var savedModel = await context.Models.FirstOrDefaultAsync(m => m.ModelId == "broken-embed");
+            savedModel.Should().BeNull();
+            viewModel.SelectedProviderModels.Should().NotContain(m => m.ModelId == "broken-embed");
+            viewModel.SaveStatusSeverity.Should().Be(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error);
+            viewModel.SaveStatusMessage.Should().Contain("Connection test failed");
+        }
+
+        [Fact]
+        public async Task AddModelAsync_ChatModel_WhenConnectionFails_DoesNotAddModel()
+        {
+            using var context = new AppDbContext(_options);
+            var settingsService = new SettingsService(context);
+            var aiClientFactory = new FakeAiClientFactory
+            {
+                ValidateResultFunc = (m) => (false, "Invalid API key")
+            };
+
+            var provider = new ProviderConfigEntity
+            {
+                Name = "OpenRouter",
+                ProviderType = "OpenRouter",
+                EndpointUrl = "https://openrouter.ai/api/v1"
+            };
+            context.Providers.Add(provider);
+            await context.SaveChangesAsync();
+
+            var viewModel = new SettingsViewModel(settingsService, aiClientFactory);
+            await viewModel.LoadProvidersAsync();
+            viewModel.SelectedProvider = viewModel.Providers.First();
+
+            viewModel.NewModelId = "broken-chat";
+            viewModel.NewModelDisplayName = "Broken Chat";
+            viewModel.NewModelTypeIndex = 0; // Chat
+
+            await viewModel.AddModelCommand.ExecuteAsync(null);
+
+            var savedModel = await context.Models.FirstOrDefaultAsync(m => m.ModelId == "broken-chat");
+            savedModel.Should().BeNull();
+            viewModel.SelectedProviderModels.Should().NotContain(m => m.ModelId == "broken-chat");
+            viewModel.SaveStatusSeverity.Should().Be(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error);
+            viewModel.SaveStatusMessage.Should().Contain("Connection test failed");
+        }
     }
 }
 

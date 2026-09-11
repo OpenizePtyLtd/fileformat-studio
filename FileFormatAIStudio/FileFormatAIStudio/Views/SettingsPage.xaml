@@ -184,8 +184,8 @@
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <StackPanel Grid.Column="0">
-                                                <TextBlock Text="{x:Bind DisplayName}" FontWeight="Medium" />
-                                                <TextBlock Text="{x:Bind ModelId}" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                <TextBlock Text="{x:Bind DisplayName}" FontWeight="Medium" IsTextSelectionEnabled="True" />
+                                                <TextBlock Text="{x:Bind ModelId}" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" IsTextSelectionEnabled="True" />
                                             </StackPanel>
 
                                             <Border Grid.Column="1"
@@ -195,7 +195,7 @@
                                                     CornerRadius="4"
                                                     Padding="8,2"
                                                     VerticalAlignment="Center">
-                                                <TextBlock Text="{x:Bind local:SettingsPage.FormatModelType(IsEmbeddingModel)}"
+                                                <TextBlock Text="{x:Bind local:SettingsPage.FormatModelBadge(IsEmbeddingModel, Dimensions)}"
                                                            FontSize="11"
                                                            FontWeight="SemiBold"
                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
@@ -210,32 +210,37 @@
                                 </ListView.ItemTemplate>
                             </ListView>
 
-                            <!-- Add Model Row -->
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="150" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0"
-                                         Header="Model ID (e.g. gpt-4o, nomic-embed-text)"
-                                         Text="{x:Bind ViewModel.NewModelId, Mode=TwoWay}" />
-                                <TextBox Grid.Column="1"
-                                         Header="Display Name"
-                                         Text="{x:Bind ViewModel.NewModelDisplayName, Mode=TwoWay}" />
-                                <ComboBox Grid.Column="2"
-                                          Header="Model Type"
-                                          HorizontalAlignment="Stretch"
-                                          SelectedIndex="{x:Bind ViewModel.NewModelTypeIndex, Mode=TwoWay}">
-                                    <ComboBoxItem Content="Chat (LLM)" />
-                                    <ComboBoxItem Content="Embedding" />
-                                </ComboBox>
-                                <Button Grid.Column="3"
-                                        Content="Add Model"
-                                        VerticalAlignment="Bottom"
-                                        Command="{x:Bind ViewModel.AddModelCommand}" />
-                            </Grid>
+                            <!-- Add Model Section -->
+                            <StackPanel Spacing="10">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="150" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Header="Model ID (e.g. gpt-4o, nomic-embed-text)"
+                                             Text="{x:Bind ViewModel.NewModelId, Mode=TwoWay}" />
+                                    <TextBox Grid.Column="1"
+                                             Header="Display Name"
+                                             Text="{x:Bind ViewModel.NewModelDisplayName, Mode=TwoWay}" />
+                                    <ComboBox Grid.Column="2"
+                                              Header="Model Type"
+                                              HorizontalAlignment="Stretch"
+                                              SelectedIndex="{x:Bind ViewModel.NewModelTypeIndex, Mode=TwoWay}">
+                                        <ComboBoxItem Content="Chat (LLM)" />
+                                        <ComboBoxItem Content="Embedding" />
+                                    </ComboBox>
+                                    <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                                        <Button Content="Add Model"
+                                                Command="{x:Bind ViewModel.AddModelCommand}"
+                                                IsEnabled="{x:Bind ViewModel.CanAddModel, Mode=OneWay}" />
+                                        <ProgressRing IsActive="{x:Bind ViewModel.IsAddingModel, Mode=OneWay}"
+                                                      Width="18" Height="18" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 

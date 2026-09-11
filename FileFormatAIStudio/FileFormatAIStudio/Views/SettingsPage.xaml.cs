@@ -51,7 +51,12 @@ namespace FileFormatAIStudio.Views
 
         public static Visibility ToVisibility(object? obj) => obj != null ? Visibility.Visible : Visibility.Collapsed;
         public static Visibility ToInvertedVisibility(object? obj) => obj == null ? Visibility.Visible : Visibility.Collapsed;
+        public static Visibility BoolToVisibility(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
         public static string FormatModelType(bool isEmbedding) => isEmbedding ? "Embedding" : "Chat (LLM)";
+        public static string FormatModelBadge(bool isEmbedding, int? dimensions) =>
+            isEmbedding
+                ? (dimensions.HasValue && dimensions.Value > 0 ? $"Embedding ({dimensions.Value}d)" : "Embedding")
+                : "Chat (LLM)";
 
         private void OnCloseSettingsClicked(object sender, RoutedEventArgs e)
         {

@@ -36,6 +36,7 @@
 | **TASK-15** | [#38](https://github.com/OpenizePtyLtd/fileformat-studio/issues/38) | 6. Knowledgebase UI | `feat(ui): Implement real-time indexing progress UI for Knowledgebase creation` | M2 | TASK-14 | ⏳ Pending |
 | **TASK-16** | [#39](https://github.com/OpenizePtyLtd/fileformat-studio/issues/39) | 7. Multi-KB Chat & Citations | `feat(chat): Add Multi-KB selector chips to ChatPage and ChatViewModel` | M3 | TASK-12, TASK-13 | ⏳ Pending |
 | **TASK-17** | [#40](https://github.com/OpenizePtyLtd/fileformat-studio/issues/40) | 7. Multi-KB Chat & Citations | `feat(rag): Implement Grounded RAG query pipeline and source citations UI` | M3 | TASK-11, TASK-16 | ⏳ Pending |
+| **TASK-18** | [#41](https://github.com/OpenizePtyLtd/fileformat-studio/issues/41) | 8. Settings & Model Management | `feat(settings): Auto-validate models on add with dynamic embedding dimension probe` | M2 | None | ✅ Completed |
 
 ---
 
