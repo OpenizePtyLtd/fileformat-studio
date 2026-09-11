@@ -274,9 +274,9 @@ namespace FileFormatAIStudio.Tests
                 return Task.CompletedTask;
             }
 
-            public Task<ChatMessageEntity> AddMessageAsync(Guid sessionId, string role, string content)
+            public Task<ChatMessageEntity> AddMessageAsync(Guid sessionId, string role, string content, string? citationJson = null)
             {
-                var msg = new ChatMessageEntity { SessionId = sessionId, Role = role, Content = content };
+                var msg = new ChatMessageEntity { SessionId = sessionId, Role = role, Content = content, CitationJson = citationJson };
                 var s = Sessions.FirstOrDefault(x => x.Id == sessionId);
                 s?.Messages.Add(msg);
                 return Task.FromResult(msg);
@@ -331,6 +331,16 @@ namespace FileFormatAIStudio.Tests
                 [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
             {
                 yield break;
+            }
+
+            public Task<GroundedRagResult> RetrieveGroundedContextAsync(
+                string userPrompt,
+                IReadOnlyList<KnowledgebaseEntity> attachedKnowledgebases,
+                int topK = 5,
+                float minSimilarity = 0.35f,
+                CancellationToken ct = default)
+            {
+                return Task.FromResult(new GroundedRagResult(Array.Empty<CitationReference>(), string.Empty));
             }
 #pragma warning restore CS1998
         }

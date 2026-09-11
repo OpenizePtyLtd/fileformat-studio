@@ -10,6 +10,7 @@ using FileFormatAIStudio.Data.Entities;
 using FileFormatAIStudio.Services.Chat;
 using FileFormatAIStudio.Services.Knowledgebase;
 using FileFormatAIStudio.Services.Settings;
+using System.Text.Json;
 using Microsoft.Extensions.AI;
 
 namespace FileFormatAIStudio.ViewModels
@@ -126,13 +127,20 @@ namespace FileFormatAIStudio.ViewModels
 
                 foreach (var msg in CurrentSession.Messages)
                 {
-                    Messages.Add(new ChatMessageItemViewModel
+                    var msgVm = new ChatMessageItemViewModel
                     {
                         Id = msg.Id,
                         Role = msg.Role,
                         Content = msg.Content,
                         Timestamp = msg.Timestamp
-                    });
+                    };
+
+                    if (!string.IsNullOrWhiteSpace(msg.CitationJson))
+                    {
+                        msgVm.LoadCitationsFromJson(msg.CitationJson);
+                    }
+
+                    Messages.Add(msgVm);
                 }
 
                 await RefreshKnowledgebasesAsync();
@@ -200,18 +208,51 @@ namespace FileFormatAIStudio.ViewModels
             Messages.Add(assistantMsgVm);
             MessageAdded?.Invoke();
 
-            // 3. Build History for Microsoft.Extensions.AI
+            // 3. Grounded RAG Retrieval (if attached KBs exist)
+            IReadOnlyList<CitationReference> citations = Array.Empty<CitationReference>();
+            string? groundedSystemPrompt = null;
+            _cts = new CancellationTokenSource();
+
+            if (AttachedKnowledgebases.Count > 0)
+            {
+                StatusText = "Retrieving context from attached knowledgebases...";
+                try
+                {
+                    var ragResult = await _chatExecutionService.RetrieveGroundedContextAsync(
+                        userPrompt,
+                        AttachedKnowledgebases.ToList(),
+                        ct: _cts.Token);
+
+                    citations = ragResult.Citations;
+                    groundedSystemPrompt = ragResult.GroundedSystemPrompt;
+
+                    if (citations.Count > 0)
+                    {
+                        assistantMsgVm.LoadCitations(citations);
+                    }
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    StatusText = $"Context retrieval notice: {ex.Message}";
+                }
+            }
+
+            // 4. Build History for Microsoft.Extensions.AI
             var history = new List<ChatMessage>();
+            if (!string.IsNullOrWhiteSpace(groundedSystemPrompt))
+            {
+                history.Add(new ChatMessage(ChatRole.System, groundedSystemPrompt));
+            }
+
             foreach (var m in Messages.Where(x => x != assistantMsgVm))
             {
                 var role = m.IsUser ? ChatRole.User : ChatRole.Assistant;
                 history.Add(new ChatMessage(role, m.Content));
             }
 
-            // 4. Stream Response
+            // 5. Stream Response
             IsGenerating = true;
             StatusText = $"Generating response using {SelectedModel.DisplayName}...";
-            _cts = new CancellationTokenSource();
 
             try
             {
@@ -245,10 +286,18 @@ namespace FileFormatAIStudio.ViewModels
                 _cts?.Dispose();
                 _cts = null;
 
-                // Save final assistant message to DB
+                // Save final assistant message to DB with CitationJson
                 if (!string.IsNullOrWhiteSpace(assistantMsgVm.Content))
                 {
-                    var assistantEntity = await _sessionService.AddMessageAsync(CurrentSession.Id, "Assistant", assistantMsgVm.Content);
+                    string? citationJson = citations.Count > 0
+                        ? JsonSerializer.Serialize(citations)
+                        : null;
+
+                    var assistantEntity = await _sessionService.AddMessageAsync(
+                        CurrentSession.Id,
+                        "Assistant",
+                        assistantMsgVm.Content,
+                        citationJson);
                     CurrentSession.Messages.Add(assistantEntity);
                 }
             }

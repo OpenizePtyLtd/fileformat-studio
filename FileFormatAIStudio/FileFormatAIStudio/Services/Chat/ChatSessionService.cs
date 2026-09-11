@@ -95,13 +95,14 @@ namespace FileFormatAIStudio.Services.Chat
             }
         }
 
-        public async Task<ChatMessageEntity> AddMessageAsync(Guid sessionId, string role, string content)
+        public async Task<ChatMessageEntity> AddMessageAsync(Guid sessionId, string role, string content, string? citationJson = null)
         {
             var message = new ChatMessageEntity
             {
                 SessionId = sessionId,
                 Role = role,
                 Content = content,
+                CitationJson = citationJson,
                 Timestamp = DateTime.UtcNow
             };
 

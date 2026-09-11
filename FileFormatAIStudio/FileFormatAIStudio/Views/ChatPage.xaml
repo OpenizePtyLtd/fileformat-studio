@@ -227,6 +227,100 @@
                                                    TextWrapping="Wrap"
                                                    IsTextSelectionEnabled="True" />
                                     </Border>
+
+                                    <!-- Source Citations Section -->
+                                    <StackPanel Visibility="{x:Bind CitationsVisibility, Mode=OneWay}"
+                                                Spacing="6"
+                                                Margin="0,4,0,2">
+                                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                            <FontIcon Glyph="&#xE81C;" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            <TextBlock Text="{x:Bind CitationsHeader, Mode=OneWay}"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </StackPanel>
+
+                                        <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                                      VerticalScrollBarVisibility="Disabled"
+                                                      HorizontalScrollMode="Enabled"
+                                                      VerticalScrollMode="Disabled">
+                                            <ItemsControl ItemsSource="{x:Bind Citations, Mode=OneWay}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal" Spacing="6" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="entities:CitationReference">
+                                                        <Button Padding="8,4"
+                                                                CornerRadius="8"
+                                                                Style="{ThemeResource SubtleButtonStyle}"
+                                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                BorderThickness="1"
+                                                                ToolTipService.ToolTip="View source reference snippet">
+                                                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                                <Border Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                                        CornerRadius="4"
+                                                                        Padding="4,1">
+                                                                    <TextBlock Text="{x:Bind DisplayIndex}"
+                                                                               FontSize="10"
+                                                                               FontWeight="Bold"
+                                                                               Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                                                                </Border>
+                                                                <TextBlock Text="{x:Bind DocumentName}"
+                                                                           FontSize="11"
+                                                                           FontWeight="SemiBold"
+                                                                           MaxWidth="160"
+                                                                           TextTrimming="CharacterEllipsis" />
+                                                                <TextBlock Text="{x:Bind PageOrSectionDisplay}"
+                                                                           FontSize="10"
+                                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                            </StackPanel>
+
+                                                            <Button.Flyout>
+                                                                <Flyout Placement="BottomEdgeAlignedLeft">
+                                                                    <StackPanel Width="380" Spacing="8">
+                                                                        <Grid ColumnSpacing="8">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="*" />
+                                                                                <ColumnDefinition Width="Auto" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <StackPanel Grid.Column="0" Spacing="2">
+                                                                                <TextBlock Text="{x:Bind DocumentName}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" />
+                                                                                <TextBlock Text="{x:Bind SourceHeaderInfo}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                                            </StackPanel>
+                                                                            <Border Grid.Column="1"
+                                                                                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                                                    CornerRadius="4"
+                                                                                    Padding="6,2"
+                                                                                    VerticalAlignment="Top">
+                                                                                <TextBlock Text="{x:Bind MatchScoreText}" FontSize="10" FontWeight="SemiBold" />
+                                                                            </Border>
+                                                                        </Grid>
+
+                                                                        <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
+                                                                            <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                                    BorderThickness="1"
+                                                                                    CornerRadius="6"
+                                                                                    Padding="10">
+                                                                                <TextBlock Text="{x:Bind Snippet}"
+                                                                                           FontSize="12"
+                                                                                           TextWrapping="Wrap"
+                                                                                           IsTextSelectionEnabled="True"
+                                                                                           LineHeight="18" />
+                                                                            </Border>
+                                                                        </ScrollViewer>
+                                                                    </StackPanel>
+                                                                </Flyout>
+                                                            </Button.Flyout>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </StackPanel>
+
                                     <TextBlock Text="{x:Bind TimeString, Mode=OneWay}"
                                                FontSize="10"
                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
