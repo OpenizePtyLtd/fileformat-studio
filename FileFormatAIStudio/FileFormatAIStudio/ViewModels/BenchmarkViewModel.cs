@@ -30,6 +30,42 @@ namespace FileFormatAIStudio.ViewModels
     }
 
     /// <summary>
+    /// Executive summary of the overall high-scoring library across all benchmarks.
+    /// </summary>
+    public class BenchmarkOverallChampionSummary
+    {
+        public string ChampionEngineName { get; set; } = string.Empty;
+        public string FormattedAvgScore { get; set; } = string.Empty;
+        public int TotalSessionsEvaluated { get; set; }
+        public int TotalDocumentsEvaluated { get; set; }
+        public string FormattedTotalChars { get; set; } = string.Empty;
+        public int CategoriesWonCount { get; set; }
+        public string WinRatePercentage { get; set; } = string.Empty;
+        public string HighlightBadge { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Summary of the high-scoring library and latest benchmark result for an individual category.
+    /// </summary>
+    public partial class BenchmarkCategoryWinnerSummary : ObservableObject
+    {
+        public DocumentCategory Category { get; set; }
+        public string DisplayName { get; set; } = string.Empty;
+        public string IconGlyph { get; set; } = string.Empty;
+        public string FormatsSummary { get; set; } = string.Empty;
+        public string WinningEngineName { get; set; } = string.Empty;
+        public string WinningScore { get; set; } = string.Empty;
+        public string WinningLatency { get; set; } = string.Empty;
+        public string FormattedTotalChars { get; set; } = string.Empty;
+        public string FormattedDate { get; set; } = string.Empty;
+        public bool HasBenchmark { get; set; }
+        public Guid? LatestSessionId { get; set; }
+
+        [ObservableProperty]
+        private bool _isSelected;
+    }
+
+    /// <summary>
     /// Represents a document selected for benchmarking.
     /// </summary>
     public partial class BenchmarkFileItemViewModel : ObservableObject
@@ -228,6 +264,27 @@ namespace FileFormatAIStudio.ViewModels
         [ObservableProperty]
         private InfoBarSeverity _statusSeverity = InfoBarSeverity.Informational;
 
+        [ObservableProperty]
+        private bool _isCreateBenchmarkMode;
+
+        public bool IsDashboardMode => !IsCreateBenchmarkMode;
+
+        [ObservableProperty]
+        private bool _hasAnyBenchmarkHistory;
+
+        public bool HasNoBenchmarkHistory => !HasAnyBenchmarkHistory;
+
+        [ObservableProperty]
+        private BenchmarkOverallChampionSummary? _overallChampion;
+
+        public bool HasOverallChampion => OverallChampion != null;
+
+        [ObservableProperty]
+        private ObservableCollection<BenchmarkCategoryWinnerSummary> _categoryWinners = new();
+
+        [ObservableProperty]
+        private BenchmarkCategoryWinnerSummary? _selectedCategoryWinner;
+
         public bool HasSelectedFiles => SelectedFiles.Count > 0;
 
         public bool CanRunBenchmark => HasSelectedFiles && !IsRunning;
@@ -248,6 +305,7 @@ namespace FileFormatAIStudio.ViewModels
             _exportService = exportService ?? new BenchmarkExportService();
 
             InitializeCategories();
+            InitializeEmptyCategoryWinners();
         }
 
         private void InitializeCategories()
@@ -262,6 +320,89 @@ namespace FileFormatAIStudio.ViewModels
             };
 
             SelectedCategory = Categories.FirstOrDefault();
+        }
+
+        private void InitializeEmptyCategoryWinners()
+        {
+            var categories = new[]
+            {
+                (DocumentCategory.Word, "Word Documents", "\uE8A5", ".docx, .doc, .rtf, .odt"),
+                (DocumentCategory.Excel, "Spreadsheets", "\uE80A", ".xlsx, .xls, .ods, .csv"),
+                (DocumentCategory.PowerPoint, "Presentations", "\uE8B7", ".pptx, .ppt, .odp"),
+                (DocumentCategory.Pdf, "PDF Documents", "\uEA90", ".pdf"),
+                (DocumentCategory.PlainText, "Plain & Structured Text", "\uE8C4", ".txt, .md, .json, .xml")
+            };
+
+            var list = categories.Select(c => new BenchmarkCategoryWinnerSummary
+            {
+                Category = c.Item1,
+                DisplayName = c.Item2,
+                IconGlyph = c.Item3,
+                FormatsSummary = c.Item4,
+                WinningEngineName = "No benchmarks yet",
+                WinningScore = "—",
+                WinningLatency = "—",
+                FormattedTotalChars = "—",
+                FormattedDate = "Not yet evaluated",
+                HasBenchmark = false,
+                LatestSessionId = null
+            }).ToList();
+
+            CategoryWinners = new ObservableCollection<BenchmarkCategoryWinnerSummary>(list);
+            SelectedCategoryWinner = CategoryWinners.FirstOrDefault();
+        }
+
+        partial void OnIsCreateBenchmarkModeChanged(bool value)
+        {
+            OnPropertyChanged(nameof(IsDashboardMode));
+        }
+
+        partial void OnHasAnyBenchmarkHistoryChanged(bool value)
+        {
+            OnPropertyChanged(nameof(HasNoBenchmarkHistory));
+        }
+
+        partial void OnOverallChampionChanged(BenchmarkOverallChampionSummary? value)
+        {
+            OnPropertyChanged(nameof(HasOverallChampion));
+        }
+
+        partial void OnSelectedCategoryWinnerChanged(BenchmarkCategoryWinnerSummary? value)
+        {
+            if (value == null) return;
+
+            foreach (var c in CategoryWinners)
+            {
+                c.IsSelected = (c == value);
+            }
+
+            if (value.HasBenchmark && value.LatestSessionId.HasValue)
+            {
+                _ = ViewSessionByIdAsync(value.LatestSessionId.Value);
+            }
+            else
+            {
+                ActiveResult = null;
+            }
+        }
+
+        [RelayCommand]
+        public void ShowCreateBenchmarkView()
+        {
+            IsCreateBenchmarkMode = true;
+        }
+
+        [RelayCommand]
+        public void CloseCreateBenchmarkView()
+        {
+            IsCreateBenchmarkMode = false;
+        }
+
+        [RelayCommand]
+        public void SelectCategoryWinner(BenchmarkCategoryWinnerSummary? summary)
+        {
+            if (summary == null) return;
+            SelectedCategoryWinner = summary;
         }
 
         partial void OnSelectedCategoryChanged(BenchmarkCategoryItem? value)
@@ -645,6 +786,178 @@ namespace FileFormatAIStudio.ViewModels
         }
 
         [RelayCommand]
+        public async Task LoadDashboardAsync()
+        {
+            try
+            {
+                var history = await _benchmarkRunner.GetBenchmarkHistoryAsync();
+                RecentSessions = new ObservableCollection<BenchmarkSessionEntity>(history);
+
+                if (history == null || history.Count == 0)
+                {
+                    HasAnyBenchmarkHistory = false;
+                    OverallChampion = null;
+                    InitializeEmptyCategoryWinners();
+                    ActiveResult = null;
+                    return;
+                }
+
+                HasAnyBenchmarkHistory = true;
+
+                var categoryList = new List<BenchmarkCategoryWinnerSummary>();
+                var categories = new[]
+                {
+                    (DocumentCategory.Word, "Word Documents", "\uE8A5", ".docx, .doc, .rtf, .odt"),
+                    (DocumentCategory.Excel, "Spreadsheets", "\uE80A", ".xlsx, .xls, .ods, .csv"),
+                    (DocumentCategory.PowerPoint, "Presentations", "\uE8B7", ".pptx, .ppt, .odp"),
+                    (DocumentCategory.Pdf, "PDF Documents", "\uEA90", ".pdf"),
+                    (DocumentCategory.PlainText, "Plain & Structured Text", "\uE8C4", ".txt, .md, .json, .xml")
+                };
+
+                var allRuns = new List<BenchmarkRunResultEntity>();
+                var categoryWins = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var (cat, displayName, icon, formats) in categories)
+                {
+                    var catSessions = history
+                        .Where(s => string.Equals(s.Category, cat.ToString(), StringComparison.OrdinalIgnoreCase) ||
+                                    s.Documents.Any(d => string.Equals(d.Category, cat.ToString(), StringComparison.OrdinalIgnoreCase)))
+                        .OrderByDescending(s => s.CreatedAt)
+                        .ToList();
+
+                    if (catSessions.Count > 0)
+                    {
+                        var latestSession = catSessions.First();
+                        var sessionResult = _exportService.MapEntityToResult(latestSession);
+
+                        var winningDocEngine = sessionResult.DocumentResults
+                            .Select(d => d.WinnerEngine)
+                            .Where(w => w != null)
+                            .GroupBy(w => w!.EngineDisplayName)
+                            .OrderByDescending(g => g.Count())
+                            .ThenByDescending(g => g.Average(x => x!.OverallScore))
+                            .FirstOrDefault();
+
+                        var winningRun = winningDocEngine?.FirstOrDefault();
+                        string winnerName = winningRun?.EngineDisplayName ?? sessionResult.OverallWinnerDisplayName ?? "N/A";
+                        double score = winningRun?.OverallScore ?? 0;
+                        string latencyStr = winningRun != null
+                            ? (winningRun.ElapsedTime.TotalMilliseconds < 1000
+                                ? $"{winningRun.ElapsedTime.TotalMilliseconds:N0} ms"
+                                : $"{winningRun.ElapsedTime.TotalSeconds:N2} s")
+                            : "—";
+
+                        long chars = winningRun?.CharacterCount ?? 0;
+
+                        categoryList.Add(new BenchmarkCategoryWinnerSummary
+                        {
+                            Category = cat,
+                            DisplayName = displayName,
+                            IconGlyph = icon,
+                            FormatsSummary = formats,
+                            WinningEngineName = winnerName,
+                            WinningScore = score > 0 ? $"{score:F1} / 100" : "—",
+                            WinningLatency = latencyStr,
+                            FormattedTotalChars = chars > 0 ? $"{chars:N0} chars" : "—",
+                            FormattedDate = latestSession.FormattedDate,
+                            HasBenchmark = true,
+                            LatestSessionId = latestSession.Id
+                        });
+
+                        if (!string.IsNullOrEmpty(winnerName) && winnerName != "N/A")
+                        {
+                            categoryWins[winnerName] = categoryWins.GetValueOrDefault(winnerName, 0) + 1;
+                        }
+                    }
+                    else
+                    {
+                        categoryList.Add(new BenchmarkCategoryWinnerSummary
+                        {
+                            Category = cat,
+                            DisplayName = displayName,
+                            IconGlyph = icon,
+                            FormatsSummary = formats,
+                            WinningEngineName = "No benchmarks yet",
+                            WinningScore = "—",
+                            WinningLatency = "—",
+                            FormattedTotalChars = "—",
+                            FormattedDate = "Not yet evaluated",
+                            HasBenchmark = false,
+                            LatestSessionId = null
+                        });
+                    }
+                }
+
+                CategoryWinners = new ObservableCollection<BenchmarkCategoryWinnerSummary>(categoryList);
+
+                // Compute Overall Champion across all history
+                foreach (var s in history)
+                {
+                    foreach (var d in s.Documents)
+                    {
+                        allRuns.AddRange(d.RunResults.Where(r => string.Equals(r.Status, "Success", StringComparison.OrdinalIgnoreCase)));
+                    }
+                }
+
+                if (allRuns.Count > 0)
+                {
+                    var engineStats = allRuns
+                        .GroupBy(r => r.EngineDisplayName)
+                        .Select(g => new
+                        {
+                            EngineName = g.Key,
+                            TotalRuns = g.Count(),
+                            WinsCount = g.Count(r => r.Rank == 1),
+                            AverageScore = g.Average(r => r.OverallScore),
+                            TotalCharacters = g.Sum(r => r.CharacterCount),
+                            CategoriesWon = categoryWins.GetValueOrDefault(g.Key, 0)
+                        })
+                        .OrderByDescending(s => s.WinsCount)
+                        .ThenByDescending(s => s.AverageScore)
+                        .ToList();
+
+                    var champion = engineStats.FirstOrDefault();
+                    if (champion != null)
+                    {
+                        double winRate = champion.TotalRuns > 0
+                            ? ((double)champion.WinsCount / champion.TotalRuns) * 100.0
+                            : 0;
+
+                        int totalDocs = history.Sum(s => s.Documents.Count);
+
+                        OverallChampion = new BenchmarkOverallChampionSummary
+                        {
+                            ChampionEngineName = champion.EngineName,
+                            FormattedAvgScore = $"{champion.AverageScore:F1} / 100",
+                            TotalSessionsEvaluated = history.Count,
+                            TotalDocumentsEvaluated = totalDocs,
+                            FormattedTotalChars = $"{champion.TotalCharacters:N0} chars",
+                            CategoriesWonCount = champion.CategoriesWon,
+                            WinRatePercentage = $"{winRate:F0}%",
+                            HighlightBadge = "👑 OVERALL HIGH SCORER"
+                        };
+                    }
+                }
+
+                // Default selection: select previously selected category if available, otherwise first with benchmark, otherwise first
+                var targetSelection = (SelectedCategoryWinner != null
+                    ? CategoryWinners.FirstOrDefault(c => c.Category == SelectedCategoryWinner.Category)
+                    : null)
+                    ?? CategoryWinners.FirstOrDefault(c => c.HasBenchmark)
+                    ?? CategoryWinners.FirstOrDefault();
+
+                if (targetSelection != null)
+                {
+                    SelectedCategoryWinner = targetSelection;
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Error loading benchmark dashboard: {ex.Message}", InfoBarSeverity.Error);
+            }
+        }
+
+        [RelayCommand]
         public async Task RunBenchmarkAsync()
         {
             if (!HasSelectedFiles || IsRunning) return;
@@ -676,7 +989,17 @@ namespace FileFormatAIStudio.ViewModels
                 OnPropertyChanged(nameof(HasLatestResult));
 
                 ShowStatus($"Benchmark completed! Winner: {result.OverallWinnerDisplayName ?? "N/A"}", InfoBarSeverity.Success);
-                await LoadHistoryAsync();
+                IsCreateBenchmarkMode = false;
+                await LoadDashboardAsync();
+
+                if (SelectedCategory != null)
+                {
+                    var matching = CategoryWinners.FirstOrDefault(c => c.Category == SelectedCategory.Category);
+                    if (matching != null)
+                    {
+                        SelectedCategoryWinner = matching;
+                    }
+                }
             }
             catch (OperationCanceledException)
             {
@@ -750,6 +1073,7 @@ namespace FileFormatAIStudio.ViewModels
                     ActiveResult = null;
                 }
                 ShowStatus("Benchmark session deleted.", InfoBarSeverity.Informational);
+                await LoadDashboardAsync();
             }
             catch (Exception ex)
             {
