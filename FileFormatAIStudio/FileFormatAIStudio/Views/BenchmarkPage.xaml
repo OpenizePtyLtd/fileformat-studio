@@ -50,85 +50,84 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!-- Category Cards Row -->
-                <ListView Grid.Row="0"
-                          ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
-                          SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
-                          SelectionMode="Single"
-                          HorizontalAlignment="Stretch"
-                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                          ScrollViewer.HorizontalScrollMode="Enabled"
-                          ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                          ScrollViewer.VerticalScrollMode="Disabled">
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="Padding" Value="0" />
-                            <Setter Property="Margin" Value="0,0,8,0" />
-                            <Setter Property="MinWidth" Value="0" />
-                            <Setter Property="MinHeight" Value="0" />
-                        </Style>
-                    </ListView.ItemContainerStyle>
-                    <ListView.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ListView.ItemsPanel>
-                    <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="vm:BenchmarkCategoryItem">
-                            <Border BorderThickness="1"
-                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                    CornerRadius="8"
-                                    Padding="12,10"
-                                    Width="158"
-                                    ToolTipService.ToolTip="{x:Bind FormatsSummary}">
-                                <StackPanel Spacing="3">
-                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                        <FontIcon Glyph="{x:Bind IconGlyph}" FontSize="15" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
-                                        <TextBlock Text="{x:Bind DisplayName}"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="12"
-                                                   TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
-                                    <TextBlock Text="{x:Bind FormatsSummary}"
-                                               FontSize="10.5"
-                                               Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                               TextTrimming="CharacterEllipsis" />
+                <!-- Fluent Segmented / Pill Strip -->
+                <Border Grid.Row="0"
+                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="4"
+                        HorizontalAlignment="Left">
+                    <ListView ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
+                              SelectedItem="{x:Bind ViewModel.SelectedCategory, Mode=TwoWay}"
+                              SelectionMode="Single"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              Padding="0"
+                              Margin="0"
+                              ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                              ScrollViewer.HorizontalScrollMode="Enabled"
+                              ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                              ScrollViewer.VerticalScrollMode="Disabled">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="14,8" />
+                                <Setter Property="Margin" Value="2,0" />
+                                <Setter Property="MinWidth" Value="0" />
+                                <Setter Property="MinHeight" Value="36" />
+                                <Setter Property="CornerRadius" Value="7" />
+                                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                <Setter Property="VerticalContentAlignment" Value="Center" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="4" />
+                            </ItemsPanelTemplate>
+                        </ListView.ItemsPanel>
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:BenchmarkCategoryItem">
+                                <StackPanel Orientation="Horizontal"
+                                            Spacing="8"
+                                            VerticalAlignment="Center"
+                                            ToolTipService.ToolTip="{x:Bind FormatsSummary}">
+                                    <FontIcon Glyph="{x:Bind IconGlyph}"
+                                              FontSize="15"
+                                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                              VerticalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind DisplayName}"
+                                               FontWeight="SemiBold"
+                                               FontSize="13"
+                                               VerticalAlignment="Center" />
                                 </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Border>
 
                 <!-- Supported Formats Info -->
-                <ScrollViewer Grid.Row="1"
-                              HorizontalScrollBarVisibility="Auto"
-                              HorizontalScrollMode="Enabled"
-                              VerticalScrollBarVisibility="Disabled"
-                              VerticalScrollMode="Disabled">
-                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <TextBlock Text="Supported Category Formats:"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                        <ItemsControl ItemsSource="{x:Bind ViewModel.AvailableFormats, Mode=OneWay}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" Spacing="6" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="bench:DocumentFormatDescriptor">
-                                    <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                            CornerRadius="4"
-                                            Padding="6,2">
-                                        <TextBlock Text="{x:Bind Extension}" FontSize="11" FontWeight="Medium" />
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </ScrollViewer>
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="Supported Formats:"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.AvailableFormats, Mode=OneWay}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="6" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="bench:DocumentFormatDescriptor">
+                                <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                        CornerRadius="4"
+                                        Padding="6,2">
+                                    <TextBlock Text="{x:Bind Extension}" FontSize="11" FontWeight="Medium" />
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
             </Grid>
 
             <!-- 4. Document Upload & Drag-and-Drop Card -->
@@ -356,7 +355,7 @@
                 </Border>
 
                 <!-- Competing Engine Scorecards -->
-                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                <ScrollViewer HorizontalScrollBarVisibility="Hidden"
                               HorizontalScrollMode="Enabled"
                               VerticalScrollBarVisibility="Disabled"
                               VerticalScrollMode="Disabled">
