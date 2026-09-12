@@ -26,7 +26,7 @@ namespace FileFormatAIStudio.Views
 
         private async void OnPageLoaded(object sender, RoutedEventArgs e)
         {
-            await ViewModel.LoadHistoryCommand.ExecuteAsync(null);
+            await ViewModel.LoadDashboardAsync();
         }
 
         private void OnDragOver(object sender, DragEventArgs e)

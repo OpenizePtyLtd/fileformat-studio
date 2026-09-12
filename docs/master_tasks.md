@@ -47,6 +47,7 @@
 | **TASK-25** | [#51](https://github.com/OpenizePtyLtd/fileformat-studio/issues/51) | 9. Benchmark & Comparison | `feat(ui): Implement Benchmark Results Comparison Matrix and Winner Scorecard` | M4 | TASK-22, TASK-23, TASK-24 | ✅ Completed |
 | **TASK-26** | [#52](https://github.com/OpenizePtyLtd/fileformat-studio/issues/52) | 9. Benchmark & Comparison | `feat(ui): Implement Side-by-Side Extracted Text Comparison & Diff Inspector Dialog` | M4 | TASK-22, TASK-25 | ✅ Completed |
 | **TASK-27** | [#53](https://github.com/OpenizePtyLtd/fileformat-studio/issues/53) | 9. Benchmark & Comparison | `test(benchmark): Add comprehensive unit and integration tests for BenchmarkRunner and Metrics` | M4 | TASK-22, TASK-23 | ✅ Completed |
+| **TASK-28** | [#65](https://github.com/OpenizePtyLtd/fileformat-studio/issues/65) | 9. Benchmark & Comparison | `feat(ui): implement Benchmark Dashboard with Overall Champion & Category-Wise Winners` | M4 | TASK-24, TASK-25 | ✅ Completed |
 
 ---
 
