@@ -5,6 +5,7 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/Solution Items/">
+    <File Path=".env" />
     <File Path="GEMINI.md" />
     <File Path="readme.md" />
     <File Path="LICENSE" />

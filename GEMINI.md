@@ -1,17 +1,21 @@
 # Project Guidelines & Agent Context: FileFormatAIStudio
 
-## GitHub & Project Management
+## Repository & Issue Management
 - **Repository**: `OpenizePtyLtd/fileformat-studio`
-- **GitHub CLI**: `gh` is installed and available system-wide on `PATH` across all directories (fallback path: `"C:\Program Files\GitHub CLI\gh.exe"` if a running daemon has an unrefreshed environment).
-- **Issue Tracking Conventions**:
-  - Keep Epic/Feature issues open as the parent tracking issue until all subtasks are finished.
-  - Whenever creating any GitHub issue, always assign it to `@me` (`--assignee "@me"`).
-  - Granular tasks should follow conventional commits:
-    - `feat(security): ...`
-    - `feat(data): ...`
-    - `feat(ui): ...`
-    - `fix(...): ...`
-  - Reference related issues in commits and PRs (e.g. `Resolves #10`, `Part of #10`).
+- **Issue Tracking**: Managed in company **Redmine instance** (switched from GitHub Issues; historical tasks 1-65 remain mapped in `docs/master_tasks.md`).
+- **Redmine Configuration**:
+  - Connection credentials (`REDMINE_URL`, `REDMINE_API_KEY`, `REDMINE_PROJECT_ID`, `REDMINE_ASSIGN_TO_ID`, `REDMINE_USER`, `REDMINE_CATEGORY_ID`) must always be read dynamically from the untracked `.env` file in the repository root.
+  - Never hardcode or commit Redmine URLs or API keys to the repository.
+  - When creating tasks/issues in Redmine via API:
+    - Assign them to `REDMINE_ASSIGN_TO_ID` (or `23`).
+    - Set `category_id` to `REDMINE_CATEGORY_ID` (or `261`).
+    - **Never prefix** the subject with `[fileformat-studio]` or `[TASK-XX]`. Use clean titles directly (e.g. `feat(...): ...`).
+- **Issue & Commit Conventions**:
+  - Granular tasks should follow conventional commits referencing Redmine issues:
+    - `feat(...): ... (refs #XXXXX)`
+    - `fix(...): ... (fixes #XXXXX)`
+    - `docs(...): ...`
+  - Reference related issues in PRs and commit logs.
 
 ## Architecture & Technology Stack
 - **Framework**: WinUI 3 / Windows App SDK on .NET 10 (`net10.0-windows10.0.19041.0`).
