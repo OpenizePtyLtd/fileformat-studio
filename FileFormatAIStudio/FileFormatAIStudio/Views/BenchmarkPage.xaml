@@ -301,7 +301,7 @@
 
                 <!-- Winner Trophy Scorecard Banner -->
                 <Border BorderThickness="1"
-                        BorderBrush="{ThemeResource AccentStrokeColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         Background="{ThemeResource AccentFillColorTertiaryBrush}"
                         CornerRadius="10"
                         Padding="20,16">
@@ -318,7 +318,7 @@
                                 CornerRadius="26"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center">
-                            <FontIcon Glyph="&#xE735;" FontSize="26" Foreground="White" />
+                            <FontIcon Glyph="&#xE735;" FontSize="26" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
                         </Border>
 
                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
