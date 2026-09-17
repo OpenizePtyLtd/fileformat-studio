@@ -57,6 +57,7 @@ namespace FileFormatAIStudio.Tests
 
         private class MockParser : IDocumentParser
         {
+            public FileFormatAIStudio.Services.Benchmarking.DocumentCategory Category { get; init; } = FileFormatAIStudio.Services.Benchmarking.DocumentCategory.Word;
             public string EngineId { get; init; } = string.Empty;
             public string DisplayName { get; init; } = string.Empty;
             public int Priority { get; init; } = 50;

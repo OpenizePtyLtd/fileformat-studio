@@ -37,6 +37,8 @@ namespace FileFormatAIStudio.Services.Parsing
             ".py"
         };
 
+        public FileFormatAIStudio.Services.Benchmarking.DocumentCategory Category => FileFormatAIStudio.Services.Benchmarking.DocumentCategory.PlainText;
+
         public string EngineId => ParserEngineId;
 
         public string DisplayName => "Plain Text / Source Files";

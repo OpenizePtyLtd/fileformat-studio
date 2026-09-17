@@ -16,6 +16,7 @@
 | **M2: Knowledgebase Management & Ingestion UI** | Service orchestration, multi-file browsing, Knowledgebase manager and creation wizard UI with real-time indexing progress. | Full WinUI 3 Knowledgebase management workflow. |
 | **M3: Multi-KB Chat Attachment & Grounded RAG** | Multi-knowledgebase attachment to chat sessions, grounded similarity retrieval, prompt augmentation, and source citations. | End-to-end multi-turn RAG chat with document citations. |
 | **M4: Text Extraction Benchmark & Comparison Suite** | Multi-library extraction benchmark grouped by document categories (Word, Excel, PowerPoint, PDF, Text), multi-metric scoring (character volume, latency, memory, cleanliness), and side-by-side comparison UI. | Full in-app benchmark runner, scorecard comparison matrix, and side-by-side text diff inspector. |
+| **M5: Format-Centric Parser Architecture & Modular Engine Decoupling** | Decouple monolithic parser suites into granular, format-centric engines (Word, Excel, PowerPoint, PDF, PlainText) with independent competitors, legacy fallback aliases, and pluggable runtime support. | Clean format-first parser architecture with granular scorecard ranking and seamless extensibility for future libraries. |
 
 ---
 
@@ -74,6 +75,13 @@
 | **TASK-52** | #134082 | 9. Benchmark & Comparison | `feat(ui): Implement Side-by-Side Extracted Text Comparison & Diff Inspector Dialog` | M4 | TASK-48, TASK-51 | ✅ Completed |
 | **TASK-53** | #134083 | 9. Benchmark & Comparison | `test(benchmark): Add comprehensive unit and integration tests for BenchmarkRunner and Metrics` | M4 | TASK-48, TASK-49 | ✅ Completed |
 | **TASK-65** | #134084 | 9. Benchmark & Comparison | `feat(ui): implement Benchmark Dashboard with Overall Champion & Category-Wise Winners` | M4 | TASK-50, TASK-51 | ✅ Completed |
+| **TASK-66** | #134357 | 10. Format-Centric Parser Architecture | `refactor(parser): enrich IDocumentParser with DocumentCategory and update factory for category queries and legacy alias resolution` | M5 | TASK-29 | ✅ Completed |
+| **TASK-67** | #134359 | 10. Format-Centric Parser Architecture | `feat(parser): implement granular AsposeWordsParser and OpenXmlWordParser engines for Word category` | M5 | TASK-66 | ✅ Completed |
+| **TASK-68** | #134360 | 10. Format-Centric Parser Architecture | `feat(parser): implement granular AsposePdfParser and PdfPigParser engines for PDF category` | M5 | TASK-66 | ✅ Completed |
+| **TASK-69** | #134361 | 10. Format-Centric Parser Architecture | `feat(parser): implement granular AsposeCellsParser, ExcelDataReaderParser, and CsvHelperParser engines for Excel category` | M5 | TASK-66 | ✅ Completed |
+| **TASK-70** | #134362 | 10. Format-Centric Parser Architecture | `feat(parser): implement granular AsposeSlidesParser engine for PowerPoint category` | M5 | TASK-66 | ✅ Completed |
+| **TASK-71** | #134363 | 10. Format-Centric Parser Architecture | `refactor(benchmark): register granular category parsers in DI and update Benchmark UI scorecards` | M5 | TASK-67, TASK-68, TASK-69, TASK-70 | ✅ Completed |
+| **TASK-72** | #134364 | 10. Format-Centric Parser Architecture | `test(parser): add unit tests for granular category parsers, factory category queries, and legacy alias fallbacks` | M5 | TASK-71 | ✅ Completed |
 
 ---
 
@@ -191,6 +199,29 @@ flowchart TD
     T49 --> T53
     T50 --> T65
     T51 --> T65
+    end
+
+    subgraph ModularParsersM5 ["Phase 10: Format-Centric Parser Architecture (M5)"]
+        T66["TASK-66 (#134357)<br/>IDocumentParser Category &amp; Alias"]
+        T67["TASK-67 (#134359)<br/>Word: Aspose.Words &amp; OpenXML"]
+        T68["TASK-68 (#134360)<br/>PDF: Aspose.PDF &amp; PdfPig"]
+        T69["TASK-69 (#134361)<br/>Excel: Cells, ExcelDataRdr, CsvHelper"]
+        T70["TASK-70 (#134362)<br/>PowerPoint: Aspose.Slides"]
+        T71["TASK-71 (#134363)<br/>DI &amp; Benchmark UI Scorecards"]
+        T72["TASK-72 (#134364)<br/>Comprehensive Tests &amp; Verification"]
+    end
+
+    %% M5 Dependencies
+    T29 --> T66
+    T66 --> T67
+    T66 --> T68
+    T66 --> T69
+    T66 --> T70
+    T67 --> T71
+    T68 --> T71
+    T69 --> T71
+    T70 --> T71
+    T71 --> T72
 ```
 
 ---

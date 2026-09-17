@@ -13,6 +13,7 @@ namespace FileFormatAIStudio.Tests
     {
         private class MockParser : IDocumentParser
         {
+            public FileFormatAIStudio.Services.Benchmarking.DocumentCategory Category { get; init; } = FileFormatAIStudio.Services.Benchmarking.DocumentCategory.Word;
             public string EngineId { get; init; } = string.Empty;
             public string DisplayName { get; init; } = string.Empty;
             public int Priority { get; init; } = 50;
@@ -310,6 +311,79 @@ namespace FileFormatAIStudio.Tests
         {
             var result = DocumentParserFactory.NormalizeExtension(input);
             result.Should().Be(expected);
+        }
+
+        [Fact]
+        public void GetParsersByCategory_ReturnsOnlyMatchingParsers()
+        {
+            var wordParser = new MockParser
+            {
+                EngineId = "aspose-words",
+                Category = FileFormatAIStudio.Services.Benchmarking.DocumentCategory.Word
+            };
+            var pdfParser = new MockParser
+            {
+                EngineId = "pdfpig",
+                Category = FileFormatAIStudio.Services.Benchmarking.DocumentCategory.Pdf
+            };
+
+            var factory = new DocumentParserFactory(new[] { wordParser, pdfParser });
+
+            var wordParsers = factory.GetParsersByCategory(FileFormatAIStudio.Services.Benchmarking.DocumentCategory.Word);
+            wordParsers.Should().ContainSingle().Which.EngineId.Should().Be("aspose-words");
+
+            var excelParsers = factory.GetParsersByCategory(FileFormatAIStudio.Services.Benchmarking.DocumentCategory.Excel);
+            excelParsers.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void ResolveParser_WithLegacyAliasAspose_ResolvesToFormatSpecificEngine()
+        {
+            var wordParser = new MockParser
+            {
+                EngineId = "aspose-words",
+                SupportedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".docx" }
+            };
+            var pdfParser = new MockParser
+            {
+                EngineId = "aspose-pdf",
+                SupportedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".pdf" }
+            };
+
+            var factory = new DocumentParserFactory(new[] { wordParser, pdfParser });
+
+            var resolvedDocx = factory.ResolveParser("document.docx", engineId: "aspose");
+            resolvedDocx.Should().NotBeNull();
+            resolvedDocx!.EngineId.Should().Be("aspose-words");
+
+            var resolvedPdf = factory.ResolveParser("document.pdf", engineId: "aspose");
+            resolvedPdf.Should().NotBeNull();
+            resolvedPdf!.EngineId.Should().Be("aspose-pdf");
+        }
+
+        [Fact]
+        public void ResolveParser_WithLegacyAliasDotNetOss_ResolvesToFormatSpecificEngine()
+        {
+            var openXml = new MockParser
+            {
+                EngineId = "openxml-words",
+                SupportedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".docx" }
+            };
+            var pdfPig = new MockParser
+            {
+                EngineId = "pdfpig",
+                SupportedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".pdf" }
+            };
+
+            var factory = new DocumentParserFactory(new[] { openXml, pdfPig });
+
+            var resolvedDocx = factory.ResolveParser("document.docx", engineId: "dotnet-oss");
+            resolvedDocx.Should().NotBeNull();
+            resolvedDocx!.EngineId.Should().Be("openxml-words");
+
+            var resolvedPdf = factory.ResolveParser("document.pdf", engineId: "dotnet-oss");
+            resolvedPdf.Should().NotBeNull();
+            resolvedPdf!.EngineId.Should().Be("pdfpig");
         }
     }
 }

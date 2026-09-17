@@ -41,11 +41,28 @@ namespace FileFormatAIStudio
             services.AddScoped<IChatSessionService, ChatSessionService>();
             services.AddScoped<IChatExecutionService, ChatExecutionService>();
 
-            // Document Parsing & Chunking
+            // Document Parsing - Granular Category Engines
             services.AddSingleton<IAsposeLicenseService, AsposeLicenseService>();
-            services.AddSingleton<IDocumentParser, AsposeDocumentParser>();
-            services.AddSingleton<IDocumentParser, DotNetOssDocumentParser>();
+
+            // Word Category
+            services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Word.AsposeWordsParser>();
+            services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Word.OpenXmlWordParser>();
+
+            // PDF Category
+            services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Pdf.AsposePdfParser>();
+            services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Pdf.PdfPigParser>();
+
+            // Excel Category
+            services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Excel.AsposeCellsParser>();
+            services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Excel.ExcelDataReaderParser>();
+            services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Excel.CsvHelperParser>();
+
+            // PowerPoint Category
+            services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.PowerPoint.AsposeSlidesParser>();
+
+            // PlainText Category
             services.AddSingleton<IDocumentParser, PlainTextParser>();
+
             services.AddSingleton<IDocumentParserFactory, DocumentParserFactory>();
             services.AddSingleton<ITextChunker, TextChunker>();
             services.AddSingleton<IDocumentCategoryRegistry, DocumentCategoryRegistry>();

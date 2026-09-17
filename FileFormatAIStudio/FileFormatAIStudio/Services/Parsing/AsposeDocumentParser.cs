@@ -53,6 +53,8 @@ namespace FileFormatAIStudio.Services.Parsing
             _licenseService = licenseService;
         }
 
+        public FileFormatAIStudio.Services.Benchmarking.DocumentCategory Category => FileFormatAIStudio.Services.Benchmarking.DocumentCategory.Word;
+
         public string EngineId => ParserEngineId;
 
         public string DisplayName => "Aspose Document Engine (.NET)";

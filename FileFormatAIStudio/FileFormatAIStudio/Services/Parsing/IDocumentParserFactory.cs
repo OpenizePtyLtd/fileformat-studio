@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+using FileFormatAIStudio.Services.Benchmarking;
+
 namespace FileFormatAIStudio.Services.Parsing
 {
     /// <summary>
@@ -13,6 +15,11 @@ namespace FileFormatAIStudio.Services.Parsing
         /// Gets all registered document parsers.
         /// </summary>
         IReadOnlyList<IDocumentParser> GetAllParsers();
+
+        /// <summary>
+        /// Gets all registered document parsers belonging to a specific document category.
+        /// </summary>
+        IReadOnlyList<IDocumentParser> GetParsersByCategory(DocumentCategory category);
 
         /// <summary>
         /// Gets a specific parser by its unique EngineId (case-insensitive), or null if not found.

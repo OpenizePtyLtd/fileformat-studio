@@ -63,6 +63,8 @@ namespace FileFormatAIStudio.Services.Parsing
             AllSupportedExtensions.UnionWith(PlainTextExtensions);
         }
 
+        public FileFormatAIStudio.Services.Benchmarking.DocumentCategory Category => FileFormatAIStudio.Services.Benchmarking.DocumentCategory.Word;
+
         public string EngineId => ParserEngineId;
 
         public string DisplayName => "Open-Source .NET Parsers (OpenXML, PdfPig, ExcelDataReader)";

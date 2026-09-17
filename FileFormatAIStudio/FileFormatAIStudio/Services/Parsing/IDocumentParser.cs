@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+using FileFormatAIStudio.Services.Benchmarking;
+
 namespace FileFormatAIStudio.Services.Parsing
 {
     /// <summary>
@@ -11,7 +13,12 @@ namespace FileFormatAIStudio.Services.Parsing
     public interface IDocumentParser
     {
         /// <summary>
-        /// Unique identifier for the parser engine (e.g. "aspose", "officeparser", "dotnet-oss", "plaintext").
+        /// Primary document category this parser engine handles (Word, Excel, PowerPoint, Pdf, PlainText).
+        /// </summary>
+        DocumentCategory Category { get; }
+
+        /// <summary>
+        /// Unique identifier for the parser engine (e.g. "aspose-words", "openxml-words", "pdfpig").
         /// </summary>
         string EngineId { get; }
 

@@ -25,13 +25,41 @@ namespace FileFormatAIStudio.Services.Parsing
             return _parsers.AsReadOnly();
         }
 
+        public IReadOnlyList<IDocumentParser> GetParsersByCategory(FileFormatAIStudio.Services.Benchmarking.DocumentCategory category)
+        {
+            return _parsers
+                .Where(p => p.Category == category)
+                .ToList()
+                .AsReadOnly();
+        }
+
         public IDocumentParser? GetParser(string engineId)
         {
             if (string.IsNullOrWhiteSpace(engineId))
                 return null;
 
-            return _parsers.FirstOrDefault(p =>
+            // Direct match
+            var direct = _parsers.FirstOrDefault(p =>
                 string.Equals(p.EngineId, engineId, StringComparison.OrdinalIgnoreCase));
+            if (direct != null)
+                return direct;
+
+            // Legacy alias fallback: "aspose" -> first aspose- engine
+            if (string.Equals(engineId, "aspose", StringComparison.OrdinalIgnoreCase))
+            {
+                return _parsers.FirstOrDefault(p =>
+                    p.EngineId.StartsWith("aspose", StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Legacy alias fallback: "dotnet-oss" -> first open-source engine
+            if (string.Equals(engineId, "dotnet-oss", StringComparison.OrdinalIgnoreCase))
+            {
+                return _parsers.FirstOrDefault(p =>
+                    string.Equals(p.EngineId, "dotnet-oss", StringComparison.OrdinalIgnoreCase) ||
+                    p.EngineId is "openxml-words" or "pdfpig" or "exceldatareader" or "csvhelper");
+            }
+
+            return null;
         }
 
         public IDocumentParser? ResolveParser(string filePathOrExtension, string? engineId = null)
@@ -40,15 +68,41 @@ namespace FileFormatAIStudio.Services.Parsing
             if (string.IsNullOrEmpty(extension))
                 return null;
 
-            // If a specific engine was requested, resolve that exact engine
+            // If a specific engine was requested, resolve that exact engine or legacy alias
             if (!string.IsNullOrWhiteSpace(engineId))
             {
-                var specificParser = GetParser(engineId);
-                if (specificParser != null &&
-                    specificParser.IsAvailable &&
-                    specificParser.SupportedExtensions.Contains(extension))
-                {
+                // Check direct engine match
+                var specificParser = _parsers.FirstOrDefault(p =>
+                    string.Equals(p.EngineId, engineId, StringComparison.OrdinalIgnoreCase) &&
+                    p.IsAvailable &&
+                    p.SupportedExtensions.Contains(extension));
+
+                if (specificParser != null)
                     return specificParser;
+
+                // Check legacy alias for "aspose"
+                if (string.Equals(engineId, "aspose", StringComparison.OrdinalIgnoreCase))
+                {
+                    var asposeMatch = _parsers.FirstOrDefault(p =>
+                        p.IsAvailable &&
+                        p.SupportedExtensions.Contains(extension) &&
+                        p.EngineId.StartsWith("aspose", StringComparison.OrdinalIgnoreCase));
+
+                    if (asposeMatch != null)
+                        return asposeMatch;
+                }
+
+                // Check legacy alias for "dotnet-oss"
+                if (string.Equals(engineId, "dotnet-oss", StringComparison.OrdinalIgnoreCase))
+                {
+                    var ossMatch = _parsers.FirstOrDefault(p =>
+                        p.IsAvailable &&
+                        p.SupportedExtensions.Contains(extension) &&
+                        (string.Equals(p.EngineId, "dotnet-oss", StringComparison.OrdinalIgnoreCase) ||
+                         p.EngineId is "openxml-words" or "pdfpig" or "exceldatareader" or "csvhelper"));
+
+                    if (ossMatch != null)
+                        return ossMatch;
                 }
 
                 return null;
