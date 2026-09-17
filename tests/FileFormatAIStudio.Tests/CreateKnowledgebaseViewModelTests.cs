@@ -46,7 +46,6 @@ namespace FileFormatAIStudio.Tests
             _viewModel.SelectedEmbeddingModel.Should().NotBeNull();
             _viewModel.SelectedEmbeddingModel!.ModelId.Should().Be("nomic-embed-text");
             _viewModel.SelectedEmbeddingModel.Dimensions.Should().Be(768);
-            _viewModel.SelectedParserEngine.EngineId.Should().Be("Auto");
             _viewModel.HasProviderWarning.Should().BeFalse();
         }
 
@@ -170,7 +169,6 @@ namespace FileFormatAIStudio.Tests
         {
             _viewModel.Name = "Finance Corpus";
             _viewModel.Description = "Financial quarterly reports";
-            _viewModel.SelectedParserEngine = _viewModel.AvailableParserEngines.First(p => p.EngineId == "aspose");
             _viewModel.SelectedProvider = new ProviderConfigEntity { Name = "OpenAI" };
             _viewModel.SelectedEmbeddingModel = new EmbeddingModelOption("text-embedding-3-small", "OpenAI Small", 1536);
 
@@ -182,7 +180,7 @@ namespace FileFormatAIStudio.Tests
 
             request.Name.Should().Be("Finance Corpus");
             request.Description.Should().Be("Financial quarterly reports");
-            request.ParserEngine.Should().Be("aspose");
+            request.ParserEngine.Should().Be("Auto");
             request.EmbeddingProvider.Should().Be("OpenAI");
             request.EmbeddingModel.Should().Be("text-embedding-3-small");
             request.VectorDimensions.Should().Be(1536);

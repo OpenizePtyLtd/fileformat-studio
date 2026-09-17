@@ -17,6 +17,7 @@
 | **M3: Multi-KB Chat Attachment & Grounded RAG** | Multi-knowledgebase attachment to chat sessions, grounded similarity retrieval, prompt augmentation, and source citations. | End-to-end multi-turn RAG chat with document citations. |
 | **M4: Text Extraction Benchmark & Comparison Suite** | Multi-library extraction benchmark grouped by document categories (Word, Excel, PowerPoint, PDF, Text), multi-metric scoring (character volume, latency, memory, cleanliness), and side-by-side comparison UI. | Full in-app benchmark runner, scorecard comparison matrix, and side-by-side text diff inspector. |
 | **M5: Format-Centric Parser Architecture & Modular Engine Decoupling** | Decouple monolithic parser suites into granular, format-centric engines (Word, Excel, PowerPoint, PDF, PlainText) with independent competitors, legacy fallback aliases, and pluggable runtime support. | Clean format-first parser architecture with granular scorecard ranking and seamless extensibility for future libraries. |
+| **M6: Document Engine Configuration & Per-Category Preferences** | Dedicated Document Engine Configuration in Settings with per-category preference selection (Word, Excel, PowerPoint, PDF, Text), dynamic benchmark winner resolution, Auto selection, and ingestion pipeline integration replacing legacy broad dropdowns. | Fully configurable category-based document parser preference engine with automatic benchmark champion integration. |
 
 ---
 
@@ -82,6 +83,12 @@
 | **TASK-70** | #134362 | 10. Format-Centric Parser Architecture | `feat(parser): implement granular AsposeSlidesParser engine for PowerPoint category` | M5 | TASK-66 | ✅ Completed |
 | **TASK-71** | #134363 | 10. Format-Centric Parser Architecture | `refactor(benchmark): register granular category parsers in DI and update Benchmark UI scorecards` | M5 | TASK-67, TASK-68, TASK-69, TASK-70 | ✅ Completed |
 | **TASK-72** | #134364 | 10. Format-Centric Parser Architecture | `test(parser): add unit tests for granular category parsers, factory category queries, and legacy alias fallbacks` | M5 | TASK-71 | ✅ Completed |
+| **TASK-73** | #134375 | 11. Document Engine Configuration & Preferences | `feat(parser): implement IDocumentEnginePreferenceService with category preferences and benchmark winner resolution` | M6 | TASK-66 | ✅ Completed |
+| **TASK-74** | #134376 | 11. Document Engine Configuration & Preferences | `feat(benchmark): integrate benchmark winner recording with document engine preferences` | M6 | TASK-73, TASK-65 | ✅ Completed |
+| **TASK-75** | #134377 | 11. Document Engine Configuration & Preferences | `refactor(kb): remove parser engine selector from Knowledgebase creation wizard and clean up KB header UI` | M6 | TASK-37 | ✅ Completed |
+| **TASK-76** | #134378 | 11. Document Engine Configuration & Preferences | `feat(kb): integrate category-based document engine resolution into multi-file knowledgebase ingestion pipeline` | M6 | TASK-73, TASK-75 | ✅ Completed |
+| **TASK-77** | #134379 | 11. Document Engine Configuration & Preferences | `feat(settings): implement Document Engine Configuration UI and ViewModel for category parser preferences` | M6 | TASK-73, TASK-74 | ✅ Completed |
+| **TASK-78** | #134380 | 11. Document Engine Configuration & Preferences | `test(parser): add unit and integration tests for document engine preferences, KB ingestion, and Settings ViewModel` | M6 | TASK-76, TASK-77 | ✅ Completed |
 
 ---
 
@@ -211,6 +218,15 @@ flowchart TD
         T72["TASK-72 (#134364)<br/>Comprehensive Tests &amp; Verification"]
     end
 
+    subgraph DocEngineConfigM6 ["Phase 11: Document Engine Preferences (M6)"]
+        T73["TASK-73 (#134375)<br/>IDocumentEnginePreferenceService"]
+        T74["TASK-74 (#134376)<br/>Benchmark Winner Recording"]
+        T75["TASK-75 (#134377)<br/>Remove KB Wizard Parser Dropdown"]
+        T76["TASK-76 (#134378)<br/>Category Parser Ingestion Pipeline"]
+        T77["TASK-77 (#134379)<br/>Settings Document Engine UI &amp; VM"]
+        T78["TASK-78 (#134380)<br/>Preferences &amp; Pipeline Tests"]
+    end
+
     %% M5 Dependencies
     T29 --> T66
     T66 --> T67
@@ -222,6 +238,18 @@ flowchart TD
     T69 --> T71
     T70 --> T71
     T71 --> T72
+
+    %% M6 Dependencies
+    T66 --> T73
+    T73 --> T74
+    T65 --> T74
+    T37 --> T75
+    T73 --> T76
+    T75 --> T76
+    T73 --> T77
+    T74 --> T77
+    T76 --> T78
+    T77 --> T78
 ```
 
 ---

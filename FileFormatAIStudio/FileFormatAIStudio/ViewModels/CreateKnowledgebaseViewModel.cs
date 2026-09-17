@@ -133,17 +133,6 @@ namespace FileFormatAIStudio.ViewModels
         public Microsoft.UI.Xaml.Visibility Step4ActiveVisibility => IsStep4Active ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
         public Microsoft.UI.Xaml.Visibility Step4CompletedVisibility => IsStep4Completed ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
 
-        public IReadOnlyList<ParserEngineOption> AvailableParserEngines { get; } = new List<ParserEngineOption>
-        {
-            new("Auto", "Auto (Auto-detect best engine)"),
-            new("aspose", "Aspose (.NET Enterprise: Words, Cells, Slides, PDF)"),
-            new("dotnet-oss", ".NET Open-Source (OpenXML, PdfPig, ExcelDataReader)"),
-            new("nodejs", "Node.js Open-Source (officeparser - Experimental)")
-        };
-
-        [ObservableProperty]
-        private ParserEngineOption _selectedParserEngine;
-
         [ObservableProperty]
         private ObservableCollection<ProviderConfigEntity> _configuredProviders = new();
 
@@ -200,7 +189,6 @@ namespace FileFormatAIStudio.ViewModels
         {
             _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
             _knowledgebaseService = knowledgebaseService;
-            _selectedParserEngine = AvailableParserEngines[0];
         }
 
         public async Task InitializeAsync()
@@ -349,7 +337,7 @@ namespace FileFormatAIStudio.ViewModels
             var request = new CreateKnowledgebaseRequest(
                 Name: Name.Trim(),
                 Description: Description.Trim(),
-                ParserEngine: SelectedParserEngine.EngineId,
+                ParserEngine: "Auto",
                 EmbeddingProvider: SelectedProvider!.Name,
                 EmbeddingModel: SelectedEmbeddingModel!.ModelId,
                 VectorDimensions: SelectedEmbeddingModel.Dimensions);

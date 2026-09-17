@@ -25,8 +25,24 @@ namespace FileFormatAIStudio.Views
             this.Loaded += async (s, e) =>
             {
                 await ViewModel.LoadProvidersAsync();
+                await ViewModel.LoadDocumentEngineSettingsAsync();
                 UpdateApiKeyBox();
             };
+        }
+
+        public static Style GetTabButtonStyle(bool isActive)
+        {
+            return (Style)Application.Current.Resources[isActive ? "AccentButtonStyle" : "DefaultButtonStyle"];
+        }
+
+        private void OnAiProvidersTabClicked(object sender, RoutedEventArgs e)
+        {
+            ViewModel.SelectAiProvidersTab();
+        }
+
+        private void OnDocumentEnginesTabClicked(object sender, RoutedEventArgs e)
+        {
+            ViewModel.SelectDocumentEnginesTab();
         }
 
         private void UpdateApiKeyBox()

@@ -27,16 +27,19 @@ namespace FileFormatAIStudio.Services.Benchmarking
         private readonly IDocumentParserFactory _parserFactory;
         private readonly IDocumentCategoryRegistry _categoryRegistry;
         private readonly List<IBenchmarkMetric> _metrics;
+        private readonly IDocumentEnginePreferenceService? _preferenceService;
 
         public BenchmarkRunnerService(
             AppDbContext dbContext,
             IDocumentParserFactory parserFactory,
             IDocumentCategoryRegistry categoryRegistry,
-            IEnumerable<IBenchmarkMetric>? metrics = null)
+            IEnumerable<IBenchmarkMetric>? metrics = null,
+            IDocumentEnginePreferenceService? preferenceService = null)
         {
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             _parserFactory = parserFactory ?? throw new ArgumentNullException(nameof(parserFactory));
             _categoryRegistry = categoryRegistry ?? throw new ArgumentNullException(nameof(categoryRegistry));
+            _preferenceService = preferenceService;
 
             var registeredMetrics = metrics?.ToList() ?? new List<IBenchmarkMetric>();
             if (!registeredMetrics.Any(m => m.MetricId == CharacterCountMetric.MetricIdentifier))
@@ -269,6 +272,16 @@ namespace FileFormatAIStudio.Services.Benchmarking
             if (options.SaveToDatabase)
             {
                 await SaveSessionToDatabaseAsync(sessionResult, cancellationToken);
+            }
+
+            // Record overall winner in preferences for Auto engine resolution
+            if (_preferenceService != null && !string.IsNullOrWhiteSpace(sessionResult.OverallWinnerEngineId))
+            {
+                await _preferenceService.RecordBenchmarkWinnerAsync(
+                    primaryCategory,
+                    sessionResult.OverallWinnerEngineId,
+                    sessionResult.OverallWinnerDisplayName ?? sessionResult.OverallWinnerEngineId,
+                    cancellationToken);
             }
 
             progress?.Report(new BenchmarkProgressReport(

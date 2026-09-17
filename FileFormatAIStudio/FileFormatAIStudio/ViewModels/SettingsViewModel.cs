@@ -7,6 +7,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FileFormatAIStudio.Data.Entities;
 using FileFormatAIStudio.Services.AI;
+using FileFormatAIStudio.Services.Benchmarking;
+using FileFormatAIStudio.Services.Parsing;
 using FileFormatAIStudio.Services.Settings;
 using Microsoft.UI.Xaml.Controls;
 
@@ -16,6 +18,45 @@ namespace FileFormatAIStudio.ViewModels
     {
         private readonly ISettingsService _settingsService;
         private readonly IAIClientFactory _aiClientFactory;
+        private readonly IDocumentEnginePreferenceService? _enginePreferenceService;
+        private readonly IDocumentCategoryRegistry? _categoryRegistry;
+        private readonly IDocumentParserFactory? _parserFactory;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsAiProvidersTabActive))]
+        [NotifyPropertyChangedFor(nameof(IsDocumentEnginesTabActive))]
+        [NotifyPropertyChangedFor(nameof(PageTitle))]
+        [NotifyPropertyChangedFor(nameof(PageSubtitle))]
+        private int _selectedSettingsTabIndex;
+
+        public bool IsAiProvidersTabActive => SelectedSettingsTabIndex == 0;
+        public bool IsDocumentEnginesTabActive => SelectedSettingsTabIndex == 1;
+
+        public string PageTitle => IsAiProvidersTabActive
+            ? "AI Providers & Models Settings"
+            : "Document Engine Configuration";
+
+        public string PageSubtitle => IsAiProvidersTabActive
+            ? "Configure cloud and local LLM endpoints (OpenAI, OpenRouter, Local company LLMs)"
+            : "Choose preferred document extraction libraries for each file format group";
+
+        [ObservableProperty]
+        private ObservableCollection<DocumentCategorySettingItemViewModel> _documentCategories = new();
+
+        [ObservableProperty]
+        private string _engineSettingsStatusMessage = string.Empty;
+
+        [ObservableProperty]
+        private bool _isEngineSettingsStatusOpen;
+
+        [ObservableProperty]
+        private InfoBarSeverity _engineSettingsStatusSeverity = InfoBarSeverity.Informational;
+
+        [RelayCommand]
+        public void SelectAiProvidersTab() => SelectedSettingsTabIndex = 0;
+
+        [RelayCommand]
+        public void SelectDocumentEnginesTab() => SelectedSettingsTabIndex = 1;
 
         [ObservableProperty]
         private ObservableCollection<ProviderConfigEntity> _providers = new();
@@ -84,10 +125,92 @@ namespace FileFormatAIStudio.ViewModels
             }
         }
 
-        public SettingsViewModel(ISettingsService settingsService, IAIClientFactory aiClientFactory)
+        public SettingsViewModel(
+            ISettingsService settingsService,
+            IAIClientFactory aiClientFactory,
+            IDocumentEnginePreferenceService? enginePreferenceService = null,
+            IDocumentCategoryRegistry? categoryRegistry = null,
+            IDocumentParserFactory? parserFactory = null)
         {
-            _settingsService = settingsService;
-            _aiClientFactory = aiClientFactory;
+            _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
+            _aiClientFactory = aiClientFactory ?? throw new ArgumentNullException(nameof(aiClientFactory));
+            _enginePreferenceService = enginePreferenceService;
+            _categoryRegistry = categoryRegistry;
+            _parserFactory = parserFactory;
+        }
+
+        [RelayCommand]
+        public async Task LoadDocumentEngineSettingsAsync()
+        {
+            if (_enginePreferenceService == null || _categoryRegistry == null || _parserFactory == null)
+            {
+                return;
+            }
+
+            DocumentCategories.Clear();
+
+            var categories = _categoryRegistry.GetAllCategories();
+            foreach (var cat in categories)
+            {
+                string catName = _categoryRegistry.GetCategoryDisplayName(cat);
+                string iconGlyph = cat switch
+                {
+                    DocumentCategory.Word => "\uE8A5",
+                    DocumentCategory.Excel => "\uEE49",
+                    DocumentCategory.PowerPoint => "\uE8B9",
+                    DocumentCategory.Pdf => "\uEA90",
+                    _ => "\uE8C4"
+                };
+
+                var extensions = _categoryRegistry.GetSupportedExtensions(cat);
+                string formatSummary = string.Join(", ", extensions.OrderBy(e => e));
+
+                var registeredParsers = _parserFactory.GetParsersByCategory(cat);
+                var options = new List<EngineOptionItem>
+                {
+                    new("Auto", "Auto (Benchmark Winner / Default)")
+                };
+
+                foreach (var p in registeredParsers)
+                {
+                    options.Add(new EngineOptionItem(p.EngineId, p.DisplayName));
+                }
+
+                string currentPreference = await _enginePreferenceService.GetPreferredEngineIdAsync(cat);
+                var selectedOption = options.FirstOrDefault(o =>
+                    string.Equals(o.EngineId, currentPreference, StringComparison.OrdinalIgnoreCase)) ?? options[0];
+
+                string? winnerName = await _enginePreferenceService.GetBenchmarkWinnerDisplayNameAsync(cat);
+
+                var vm = new DocumentCategorySettingItemViewModel(
+                    category: cat,
+                    categoryName: catName,
+                    iconGlyph: iconGlyph,
+                    supportedFormatsSummary: formatSummary,
+                    availableEngines: options,
+                    initialSelectedEngine: selectedOption,
+                    benchmarkWinnerDisplayName: winnerName,
+                    preferenceService: _enginePreferenceService);
+
+                DocumentCategories.Add(vm);
+            }
+        }
+
+        [RelayCommand]
+        public async Task ResetAllCategoriesToAutoAsync()
+        {
+            if (_enginePreferenceService == null) return;
+
+            foreach (var item in DocumentCategories)
+            {
+                var autoOption = item.AvailableEngines.FirstOrDefault(o => o.EngineId == "Auto") ?? item.AvailableEngines[0];
+                item.SelectedEngine = autoOption;
+                await _enginePreferenceService.SetPreferredEngineIdAsync(item.Category, "Auto");
+            }
+
+            EngineSettingsStatusSeverity = InfoBarSeverity.Success;
+            EngineSettingsStatusMessage = "All document categories have been reset to Auto (Benchmark Winner / Default).";
+            IsEngineSettingsStatusOpen = true;
         }
 
         public void UpdateCanAddProvider()

@@ -25,6 +25,7 @@ namespace FileFormatAIStudio.Services.Knowledgebase
         private readonly ITextChunker _textChunker;
         private readonly IVectorStoreService _vectorStore;
         private readonly IAIClientFactory _aiClientFactory;
+        private readonly IDocumentEnginePreferenceService? _enginePreferenceService;
         private readonly string _storageDirectory;
 
         public KnowledgebaseService(
@@ -33,13 +34,15 @@ namespace FileFormatAIStudio.Services.Knowledgebase
             ITextChunker textChunker,
             IVectorStoreService vectorStore,
             IAIClientFactory aiClientFactory,
-            string? customStorageDirectory = null)
+            string? customStorageDirectory = null,
+            IDocumentEnginePreferenceService? enginePreferenceService = null)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _parserFactory = parserFactory ?? throw new ArgumentNullException(nameof(parserFactory));
             _textChunker = textChunker ?? throw new ArgumentNullException(nameof(textChunker));
             _vectorStore = vectorStore ?? throw new ArgumentNullException(nameof(vectorStore));
             _aiClientFactory = aiClientFactory ?? throw new ArgumentNullException(nameof(aiClientFactory));
+            _enginePreferenceService = enginePreferenceService;
 
             if (!string.IsNullOrWhiteSpace(customStorageDirectory))
             {
@@ -309,13 +312,27 @@ namespace FileFormatAIStudio.Services.Knowledgebase
                         Message = $"[{docNumber}/{documents.Count}] Extracting text from {doc.FileName}..."
                     });
 
-                    string? preferredEngine = string.Equals(kb.ParserEngine, "Auto", StringComparison.OrdinalIgnoreCase)
-                        ? null
-                        : kb.ParserEngine;
+                    IDocumentParser? resolvedParser = null;
+                    if (_enginePreferenceService != null)
+                    {
+                        resolvedParser = await _enginePreferenceService.ResolveParserForDocumentAsync(doc.FilePath, ct);
+                    }
 
-                    string extractedText = await _parserFactory.ExtractTextAsync(doc.FilePath, preferredEngine, ct);
-                    var resolvedParser = _parserFactory.ResolveParser(doc.FilePath, preferredEngine);
-                    doc.ParserEngineUsed = resolvedParser?.EngineId ?? preferredEngine ?? "Auto";
+                    if (resolvedParser == null)
+                    {
+                        string? preferredEngine = string.Equals(kb.ParserEngine, "Auto", StringComparison.OrdinalIgnoreCase)
+                            ? null
+                            : kb.ParserEngine;
+                        resolvedParser = _parserFactory.ResolveParser(doc.FilePath, preferredEngine);
+                    }
+
+                    if (resolvedParser == null)
+                    {
+                        throw new NotSupportedException($"No available parser engine registered to handle document: '{doc.FileName}'.");
+                    }
+
+                    string extractedText = await resolvedParser.ExtractTextAsync(doc.FilePath, ct);
+                    doc.ParserEngineUsed = resolvedParser.DisplayName;
                     doc.RawExtractedText = extractedText;
 
                     // Stage B: Chunking

@@ -44,19 +44,12 @@
 
             <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,2" />
 
-            <!-- Section 2: AI and Parsing Configuration -->
+            <!-- Section 2: AI Embedding Configuration -->
             <StackPanel Spacing="10">
-                <TextBlock Text="AI AND PARSING ENGINES"
+                <TextBlock Text="AI EMBEDDING CONFIGURATION"
                            FontSize="11"
                            FontWeight="SemiBold"
                            Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-
-                <ComboBox x:Name="ParserEngineComboBox"
-                          Header="Document Parser Engine"
-                          HorizontalAlignment="Stretch"
-                          ItemsSource="{x:Bind ViewModel.AvailableParserEngines}"
-                          SelectedItem="{x:Bind ViewModel.SelectedParserEngine, Mode=TwoWay}"
-                          DisplayMemberPath="DisplayName" />
 
                 <Grid ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
