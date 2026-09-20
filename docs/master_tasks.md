@@ -92,6 +92,7 @@
 | **TASK-79** | #134480 | 9. Benchmark & Comparison | `fix(ui): resolve blank benchmark scorecard cards by correcting ErrorMessage visibility binding` | M4 | TASK-65, TASK-71 | ✅ Completed |
 | **TASK-80** | #134481 | 9. Benchmark & Comparison | `feat(benchmark): implement dual-pane in-text search and navigation in benchmark extracted text diff dialog` | M4 | TASK-52 | ✅ Completed |
 | **TASK-81** | #134482 | 9. Benchmark & Comparison | `feat(benchmark): add in-text search highlighting and scrollbar match markers in diff inspector` | M4 | TASK-80 | ✅ Completed |
+| **TASK-82** | #134483 | 9. Benchmark & Comparison | `fix(benchmark): enable dynamic word wrap by binding ScrollViewer horizontal scroll mode and visibility in diff inspector` | M4 | TASK-81 | ✅ Completed |
 
 ---
 
@@ -166,6 +167,7 @@ flowchart TD
         T79["TASK-79 (#134480)<br/>Scorecard ErrorMessage Binding Fix"]
         T80["TASK-80 (#134481)<br/>Dual-Pane Search &amp; Nav in Diff"]
         T81["TASK-81 (#134482)<br/>Search Highlighting &amp; Scrollbar Markers"]
+        T82["TASK-82 (#134483)<br/>Dynamic Word Wrap &amp; ScrollMode Fix"]
     end
 
     %% M1 Dependencies
@@ -215,6 +217,7 @@ flowchart TD
     T65 --> T79
     T52 --> T80
     T80 --> T81
+    T81 --> T82
     end
 
     subgraph ModularParsersM5 ["Phase 10: Format-Centric Parser Architecture (M5)"]

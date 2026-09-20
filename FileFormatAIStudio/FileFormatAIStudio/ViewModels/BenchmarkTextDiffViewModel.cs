@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FileFormatAIStudio.Services.Benchmarking;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 
 namespace FileFormatAIStudio.ViewModels
 {
@@ -101,6 +102,8 @@ namespace FileFormatAIStudio.ViewModels
         private string _copyFeedbackMessage = string.Empty;
 
         public TextWrapping TextWrappingMode => IsWordWrap ? TextWrapping.Wrap : TextWrapping.NoWrap;
+        public ScrollBarVisibility HorizontalScrollBarVisibilityMode => IsWordWrap ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Auto;
+        public ScrollMode HorizontalScrollModeValue => IsWordWrap ? ScrollMode.Disabled : ScrollMode.Enabled;
 
         public bool HasDiffItems => DiffItems.Count > 0;
 
@@ -153,6 +156,8 @@ namespace FileFormatAIStudio.ViewModels
         partial void OnIsWordWrapChanged(bool value)
         {
             OnPropertyChanged(nameof(TextWrappingMode));
+            OnPropertyChanged(nameof(HorizontalScrollBarVisibilityMode));
+            OnPropertyChanged(nameof(HorizontalScrollModeValue));
         }
 
         partial void OnSearchQueryChanged(string value)

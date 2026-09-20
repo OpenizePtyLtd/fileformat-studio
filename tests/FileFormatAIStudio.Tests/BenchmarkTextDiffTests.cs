@@ -294,6 +294,30 @@ namespace FileFormatAIStudio.Tests
             vm.HasAnyMatches.Should().BeFalse();
             vm.SearchMatchSummary.Should().BeEmpty();
         }
+
+        [Fact]
+        public void ViewModel_WordWrapToggle_UpdatesTextWrappingAndScrollModes()
+        {
+            var vm = new BenchmarkTextDiffViewModel();
+
+            // Default: IsWordWrap is true
+            vm.IsWordWrap.Should().BeTrue();
+            vm.TextWrappingMode.Should().Be(Microsoft.UI.Xaml.TextWrapping.Wrap);
+            vm.HorizontalScrollBarVisibilityMode.Should().Be(Microsoft.UI.Xaml.Controls.ScrollBarVisibility.Disabled);
+            vm.HorizontalScrollModeValue.Should().Be(Microsoft.UI.Xaml.Controls.ScrollMode.Disabled);
+
+            // Toggle word wrap off
+            vm.IsWordWrap = false;
+            vm.TextWrappingMode.Should().Be(Microsoft.UI.Xaml.TextWrapping.NoWrap);
+            vm.HorizontalScrollBarVisibilityMode.Should().Be(Microsoft.UI.Xaml.Controls.ScrollBarVisibility.Auto);
+            vm.HorizontalScrollModeValue.Should().Be(Microsoft.UI.Xaml.Controls.ScrollMode.Enabled);
+
+            // Toggle word wrap back on
+            vm.IsWordWrap = true;
+            vm.TextWrappingMode.Should().Be(Microsoft.UI.Xaml.TextWrapping.Wrap);
+            vm.HorizontalScrollBarVisibilityMode.Should().Be(Microsoft.UI.Xaml.Controls.ScrollBarVisibility.Disabled);
+            vm.HorizontalScrollModeValue.Should().Be(Microsoft.UI.Xaml.Controls.ScrollMode.Disabled);
+        }
     }
 }
 

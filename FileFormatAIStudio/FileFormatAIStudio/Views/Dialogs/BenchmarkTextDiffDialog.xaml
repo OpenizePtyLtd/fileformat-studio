@@ -247,8 +247,8 @@
                         <Grid Grid.Row="1">
                             <ScrollViewer x:Name="LeftScrollViewer"
                                           VerticalScrollBarVisibility="Auto"
-                                          HorizontalScrollBarVisibility="Auto"
-                                          HorizontalScrollMode="Enabled"
+                                          HorizontalScrollBarVisibility="{x:Bind ViewModel.HorizontalScrollBarVisibilityMode, Mode=OneWay}"
+                                          HorizontalScrollMode="{x:Bind ViewModel.HorizontalScrollModeValue, Mode=OneWay}"
                                           VerticalScrollMode="Enabled"
                                           ViewChanged="OnLeftScrollViewerViewChanged">
                                 <TextBlock x:Name="LeftTextBlock"
@@ -257,7 +257,7 @@
                                            TextWrapping="{x:Bind ViewModel.TextWrappingMode, Mode=OneWay}"
                                            FontFamily="Consolas, 'Cascadia Code', 'Segoe UI Mono', monospace"
                                            FontSize="11"
-                                           Padding="6" />
+                                           Padding="8,6,16,6" />
                             </ScrollViewer>
 
                             <!-- Scrollbar Match Markers Track -->
@@ -308,8 +308,8 @@
                         <Grid Grid.Row="1">
                             <ScrollViewer x:Name="RightScrollViewer"
                                           VerticalScrollBarVisibility="Auto"
-                                          HorizontalScrollBarVisibility="Auto"
-                                          HorizontalScrollMode="Enabled"
+                                          HorizontalScrollBarVisibility="{x:Bind ViewModel.HorizontalScrollBarVisibilityMode, Mode=OneWay}"
+                                          HorizontalScrollMode="{x:Bind ViewModel.HorizontalScrollModeValue, Mode=OneWay}"
                                           VerticalScrollMode="Enabled"
                                           ViewChanged="OnRightScrollViewerViewChanged">
                                 <TextBlock x:Name="RightTextBlock"
@@ -318,7 +318,7 @@
                                            TextWrapping="{x:Bind ViewModel.TextWrappingMode, Mode=OneWay}"
                                            FontFamily="Consolas, 'Cascadia Code', 'Segoe UI Mono', monospace"
                                            FontSize="11"
-                                           Padding="6" />
+                                           Padding="8,6,16,6" />
                             </ScrollViewer>
 
                             <!-- Scrollbar Match Markers Track -->
