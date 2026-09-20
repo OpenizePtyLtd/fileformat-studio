@@ -176,7 +176,22 @@ namespace FileFormatAIStudio.ViewModels
 
                 foreach (var p in registeredParsers)
                 {
-                    options.Add(new EngineOptionItem(p.EngineId, p.DisplayName));
+                    bool isAspose = p.EngineId.Contains("aspose", StringComparison.OrdinalIgnoreCase);
+                    bool isLicensed = isAspose && (_licenseService?.IsEngineLicensed(p.EngineId) ?? false);
+                    string displayName = p.DisplayName;
+
+                    if (isAspose)
+                    {
+                        string statusText = isLicensed ? "Licensed" : "Evaluation Mode";
+                        displayName = $"{p.DisplayName} ({statusText})";
+                    }
+
+                    options.Add(new EngineOptionItem(
+                        EngineId: p.EngineId,
+                        DisplayName: displayName,
+                        IsAspose: isAspose,
+                        IsLicensed: isLicensed,
+                        LicenseStatus: isAspose ? (isLicensed ? "Licensed" : "Evaluation Mode") : null));
                 }
 
                 string currentPreference = await _enginePreferenceService.GetPreferredEngineIdAsync(cat);

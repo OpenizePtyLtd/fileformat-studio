@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FileFormatAIStudio.Data;
@@ -10,6 +11,7 @@ using FileFormatAIStudio.Services.Benchmarking;
 using FileFormatAIStudio.Services.Knowledgebase;
 using FileFormatAIStudio.Services.Parsing;
 using FileFormatAIStudio.Services.Parsing.Engines.Word;
+using FileFormatAIStudio.Services.Settings;
 using FileFormatAIStudio.ViewModels;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
@@ -282,6 +284,50 @@ namespace FileFormatAIStudio.Tests
             itemVm.SelectedEngine = engines[2];
             itemVm.IsSelectedEngineAspose.Should().BeFalse();
             itemVm.IsSelectedEngineInEvaluation.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task SettingsViewModel_LoadDocumentEngineSettingsAsync_MentionsLicenseStatusInDropdownOptions()
+        {
+            using var context = new AppDbContext(_options);
+            var prefService = new DocumentEnginePreferenceService(context, _categoryRegistry, _parserFactory);
+            var settingsService = new SettingsService(context);
+            var aiClientFactory = new FakeAiClientFactory();
+            var licenseService = new AsposeLicenseService();
+            licenseService.InitializeLicenses("C:\\NonExistent\\lic.lic"); // Unlicensed / evaluation
+
+            var vm = new SettingsViewModel(
+                settingsService,
+                aiClientFactory,
+                prefService,
+                _categoryRegistry,
+                _parserFactory,
+                licenseService);
+
+            await vm.LoadDocumentEngineSettingsAsync();
+
+            vm.DocumentCategories.Should().NotBeEmpty();
+            var wordCategory = vm.DocumentCategories.FirstOrDefault(c => c.Category == DocumentCategory.Word);
+            wordCategory.Should().NotBeNull();
+
+            // Aspose option must clearly state Evaluation Mode in its DisplayName and properties
+            var asposeWordsOption = wordCategory!.AvailableEngines.FirstOrDefault(e => e.EngineId == "aspose-words");
+            asposeWordsOption.Should().NotBeNull();
+            asposeWordsOption!.DisplayName.Should().Contain("Evaluation Mode");
+            asposeWordsOption.IsAspose.Should().BeTrue();
+            asposeWordsOption.IsLicensed.Should().BeFalse();
+            asposeWordsOption.LicenseStatus.Should().Be("Evaluation Mode");
+
+            // Auto and OpenXML options must not mention evaluation or license status
+            var autoOption = wordCategory.AvailableEngines.FirstOrDefault(e => e.EngineId == "Auto");
+            autoOption.Should().NotBeNull();
+            autoOption!.DisplayName.Should().NotContain("Evaluation Mode");
+            autoOption.DisplayName.Should().NotContain("Licensed");
+
+            var openXmlOption = wordCategory.AvailableEngines.FirstOrDefault(e => e.EngineId == "openxml-words");
+            openXmlOption.Should().NotBeNull();
+            openXmlOption!.DisplayName.Should().NotContain("Evaluation Mode");
+            openXmlOption.DisplayName.Should().NotContain("Licensed");
         }
     }
 }

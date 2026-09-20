@@ -9,7 +9,15 @@ namespace FileFormatAIStudio.ViewModels
     /// <summary>
     /// Option item representing a parser engine selectable within a document category.
     /// </summary>
-    public sealed record EngineOptionItem(string EngineId, string DisplayName);
+    public sealed record EngineOptionItem(
+        string EngineId,
+        string DisplayName,
+        bool IsAspose = false,
+        bool IsLicensed = false,
+        string? LicenseStatus = null)
+    {
+        public override string ToString() => DisplayName;
+    }
 
     /// <summary>
     /// ViewModel representing a document category card in the Document Engines Settings view.
