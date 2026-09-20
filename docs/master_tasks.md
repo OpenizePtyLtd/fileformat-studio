@@ -90,6 +90,7 @@
 | **TASK-77** | #134379 | 11. Document Engine Configuration & Preferences | `feat(settings): implement Document Engine Configuration UI and ViewModel for category parser preferences` | M6 | TASK-73, TASK-74 | ✅ Completed |
 | **TASK-78** | #134380 | 11. Document Engine Configuration & Preferences | `test(parser): add unit and integration tests for document engine preferences, KB ingestion, and Settings ViewModel` | M6 | TASK-76, TASK-77 | ✅ Completed |
 | **TASK-79** | #134480 | 9. Benchmark & Comparison | `fix(ui): resolve blank benchmark scorecard cards by correcting ErrorMessage visibility binding` | M4 | TASK-65, TASK-71 | ✅ Completed |
+| **TASK-80** | #134481 | 9. Benchmark & Comparison | `feat(benchmark): implement dual-pane in-text search and navigation in benchmark extracted text diff dialog` | M4 | TASK-52 | ✅ Completed |
 
 ---
 
@@ -162,6 +163,7 @@ flowchart TD
         T53["TASK-53 (#134083)<br/>Automated Benchmark Tests"]
         T65["TASK-65 (#134084)<br/>Benchmark Dashboard & Winner"]
         T79["TASK-79 (#134480)<br/>Scorecard ErrorMessage Binding Fix"]
+        T80["TASK-80 (#134481)<br/>Dual-Pane Search &amp; Nav in Diff"]
     end
 
     %% M1 Dependencies
@@ -209,6 +211,7 @@ flowchart TD
     T50 --> T65
     T51 --> T65
     T65 --> T79
+    T52 --> T80
     end
 
     subgraph ModularParsersM5 ["Phase 10: Format-Centric Parser Architecture (M5)"]

@@ -11,6 +11,8 @@ using Microsoft.UI.Xaml;
 
 namespace FileFormatAIStudio.ViewModels
 {
+    public sealed record TextSearchMatch(int Index, int Length, int LineIndex);
+
     public partial class BenchmarkTextDiffViewModel : ObservableObject
     {
         [ObservableProperty]
@@ -53,6 +55,35 @@ namespace FileFormatAIStudio.ViewModels
 
         [ObservableProperty]
         private string _searchQuery = string.Empty;
+
+        [ObservableProperty]
+        private int _matchCountA;
+
+        [ObservableProperty]
+        private int _matchCountB;
+
+        [ObservableProperty]
+        private int _currentMatchIndexA = -1;
+
+        [ObservableProperty]
+        private int _currentMatchIndexB = -1;
+
+        [ObservableProperty]
+        private string _searchMatchSummary = string.Empty;
+
+        [ObservableProperty]
+        private bool _hasSearchQuery;
+
+        [ObservableProperty]
+        private bool _hasAnyMatches;
+
+        public List<TextSearchMatch> MatchesA { get; } = new();
+        public List<TextSearchMatch> MatchesB { get; } = new();
+
+        public TextSearchMatch? CurrentMatchA => (MatchesA.Count > 0 && CurrentMatchIndexA >= 0 && CurrentMatchIndexA < MatchesA.Count) ? MatchesA[CurrentMatchIndexA] : null;
+        public TextSearchMatch? CurrentMatchB => (MatchesB.Count > 0 && CurrentMatchIndexB >= 0 && CurrentMatchIndexB < MatchesB.Count) ? MatchesB[CurrentMatchIndexB] : null;
+
+        public event Action? SearchMatchNavigated;
 
         [ObservableProperty]
         private bool _isSyncScroll = true;
@@ -127,6 +158,7 @@ namespace FileFormatAIStudio.ViewModels
         partial void OnSearchQueryChanged(string value)
         {
             ApplyFilter();
+            UpdateSearchMatches(resetIndex: true);
         }
 
         public void SetViewMode(bool sideBySide)
@@ -174,6 +206,118 @@ namespace FileFormatAIStudio.ViewModels
             }
 
             ApplyFilter();
+            UpdateSearchMatches(resetIndex: true);
+        }
+
+        public void NavigateNext()
+        {
+            if (!HasAnyMatches) return;
+
+            if (MatchCountA > 0)
+            {
+                CurrentMatchIndexA = (CurrentMatchIndexA + 1) % MatchCountA;
+            }
+            if (MatchCountB > 0)
+            {
+                CurrentMatchIndexB = (CurrentMatchIndexB + 1) % MatchCountB;
+            }
+
+            UpdateSearchMatchSummary();
+            SearchMatchNavigated?.Invoke();
+        }
+
+        public void NavigatePrevious()
+        {
+            if (!HasAnyMatches) return;
+
+            if (MatchCountA > 0)
+            {
+                CurrentMatchIndexA = (CurrentMatchIndexA - 1 + MatchCountA) % MatchCountA;
+            }
+            if (MatchCountB > 0)
+            {
+                CurrentMatchIndexB = (CurrentMatchIndexB - 1 + MatchCountB) % MatchCountB;
+            }
+
+            UpdateSearchMatchSummary();
+            SearchMatchNavigated?.Invoke();
+        }
+
+        public void UpdateSearchMatches(bool resetIndex = true)
+        {
+            MatchesA.Clear();
+            MatchesB.Clear();
+
+            HasSearchQuery = !string.IsNullOrWhiteSpace(SearchQuery);
+
+            if (HasSearchQuery)
+            {
+                MatchesA.AddRange(FindMatches(TextA, SearchQuery));
+                MatchesB.AddRange(FindMatches(TextB, SearchQuery));
+            }
+
+            MatchCountA = MatchesA.Count;
+            MatchCountB = MatchesB.Count;
+            HasAnyMatches = MatchCountA > 0 || MatchCountB > 0;
+
+            if (resetIndex)
+            {
+                CurrentMatchIndexA = MatchCountA > 0 ? 0 : -1;
+                CurrentMatchIndexB = MatchCountB > 0 ? 0 : -1;
+            }
+            else
+            {
+                if (CurrentMatchIndexA >= MatchCountA) CurrentMatchIndexA = MatchCountA - 1;
+                if (CurrentMatchIndexB >= MatchCountB) CurrentMatchIndexB = MatchCountB - 1;
+                if (MatchCountA > 0 && CurrentMatchIndexA < 0) CurrentMatchIndexA = 0;
+                if (MatchCountB > 0 && CurrentMatchIndexB < 0) CurrentMatchIndexB = 0;
+            }
+
+            UpdateSearchMatchSummary();
+            SearchMatchNavigated?.Invoke();
+        }
+
+        private void UpdateSearchMatchSummary()
+        {
+            if (!HasSearchQuery)
+            {
+                SearchMatchSummary = string.Empty;
+                return;
+            }
+
+            if (MatchCountA == 0 && MatchCountB == 0)
+            {
+                SearchMatchSummary = "0 matches";
+                return;
+            }
+
+            string posA = MatchCountA > 0 ? $"{CurrentMatchIndexA + 1}/{MatchCountA}" : "0";
+            string posB = MatchCountB > 0 ? $"{CurrentMatchIndexB + 1}/{MatchCountB}" : "0";
+            SearchMatchSummary = $"A: {posA} • B: {posB}";
+        }
+
+        private static List<TextSearchMatch> FindMatches(string text, string query)
+        {
+            var list = new List<TextSearchMatch>();
+            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(query))
+                return list;
+
+            int line = 0;
+            int lastLineStart = 0;
+            int index = 0;
+            while ((index = text.IndexOf(query, index, StringComparison.OrdinalIgnoreCase)) >= 0)
+            {
+                for (int i = lastLineStart; i < index; i++)
+                {
+                    if (text[i] == '\n')
+                        line++;
+                }
+                lastLineStart = index;
+
+                list.Add(new TextSearchMatch(index, query.Length, line));
+                index += Math.Max(1, query.Length);
+            }
+            return list;
         }
 
         private void ApplyFilter()

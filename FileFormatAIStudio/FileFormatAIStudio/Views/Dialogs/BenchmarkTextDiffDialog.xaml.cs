@@ -18,6 +18,7 @@ namespace FileFormatAIStudio.Views.Dialogs
             this.InitializeComponent();
 
             ViewModel = new BenchmarkTextDiffViewModel();
+            ViewModel.SearchMatchNavigated += OnSearchMatchNavigated;
             ViewModel.Initialize(documentResult);
 
             UpdateViewModeUI();
@@ -43,6 +44,10 @@ namespace FileFormatAIStudio.Views.Dialogs
                 UnifiedDiffContainer.Visibility = Visibility.Collapsed;
                 SideBySideTabButton.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
                 UnifiedDiffTabButton.Style = (Style)Application.Current.Resources["DefaultButtonStyle"];
+                if (ViewModel.HasSearchQuery)
+                {
+                    HighlightCurrentMatches();
+                }
             }
             else
             {
@@ -51,6 +56,104 @@ namespace FileFormatAIStudio.Views.Dialogs
                 SideBySideTabButton.Style = (Style)Application.Current.Resources["DefaultButtonStyle"];
                 UnifiedDiffTabButton.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
             }
+        }
+
+        private void OnSearchMatchNavigated()
+        {
+            HighlightCurrentMatches();
+        }
+
+        private void HighlightCurrentMatches()
+        {
+            try
+            {
+                _isSyncingScroll = true;
+
+                var matchA = ViewModel.CurrentMatchA;
+                if (matchA != null)
+                {
+                    LeftTextBox.Select(matchA.Index, matchA.Length);
+                    ScrollToMatch(LeftScrollViewer, LeftTextBox, matchA);
+                }
+                else if (!ViewModel.HasSearchQuery)
+                {
+                    LeftTextBox.Select(0, 0);
+                }
+
+                var matchB = ViewModel.CurrentMatchB;
+                if (matchB != null)
+                {
+                    RightTextBox.Select(matchB.Index, matchB.Length);
+                    ScrollToMatch(RightScrollViewer, RightTextBox, matchB);
+                }
+                else if (!ViewModel.HasSearchQuery)
+                {
+                    RightTextBox.Select(0, 0);
+                }
+            }
+            catch { }
+            finally
+            {
+                _isSyncingScroll = false;
+            }
+        }
+
+        private void ScrollToMatch(ScrollViewer scrollViewer, TextBox textBox, TextSearchMatch match)
+        {
+            try
+            {
+                string text = textBox.Text;
+                if (string.IsNullOrEmpty(text)) return;
+
+                int totalLines = 1;
+                for (int i = 0; i < text.Length; i++)
+                {
+                    if (text[i] == '\n') totalLines++;
+                }
+
+                if (totalLines > 0 && scrollViewer.ScrollableHeight > 0)
+                {
+                    double lineRatio = (double)match.LineIndex / Math.Max(1, totalLines);
+                    double targetOffset = (lineRatio * scrollViewer.ExtentHeight) - (scrollViewer.ViewportHeight / 3.0);
+                    targetOffset = Math.Clamp(targetOffset, 0, scrollViewer.ScrollableHeight);
+                    scrollViewer.ChangeView(null, targetOffset, null, false);
+                }
+            }
+            catch { }
+        }
+
+        private void OnSearchBoxKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                var shiftState = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift);
+                bool isShift = (shiftState & Windows.UI.Core.CoreVirtualKeyStates.Down) == Windows.UI.Core.CoreVirtualKeyStates.Down;
+
+                if (isShift)
+                {
+                    ViewModel.NavigatePrevious();
+                }
+                else
+                {
+                    ViewModel.NavigateNext();
+                }
+                e.Handled = true;
+            }
+            else if (e.Key == Windows.System.VirtualKey.Escape)
+            {
+                ViewModel.SearchQuery = string.Empty;
+                e.Handled = true;
+            }
+        }
+
+        private void OnPreviousMatchClicked(object sender, RoutedEventArgs e)
+        {
+            ViewModel.NavigatePrevious();
+        }
+
+        private void OnNextMatchClicked(object sender, RoutedEventArgs e)
+        {
+            ViewModel.NavigateNext();
         }
 
         private void OnLeftScrollViewerViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)

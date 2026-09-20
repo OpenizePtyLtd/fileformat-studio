@@ -171,6 +171,129 @@ namespace FileFormatAIStudio.Tests
             unified.Should().Contain("+ [A] Beta");
             unified.Should().Contain("- [B] Gamma");
         }
+
+        [Fact]
+        public void ViewModel_DualPaneSearch_TracksMatchesAcrossBothPanes()
+        {
+            var vm = new BenchmarkTextDiffViewModel();
+
+            var run1 = new BenchmarkEngineRunResult(
+                "engine1", "Engine A", true, TimeSpan.FromMilliseconds(50), 1024, 50, 8, 95.0, 1,
+                Array.Empty<MetricScoreResult>(), "Alpha invoice 101\nBeta section\nAnother invoice 102");
+            var run2 = new BenchmarkEngineRunResult(
+                "engine2", "Engine B", true, TimeSpan.FromMilliseconds(60), 2048, 40, 6, 85.0, 2,
+                Array.Empty<MetricScoreResult>(), "Alpha invoice 101\nGamma section");
+
+            var docResult = new BenchmarkDocumentResult(
+                "C:\\path\\doc.docx", "doc.docx", ".docx", DocumentCategory.Word, 10240,
+                new[] { run1, run2 }, run1);
+
+            vm.Initialize(docResult);
+
+            // Act
+            vm.SearchQuery = "invoice";
+
+            // Assert
+            vm.HasSearchQuery.Should().BeTrue();
+            vm.HasAnyMatches.Should().BeTrue();
+            vm.MatchCountA.Should().Be(2);
+            vm.MatchCountB.Should().Be(1);
+            vm.CurrentMatchIndexA.Should().Be(0);
+            vm.CurrentMatchIndexB.Should().Be(0);
+            vm.SearchMatchSummary.Should().Be("A: 1/2 • B: 1/1");
+            vm.CurrentMatchA.Should().NotBeNull();
+            vm.CurrentMatchA!.LineIndex.Should().Be(0);
+            vm.CurrentMatchB.Should().NotBeNull();
+            vm.CurrentMatchB!.LineIndex.Should().Be(0);
+        }
+
+        [Fact]
+        public void ViewModel_DualPaneSearch_NavigatesNextAndPrevious()
+        {
+            var vm = new BenchmarkTextDiffViewModel();
+
+            var run1 = new BenchmarkEngineRunResult(
+                "engine1", "Engine A", true, TimeSpan.FromMilliseconds(50), 1024, 50, 8, 95.0, 1,
+                Array.Empty<MetricScoreResult>(), "Invoice 1\nInvoice 2\nInvoice 3");
+            var run2 = new BenchmarkEngineRunResult(
+                "engine2", "Engine B", true, TimeSpan.FromMilliseconds(60), 2048, 40, 6, 85.0, 2,
+                Array.Empty<MetricScoreResult>(), "Invoice 1\nInvoice 2");
+
+            var docResult = new BenchmarkDocumentResult(
+                "C:\\path\\doc.docx", "doc.docx", ".docx", DocumentCategory.Word, 10240,
+                new[] { run1, run2 }, run1);
+
+            vm.Initialize(docResult);
+
+            int eventCallCount = 0;
+            vm.SearchMatchNavigated += () => eventCallCount++;
+
+            vm.SearchQuery = "Invoice";
+            eventCallCount.Should().Be(1); // Fired upon initial match scan
+            vm.SearchMatchSummary.Should().Be("A: 1/3 • B: 1/2");
+
+            // Navigate Next
+            vm.NavigateNext();
+            eventCallCount.Should().Be(2);
+            vm.CurrentMatchIndexA.Should().Be(1);
+            vm.CurrentMatchIndexB.Should().Be(1);
+            vm.SearchMatchSummary.Should().Be("A: 2/3 • B: 2/2");
+
+            // Navigate Next again (Pane B wraps to 0, Pane A goes to 2)
+            vm.NavigateNext();
+            vm.CurrentMatchIndexA.Should().Be(2);
+            vm.CurrentMatchIndexB.Should().Be(0);
+            vm.SearchMatchSummary.Should().Be("A: 3/3 • B: 1/2");
+
+            // Navigate Previous (steps back)
+            vm.NavigatePrevious();
+            vm.CurrentMatchIndexA.Should().Be(1);
+            vm.CurrentMatchIndexB.Should().Be(1);
+            vm.SearchMatchSummary.Should().Be("A: 2/3 • B: 2/2");
+        }
+
+        [Fact]
+        public void ViewModel_DualPaneSearch_HandlesDiscrepantAndZeroMatches()
+        {
+            var vm = new BenchmarkTextDiffViewModel();
+
+            var run1 = new BenchmarkEngineRunResult(
+                "engine1", "Engine A", true, TimeSpan.FromMilliseconds(50), 1024, 50, 8, 95.0, 1,
+                Array.Empty<MetricScoreResult>(), "Grand Total: $1,250.00\nSubtotal: $1,000.00");
+            var run2 = new BenchmarkEngineRunResult(
+                "engine2", "Engine B", true, TimeSpan.FromMilliseconds(60), 2048, 40, 6, 85.0, 2,
+                Array.Empty<MetricScoreResult>(), "Subtotal: $1,000.00");
+
+            var docResult = new BenchmarkDocumentResult(
+                "C:\\path\\doc.docx", "doc.docx", ".docx", DocumentCategory.Word, 10240,
+                new[] { run1, run2 }, run1);
+
+            vm.Initialize(docResult);
+
+            // Test term that only exists in Engine A
+            vm.SearchQuery = "Grand Total";
+            vm.MatchCountA.Should().Be(1);
+            vm.MatchCountB.Should().Be(0);
+            vm.HasAnyMatches.Should().BeTrue();
+            vm.SearchMatchSummary.Should().Be("A: 1/1 • B: 0");
+            vm.CurrentMatchA.Should().NotBeNull();
+            vm.CurrentMatchB.Should().BeNull();
+
+            // Test term that exists in neither engine
+            vm.SearchQuery = "NonExistentKeywordXYZ";
+            vm.MatchCountA.Should().Be(0);
+            vm.MatchCountB.Should().Be(0);
+            vm.HasAnyMatches.Should().BeFalse();
+            vm.SearchMatchSummary.Should().Be("0 matches");
+            vm.CurrentMatchA.Should().BeNull();
+            vm.CurrentMatchB.Should().BeNull();
+
+            // Test clearing search
+            vm.SearchQuery = "";
+            vm.HasSearchQuery.Should().BeFalse();
+            vm.HasAnyMatches.Should().BeFalse();
+            vm.SearchMatchSummary.Should().BeEmpty();
+        }
     }
 }
 
