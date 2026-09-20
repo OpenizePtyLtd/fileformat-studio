@@ -59,6 +59,16 @@ namespace FileFormatAIStudio.Services.Parsing
                     p.EngineId is "openxml-words" or "pdfpig" or "exceldatareader" or "csvhelper");
             }
 
+            // Alias fallback: "officeparser" / "node-parser" -> first officeparser engine
+            if (string.Equals(engineId, "officeparser", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(engineId, "node-parser", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(engineId, "nodejs", StringComparison.OrdinalIgnoreCase))
+            {
+                return _parsers.FirstOrDefault(p =>
+                    string.Equals(p.EngineId, "officeparser", StringComparison.OrdinalIgnoreCase) ||
+                    p.EngineId.StartsWith("officeparser", StringComparison.OrdinalIgnoreCase));
+            }
+
             return null;
         }
 
@@ -103,6 +113,21 @@ namespace FileFormatAIStudio.Services.Parsing
 
                     if (ossMatch != null)
                         return ossMatch;
+                }
+
+                // Check alias for "officeparser" / "node-parser"
+                if (string.Equals(engineId, "officeparser", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(engineId, "node-parser", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(engineId, "nodejs", StringComparison.OrdinalIgnoreCase))
+                {
+                    var nodeMatch = _parsers.FirstOrDefault(p =>
+                        p.IsAvailable &&
+                        p.SupportedExtensions.Contains(extension) &&
+                        (string.Equals(p.EngineId, "officeparser", StringComparison.OrdinalIgnoreCase) ||
+                         p.EngineId.StartsWith("officeparser", StringComparison.OrdinalIgnoreCase)));
+
+                    if (nodeMatch != null)
+                        return nodeMatch;
                 }
 
                 return null;

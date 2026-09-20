@@ -47,18 +47,22 @@ namespace FileFormatAIStudio
             // Word Category
             services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Word.AsposeWordsParser>();
             services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Word.OpenXmlWordParser>();
+            services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Word.OfficeParserWordParser>();
 
             // PDF Category
             services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Pdf.AsposePdfParser>();
             services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Pdf.PdfPigParser>();
+            services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Pdf.OfficeParserPdfParser>();
 
             // Excel Category
             services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Excel.AsposeCellsParser>();
             services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Excel.ExcelDataReaderParser>();
             services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Excel.CsvHelperParser>();
+            services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.Excel.OfficeParserExcelParser>();
 
             // PowerPoint Category
             services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.PowerPoint.AsposeSlidesParser>();
+            services.AddSingleton<IDocumentParser, FileFormatAIStudio.Services.Parsing.Engines.PowerPoint.OfficeParserSlidesParser>();
 
             // PlainText Category
             services.AddSingleton<IDocumentParser, PlainTextParser>();

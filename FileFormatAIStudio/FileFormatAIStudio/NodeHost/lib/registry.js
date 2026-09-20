@@ -30,7 +30,16 @@ class EngineRegistry {
      */
     get(id) {
         if (!id) return undefined;
-        return this.engines.get(id.toLowerCase());
+        const normalized = id.toLowerCase();
+        const direct = this.engines.get(normalized);
+        if (direct) return direct;
+
+        // Fallback prefix / alias matching (e.g. 'officeparser-slides' -> 'officeparser')
+        if (normalized.startsWith('officeparser')) {
+            return this.engines.get('officeparser');
+        }
+
+        return undefined;
     }
 
     /**

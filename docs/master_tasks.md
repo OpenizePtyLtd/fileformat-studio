@@ -53,7 +53,7 @@
 | **TASK-29** | #134059 | 3. Parser Subsystem | `feat(parser): Implement IDocumentParser contract, metadata models, and DocumentParserFactory` | M1 | None | ✅ Completed |
 | **TASK-30** | #134060 | 3. Parser Subsystem | `feat(parser): Implement AsposeDocumentParser (.NET Words, Cells, Slides, PDF)` | M1 | TASK-29 | ✅ Completed |
 | **TASK-31** | #134061 | 3. Parser Subsystem | `feat(parser): Implement DotNetOssDocumentParser (OpenXML, PdfPig, ExcelDataReader)` | M1 | TASK-29 | ✅ Completed |
-| **TASK-32** | #134062 | 3. Parser Subsystem | `feat(parser): Implement NodeJsDocumentParser runner with officeparser & JSON IPC` | M1 | TASK-26, TASK-29 | ⏳ Pending |
+| **TASK-32** | #134062 | 3. Parser Subsystem | `feat(parser): Implement NodeJsDocumentParser runner with officeparser & JSON IPC` | M1 | TASK-26, TASK-29 | ✅ Completed |
 | **TASK-33** | #134063 | 4. Chunking & Vector Search | `feat(rag): Implement TextChunker with token window and overlap` | M1 | TASK-29 | ✅ Completed |
 | **TASK-34** | #134064 | 4. Chunking & Vector Search | `feat(rag): Implement VectorStoreService with SIMD Cosine Similarity search` | M1 | TASK-24, TASK-28, TASK-33 | ✅ Completed |
 | **TASK-35** | #134065 | 5. Knowledgebase Services | `feat(service): Implement KnowledgebaseService & multi-file ingestion pipeline` | M2 | TASK-25, TASK-28, TASK-29, TASK-33, TASK-34 | ✅ Completed |

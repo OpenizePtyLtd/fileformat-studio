@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const url = require('url');
 const BaseEngine = require('../lib/baseEngine');
 const officeParser = require('officeparser');
 
@@ -42,6 +43,15 @@ class OfficeParserEngine extends BaseEngine {
             ignoreNotes: false,
             ...options
         };
+
+        if (ext === '.pdf' && !config.pdfWorkerSrc) {
+            try {
+                const workerPath = require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs');
+                config.pdfWorkerSrc = url.pathToFileURL(workerPath).href;
+            } catch {
+                // Ignore fallback if unresolvable
+            }
+        }
 
         const parsed = await officeParser.parseOffice(filePath, config);
 

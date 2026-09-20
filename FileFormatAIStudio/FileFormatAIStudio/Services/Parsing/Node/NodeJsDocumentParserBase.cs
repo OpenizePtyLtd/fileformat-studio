@@ -32,6 +32,12 @@ namespace FileFormatAIStudio.Services.Parsing.Node
 
         public abstract IReadOnlySet<string> SupportedExtensions { get; }
 
+        /// <summary>
+        /// The engine identifier recognized by the NodeHost process (e.g. 'officeparser').
+        /// Defaults to 'officeparser', but can be overridden when targeting another Node engine.
+        /// </summary>
+        protected virtual string NodeEngineId => "officeparser";
+
         public virtual async Task<string> ExtractTextAsync(string filePath, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(filePath))
@@ -51,7 +57,7 @@ namespace FileFormatAIStudio.Services.Parsing.Node
                 throw new InvalidOperationException($"Parser '{DisplayName}' is unavailable because the Node.js runtime or NodeHost could not be located.");
             }
 
-            var response = await NodeHost.ExecuteAsync(EngineId, "extractText", filePath, cancellationToken);
+            var response = await NodeHost.ExecuteAsync(NodeEngineId, "extractText", filePath, cancellationToken);
 
             if (!response.Success)
             {
