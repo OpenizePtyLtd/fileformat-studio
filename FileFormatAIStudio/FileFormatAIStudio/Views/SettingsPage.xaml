@@ -422,57 +422,14 @@
                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                         </StackPanel>
 
-                                        <!-- Engine Selector Dropdown & License Tag -->
-                                        <StackPanel Grid.Column="2" Spacing="4">
-                                            <ComboBox Header="Preferred Engine"
-                                                      HorizontalAlignment="Stretch"
-                                                      ItemsSource="{x:Bind AvailableEngines}"
-                                                      SelectedItem="{x:Bind SelectedEngine, Mode=TwoWay}"
-                                                      DisplayMemberPath="DisplayName" />
-
-                                            <!-- Aspose Evaluation Mode Notice Pill -->
-                                            <Border Visibility="{x:Bind local:SettingsPage.BoolToVisibility(IsSelectedEngineInEvaluation), Mode=OneWay}"
-                                                    Background="{ThemeResource SystemFillColorCautionBackgroundBrush}"
-                                                    BorderBrush="{ThemeResource SystemFillColorCautionBrush}"
-                                                    BorderThickness="1"
-                                                    CornerRadius="4"
-                                                    Padding="6,3"
-                                                    HorizontalAlignment="Left"
-                                                    ToolTipService.ToolTip="{x:Bind LicenseStatusTooltip, Mode=OneWay}">
-                                                <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                                                    <FontIcon Glyph="&#xE7BA;" FontSize="10" Foreground="{ThemeResource SystemFillColorCautionBrush}" VerticalAlignment="Center" />
-                                                    <TextBlock Text="Evaluation Mode"
-                                                               FontSize="10"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{ThemeResource SystemFillColorCautionBrush}"
-                                                               VerticalAlignment="Center" />
-                                                    <TextBlock Text="•" FontSize="10" Foreground="{ThemeResource TextFillColorTertiaryBrush}" VerticalAlignment="Center" />
-                                                    <TextBlock Text="{x:Bind LicenseStatusShortNote, Mode=OneWay}"
-                                                               FontSize="10"
-                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                               VerticalAlignment="Center" />
-                                                </StackPanel>
-                                            </Border>
-
-                                            <!-- Aspose Licensed Pill -->
-                                            <Border Visibility="{x:Bind local:SettingsPage.BoolToVisibility(IsSelectedEngineLicensed), Mode=OneWay}"
-                                                    Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}"
-                                                    BorderBrush="{ThemeResource SystemFillColorSuccessBrush}"
-                                                    BorderThickness="1"
-                                                    CornerRadius="4"
-                                                    Padding="6,3"
-                                                    HorizontalAlignment="Left"
-                                                    ToolTipService.ToolTip="{x:Bind LicenseStatusTooltip, Mode=OneWay}">
-                                                <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
-                                                    <FontIcon Glyph="&#xE73E;" FontSize="10" Foreground="{ThemeResource SystemFillColorSuccessBrush}" VerticalAlignment="Center" />
-                                                    <TextBlock Text="Licensed"
-                                                               FontSize="10"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{ThemeResource SystemFillColorSuccessBrush}"
-                                                               VerticalAlignment="Center" />
-                                                </StackPanel>
-                                            </Border>
-                                        </StackPanel>
+                                        <!-- Engine Selector Dropdown -->
+                                        <ComboBox Grid.Column="2"
+                                                  Header="Preferred Engine"
+                                                  HorizontalAlignment="Stretch"
+                                                  VerticalAlignment="Center"
+                                                  ItemsSource="{x:Bind AvailableEngines}"
+                                                  SelectedItem="{x:Bind SelectedEngine, Mode=TwoWay}"
+                                                  DisplayMemberPath="DisplayName" />
                                     </Grid>
 
                                     <!-- Bottom Row: Benchmark Champion Status & Feedback -->

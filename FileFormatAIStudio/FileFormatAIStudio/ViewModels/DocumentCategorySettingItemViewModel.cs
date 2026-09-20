@@ -56,7 +56,9 @@ namespace FileFormatAIStudio.ViewModels
             SelectedEngine.EngineId.Contains("aspose", StringComparison.OrdinalIgnoreCase);
 
         public bool IsSelectedEngineLicensed =>
-            _licenseService != null && _licenseService.IsEngineLicensed(SelectedEngine?.EngineId ?? "");
+            IsSelectedEngineAspose &&
+            _licenseService != null &&
+            _licenseService.IsEngineLicensed(SelectedEngine?.EngineId ?? "");
 
         public bool IsSelectedEngineInEvaluation =>
             IsSelectedEngineAspose && !IsSelectedEngineLicensed;
