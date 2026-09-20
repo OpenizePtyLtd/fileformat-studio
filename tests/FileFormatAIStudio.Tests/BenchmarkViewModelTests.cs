@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FileFormatAIStudio.Data.Entities;
 using FileFormatAIStudio.Services.Benchmarking;
+using FileFormatAIStudio.Services.Parsing;
 using FileFormatAIStudio.ViewModels;
 using FluentAssertions;
 using Microsoft.UI.Xaml.Controls;
@@ -375,6 +376,77 @@ namespace FileFormatAIStudio.Tests
             vm.ActiveResult!.SessionId.Should().Be(sessionId);
             vm.WinnerScorecard.Should().NotBeNull();
             vm.WinnerScorecard!.EngineDisplayName.Should().Be("Aspose.PDF");
+        }
+
+        [Fact]
+        public async Task EvaluationMode_FlagsAsposeScorecards_WhenUnlicensed()
+        {
+            var sessionId = Guid.NewGuid();
+            var session = new BenchmarkSessionEntity
+            {
+                Id = sessionId,
+                Title = "PDF Benchmark Session",
+                Category = "Pdf",
+                TotalDocuments = 1,
+                CreatedAt = DateTime.UtcNow
+            };
+            var doc = new BenchmarkDocumentEntity
+            {
+                Id = Guid.NewGuid(),
+                SessionId = sessionId,
+                FileName = "manual.pdf",
+                FilePath = "C:/docs/manual.pdf",
+                Extension = ".pdf",
+                Category = "Pdf",
+                FileSizeBytes = 5000
+            };
+            doc.RunResults.Add(new BenchmarkRunResultEntity
+            {
+                Id = Guid.NewGuid(),
+                DocumentId = doc.Id,
+                EngineId = "aspose-pdf",
+                EngineDisplayName = "Aspose.PDF for .NET",
+                Status = "Success",
+                ElapsedMilliseconds = 120,
+                CharacterCount = 2500,
+                WordCount = 400,
+                OverallScore = 65.0,
+                Rank = 2
+            });
+            doc.RunResults.Add(new BenchmarkRunResultEntity
+            {
+                Id = Guid.NewGuid(),
+                DocumentId = doc.Id,
+                EngineId = "pdfpig",
+                EngineDisplayName = "PdfPig .NET",
+                Status = "Success",
+                ElapsedMilliseconds = 95,
+                CharacterCount = 15000,
+                WordCount = 2500,
+                OverallScore = 95.0,
+                Rank = 1
+            });
+            session.Documents.Add(doc);
+
+            var runner = new MockBenchmarkRunner();
+            runner.History.Add(session);
+
+            var licenseService = new AsposeLicenseService();
+            licenseService.InitializeLicenses("C:\\NonExistent\\lic.lic");
+
+            var vm = new BenchmarkViewModel(runner, _categoryRegistry, licenseService: licenseService);
+            await vm.LoadDashboardCommand.ExecuteAsync(null);
+
+            var pdfWinner = vm.CategoryWinners.First(c => c.Category == DocumentCategory.Pdf);
+            vm.SelectCategoryWinnerCommand.Execute(pdfWinner);
+
+            var asposeScorecard = vm.EngineScorecards.First(s => s.EngineId == "aspose-pdf");
+            asposeScorecard.IsEvaluationMode.Should().BeTrue();
+            asposeScorecard.EvaluationBadgeText.Should().Be("Evaluation Mode");
+            asposeScorecard.EvaluationWarningTooltip.Should().Contain("4 pages");
+
+            var pdfpigScorecard = vm.EngineScorecards.First(s => s.EngineId == "pdfpig");
+            pdfpigScorecard.IsEvaluationMode.Should().BeFalse();
         }
     }
 }

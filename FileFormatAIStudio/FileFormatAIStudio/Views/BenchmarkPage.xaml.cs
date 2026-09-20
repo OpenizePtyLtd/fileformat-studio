@@ -226,6 +226,9 @@ namespace FileFormatAIStudio.Views
 
         public static Visibility StringToVisibility(string? text) =>
             string.IsNullOrWhiteSpace(text) ? Visibility.Collapsed : Visibility.Visible;
+
+        public static Visibility BoolToVisibility(bool value) =>
+            value ? Visibility.Visible : Visibility.Collapsed;
     }
 }
 

@@ -10,6 +10,7 @@ using FileFormatAIStudio.Services.Benchmarking;
 using FileFormatAIStudio.Services.Knowledgebase;
 using FileFormatAIStudio.Services.Parsing;
 using FileFormatAIStudio.Services.Parsing.Engines.Word;
+using FileFormatAIStudio.ViewModels;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -237,6 +238,50 @@ namespace FileFormatAIStudio.Tests
                     try { Directory.Delete(tempDir, recursive: true); } catch { }
                 }
             }
+        }
+
+        [Fact]
+        public void DocumentCategorySettingItemViewModel_ReflectsLicenseAndEvaluationStatus()
+        {
+            using var context = new AppDbContext(_options);
+            var prefService = new DocumentEnginePreferenceService(context, _categoryRegistry, _parserFactory);
+            var licenseService = new AsposeLicenseService();
+            licenseService.InitializeLicenses("C:\\NonExistent\\lic.lic");
+
+            var engines = new List<EngineOptionItem>
+            {
+                new("Auto", "Auto"),
+                new("aspose-words", "Aspose.Words for .NET"),
+                new("openxml", "OpenXML Word")
+            };
+
+            var itemVm = new DocumentCategorySettingItemViewModel(
+                category: DocumentCategory.Word,
+                categoryName: "Word Documents",
+                iconGlyph: "\uE8A5",
+                supportedFormatsSummary: ".docx, .doc",
+                availableEngines: engines,
+                initialSelectedEngine: engines[0], // Auto
+                benchmarkWinnerDisplayName: null,
+                preferenceService: prefService,
+                licenseService: licenseService);
+
+            // In Auto mode, not specifically an Aspose engine
+            itemVm.IsSelectedEngineAspose.Should().BeFalse();
+            itemVm.IsSelectedEngineInEvaluation.Should().BeFalse();
+
+            // Switch to Aspose engine
+            itemVm.SelectedEngine = engines[1];
+            itemVm.IsSelectedEngineAspose.Should().BeTrue();
+            itemVm.IsSelectedEngineLicensed.Should().BeFalse();
+            itemVm.IsSelectedEngineInEvaluation.Should().BeTrue();
+            itemVm.LicenseStatusBadgeText.Should().Be("Evaluation Mode");
+            itemVm.LicenseStatusTooltip.Should().Contain("watermark");
+
+            // Switch to OpenXML engine
+            itemVm.SelectedEngine = engines[2];
+            itemVm.IsSelectedEngineAspose.Should().BeFalse();
+            itemVm.IsSelectedEngineInEvaluation.Should().BeFalse();
         }
     }
 }

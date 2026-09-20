@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FileFormatAIStudio.Data.Entities;
 using FileFormatAIStudio.Services.Knowledgebase;
+using FileFormatAIStudio.Services.Parsing;
 using FileFormatAIStudio.Services.Settings;
 using FileFormatAIStudio.ViewModels;
 using FluentAssertions;
@@ -344,6 +345,27 @@ namespace FileFormatAIStudio.Tests
             vm.IsCompleted = true;
             vm.IsStep4Completed.Should().BeTrue();
             vm.Step4CompletedVisibility.Should().Be(Microsoft.UI.Xaml.Visibility.Visible);
+        }
+
+        [Fact]
+        public void AddFiles_WithPdfAndWord_ShowsEvaluationNotice_WhenUnlicensed()
+        {
+            var fakeSettings = new FakeSettingsService();
+            var licenseService = new AsposeLicenseService();
+            licenseService.InitializeLicenses("C:\\NonExistent\\lic.lic");
+
+            var vm = new CreateKnowledgebaseViewModel(fakeSettings, licenseService: licenseService);
+            vm.HasUnlicensedEngineWarning.Should().BeFalse();
+
+            var pdfFile = new SelectedFileItemViewModel("C:/docs/report.pdf", 2048);
+            vm.AddFiles(new[] { pdfFile });
+
+            vm.HasUnlicensedEngineWarning.Should().BeTrue();
+            vm.UnlicensedEngineNoticeMessage.Should().Contain("PDF");
+            vm.UnlicensedEngineNoticeMessage.Should().Contain("4 pages");
+
+            vm.ClearAllFiles();
+            vm.HasUnlicensedEngineWarning.Should().BeFalse();
         }
     }
 

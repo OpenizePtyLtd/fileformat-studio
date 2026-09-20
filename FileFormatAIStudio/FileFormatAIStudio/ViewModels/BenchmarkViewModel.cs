@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FileFormatAIStudio.Data.Entities;
 using FileFormatAIStudio.Services.Benchmarking;
+using FileFormatAIStudio.Services.Parsing;
 using Microsoft.UI.Xaml.Controls;
 
 namespace FileFormatAIStudio.ViewModels
@@ -155,6 +156,9 @@ namespace FileFormatAIStudio.ViewModels
         public string CleanlinessScore { get; set; } = string.Empty;
         public bool IsSuccess { get; set; }
         public string? ErrorMessage { get; set; }
+        public bool IsEvaluationMode { get; set; }
+        public string? EvaluationBadgeText { get; set; }
+        public string? EvaluationWarningTooltip { get; set; }
     }
 
     /// <summary>
@@ -190,6 +194,7 @@ namespace FileFormatAIStudio.ViewModels
         private readonly IBenchmarkRunnerService _benchmarkRunner;
         private readonly IDocumentCategoryRegistry _categoryRegistry;
         private readonly IBenchmarkExportService _exportService;
+        private readonly IAsposeLicenseService? _licenseService;
         private CancellationTokenSource? _runCts;
 
         [ObservableProperty]
@@ -298,11 +303,13 @@ namespace FileFormatAIStudio.ViewModels
         public BenchmarkViewModel(
             IBenchmarkRunnerService benchmarkRunner,
             IDocumentCategoryRegistry categoryRegistry,
-            IBenchmarkExportService? exportService = null)
+            IBenchmarkExportService? exportService = null,
+            IAsposeLicenseService? licenseService = null)
         {
             _benchmarkRunner = benchmarkRunner ?? throw new ArgumentNullException(nameof(benchmarkRunner));
             _categoryRegistry = categoryRegistry ?? throw new ArgumentNullException(nameof(categoryRegistry));
             _exportService = exportService ?? new BenchmarkExportService();
+            _licenseService = licenseService;
 
             InitializeCategories();
             InitializeEmptyCategoryWinners();
@@ -487,6 +494,25 @@ namespace FileFormatAIStudio.ViewModels
                 var cleanMetric = run.MetricScores.FirstOrDefault(m => m.MetricId == "cleanliness_score");
                 string cleanliness = cleanMetric != null ? $"{cleanMetric.RawValue:F1}%" : "100.0%";
 
+                bool isEvaluationMode = false;
+                string? evaluationBadgeText = null;
+                string? evaluationWarningTooltip = null;
+
+                if (run.EngineId.Contains("aspose", StringComparison.OrdinalIgnoreCase))
+                {
+                    bool isLicensed = _licenseService?.IsEngineLicensed(run.EngineId) ?? false;
+                    if (!isLicensed)
+                    {
+                        isEvaluationMode = true;
+                        evaluationBadgeText = "Evaluation Mode";
+                        evaluationWarningTooltip = _licenseService != null
+                            ? _licenseService.GetEvaluationNotice(run.EngineId)
+                            : (run.EngineId.Contains("pdf", StringComparison.OrdinalIgnoreCase)
+                                ? "Evaluation Mode: Aspose.PDF processes only the first 4 pages of any PDF document. Extraction volume is capped."
+                                : "Evaluation Mode: Aspose library is running without a license. Extracted content is subject to evaluation limits and watermarks.");
+                    }
+                }
+
                 var scorecard = new BenchmarkScorecardItemViewModel
                 {
                     EngineId = run.EngineId,
@@ -506,7 +532,10 @@ namespace FileFormatAIStudio.ViewModels
                     FormattedMemory = memory,
                     CleanlinessScore = cleanliness,
                     IsSuccess = run.IsSuccess,
-                    ErrorMessage = run.ErrorMessage
+                    ErrorMessage = run.ErrorMessage,
+                    IsEvaluationMode = isEvaluationMode,
+                    EvaluationBadgeText = evaluationBadgeText,
+                    EvaluationWarningTooltip = evaluationWarningTooltip
                 };
 
                 EngineScorecards.Add(scorecard);

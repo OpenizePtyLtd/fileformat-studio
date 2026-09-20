@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using FileFormatAIStudio.Data.Entities;
 using FileFormatAIStudio.Services.AI;
 using FileFormatAIStudio.Services.Knowledgebase;
+using FileFormatAIStudio.Services.Parsing;
 using FileFormatAIStudio.Services.Settings;
 
 namespace FileFormatAIStudio.ViewModels
@@ -24,7 +25,15 @@ namespace FileFormatAIStudio.ViewModels
     {
         private readonly ISettingsService _settingsService;
         private readonly IKnowledgebaseService? _knowledgebaseService;
+        private readonly IAsposeLicenseService? _licenseService;
+        private readonly IDocumentEnginePreferenceService? _enginePreferenceService;
         private System.Threading.CancellationTokenSource? _indexingCts;
+
+        [ObservableProperty]
+        private bool _hasUnlicensedEngineWarning;
+
+        [ObservableProperty]
+        private string _unlicensedEngineNoticeMessage = string.Empty;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsValid))]
@@ -185,10 +194,16 @@ namespace FileFormatAIStudio.ViewModels
             SelectedEmbeddingModel != null &&
             !string.IsNullOrWhiteSpace(SelectedEmbeddingModel.ModelId);
 
-        public CreateKnowledgebaseViewModel(ISettingsService settingsService, IKnowledgebaseService? knowledgebaseService = null)
+        public CreateKnowledgebaseViewModel(
+            ISettingsService settingsService,
+            IKnowledgebaseService? knowledgebaseService = null,
+            IAsposeLicenseService? licenseService = null,
+            IDocumentEnginePreferenceService? enginePreferenceService = null)
         {
             _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
             _knowledgebaseService = knowledgebaseService;
+            _licenseService = licenseService;
+            _enginePreferenceService = enginePreferenceService;
         }
 
         public async Task InitializeAsync()
@@ -293,6 +308,7 @@ namespace FileFormatAIStudio.ViewModels
                 OnPropertyChanged(nameof(HasSelectedFiles));
                 OnPropertyChanged(nameof(HasNoSelectedFiles));
                 OnPropertyChanged(nameof(TotalFilesSummary));
+                UpdateEvaluationWarning();
             }
         }
 
@@ -306,6 +322,7 @@ namespace FileFormatAIStudio.ViewModels
                 OnPropertyChanged(nameof(HasSelectedFiles));
                 OnPropertyChanged(nameof(HasNoSelectedFiles));
                 OnPropertyChanged(nameof(TotalFilesSummary));
+                UpdateEvaluationWarning();
             }
         }
 
@@ -320,6 +337,56 @@ namespace FileFormatAIStudio.ViewModels
             OnPropertyChanged(nameof(HasSelectedFiles));
             OnPropertyChanged(nameof(HasNoSelectedFiles));
             OnPropertyChanged(nameof(TotalFilesSummary));
+            UpdateEvaluationWarning();
+        }
+
+        private void UpdateEvaluationWarning()
+        {
+            HasUnlicensedEngineWarning = false;
+            UnlicensedEngineNoticeMessage = string.Empty;
+
+            if (SelectedFiles.Count == 0)
+            {
+                return;
+            }
+
+            var unlicensedNotices = new List<string>();
+
+            bool hasPdf = SelectedFiles.Any(f => string.Equals(f.FileExtension, ".pdf", StringComparison.OrdinalIgnoreCase));
+            if (hasPdf && (_licenseService == null || !_licenseService.IsPdfLicensed))
+            {
+                unlicensedNotices.Add("PDF extraction is limited to the first 4 pages in Aspose evaluation mode");
+            }
+
+            bool hasWord = SelectedFiles.Any(f =>
+                string.Equals(f.FileExtension, ".docx", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(f.FileExtension, ".doc", StringComparison.OrdinalIgnoreCase));
+            if (hasWord && (_licenseService == null || !_licenseService.IsWordsLicensed))
+            {
+                unlicensedNotices.Add("Word extraction will include Aspose evaluation watermarks");
+            }
+
+            bool hasExcel = SelectedFiles.Any(f =>
+                string.Equals(f.FileExtension, ".xlsx", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(f.FileExtension, ".xls", StringComparison.OrdinalIgnoreCase));
+            if (hasExcel && (_licenseService == null || !_licenseService.IsCellsLicensed))
+            {
+                unlicensedNotices.Add("Excel extraction operates under Aspose evaluation limits");
+            }
+
+            bool hasPowerPoint = SelectedFiles.Any(f =>
+                string.Equals(f.FileExtension, ".pptx", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(f.FileExtension, ".ppt", StringComparison.OrdinalIgnoreCase));
+            if (hasPowerPoint && (_licenseService == null || !_licenseService.IsSlidesLicensed))
+            {
+                unlicensedNotices.Add("PowerPoint extraction operates under Aspose evaluation limits");
+            }
+
+            if (unlicensedNotices.Count > 0)
+            {
+                HasUnlicensedEngineWarning = true;
+                UnlicensedEngineNoticeMessage = $"Notice: {string.Join("; ", unlicensedNotices)}.";
+            }
         }
 
         private void OnFileRemoveRequested(SelectedFileItemViewModel file)

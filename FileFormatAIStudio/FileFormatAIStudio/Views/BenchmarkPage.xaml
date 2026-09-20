@@ -409,8 +409,9 @@
                                             CornerRadius="10"
                                             Padding="18,16"
                                             Width="260">
-                                        <Grid RowSpacing="12">
+                                        <Grid RowSpacing="10">
                                             <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
@@ -434,20 +435,39 @@
                                                         CornerRadius="4"
                                                         Padding="6,2">
                                                     <TextBlock Text="{x:Bind RankBadgeText}"
-                                                               FontSize="11"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                                                FontSize="11"
+                                                                FontWeight="SemiBold"
+                                                                Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
                                                 </Border>
                                             </Grid>
 
+                                            <!-- Evaluation Warning Badge -->
+                                            <Border Grid.Row="1"
+                                                    Visibility="{x:Bind local:BenchmarkPage.BoolToVisibility(IsEvaluationMode)}"
+                                                    Background="{ThemeResource SystemFillColorCautionBackgroundBrush}"
+                                                    BorderBrush="{ThemeResource SystemFillColorCautionBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="4"
+                                                    Padding="6,3"
+                                                    ToolTipService.ToolTip="{x:Bind EvaluationWarningTooltip}">
+                                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                    <FontIcon Glyph="&#xE7BA;" FontSize="11" Foreground="{ThemeResource SystemFillColorCautionBrush}" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{x:Bind EvaluationBadgeText}"
+                                                               FontSize="10"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                                               VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </Border>
+
                                             <!-- Score Big Display -->
-                                            <StackPanel Grid.Row="1" Spacing="2">
+                                            <StackPanel Grid.Row="2" Spacing="2">
                                                 <TextBlock Text="COMPOSITE SCORE" FontSize="10" FontWeight="Bold" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
                                                 <TextBlock Text="{x:Bind FormattedScore}" FontSize="22" FontWeight="Bold" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
                                             </StackPanel>
 
                                             <!-- Key Metrics Summary Grid -->
-                                            <Grid Grid.Row="2" ColumnSpacing="12" RowSpacing="6">
+                                            <Grid Grid.Row="3" ColumnSpacing="12" RowSpacing="6">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="*" />
@@ -479,7 +499,7 @@
                                             </Grid>
 
                                             <!-- Error message if any -->
-                                            <TextBlock Grid.Row="3"
+                                            <TextBlock Grid.Row="4"
                                                        Text="{x:Bind ErrorMessage}"
                                                        FontSize="11"
                                                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"

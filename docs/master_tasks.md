@@ -94,7 +94,7 @@
 | **TASK-81** | #134482 | 9. Benchmark & Comparison | `feat(benchmark): add in-text search highlighting and scrollbar match markers in diff inspector` | M4 | TASK-80 | ✅ Completed |
 | **TASK-82** | #134483 | 9. Benchmark & Comparison | `fix(benchmark): enable dynamic word wrap by binding ScrollViewer horizontal scroll mode and visibility in diff inspector` | M4 | TASK-81 | ✅ Completed |
 | **TASK-83** | #134488 | 9. Benchmark & Comparison | `feat(benchmark): rebalance benchmark metrics to extraction-dominant weight distribution` | M4 | TASK-49 | ✅ Completed |
-| **TASK-84** | #134489 | 11. Document Engine Configuration & Preferences | `feat(license): display Aspose evaluation mode warnings and license status indicators across document workflows` | M6 | TASK-77, TASK-83 | ⏳ Ready |
+| **TASK-84** | #134489 | 11. Document Engine Configuration & Preferences | `feat(license): display Aspose evaluation mode warnings and license status indicators across document workflows` | M6 | TASK-77, TASK-83 | ✅ Completed |
 | **TASK-85** | #134490 | 11. Document Engine Configuration & Preferences | `feat(settings): implement in-app Aspose license file upload and dynamic activation in Settings` | M6 | TASK-84 | ⏳ Ready |
 
 ---

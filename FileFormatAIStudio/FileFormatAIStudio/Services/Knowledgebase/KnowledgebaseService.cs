@@ -26,6 +26,7 @@ namespace FileFormatAIStudio.Services.Knowledgebase
         private readonly IVectorStoreService _vectorStore;
         private readonly IAIClientFactory _aiClientFactory;
         private readonly IDocumentEnginePreferenceService? _enginePreferenceService;
+        private readonly IAsposeLicenseService? _licenseService;
         private readonly string _storageDirectory;
 
         public KnowledgebaseService(
@@ -35,7 +36,8 @@ namespace FileFormatAIStudio.Services.Knowledgebase
             IVectorStoreService vectorStore,
             IAIClientFactory aiClientFactory,
             string? customStorageDirectory = null,
-            IDocumentEnginePreferenceService? enginePreferenceService = null)
+            IDocumentEnginePreferenceService? enginePreferenceService = null,
+            IAsposeLicenseService? licenseService = null)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _parserFactory = parserFactory ?? throw new ArgumentNullException(nameof(parserFactory));
@@ -43,6 +45,7 @@ namespace FileFormatAIStudio.Services.Knowledgebase
             _vectorStore = vectorStore ?? throw new ArgumentNullException(nameof(vectorStore));
             _aiClientFactory = aiClientFactory ?? throw new ArgumentNullException(nameof(aiClientFactory));
             _enginePreferenceService = enginePreferenceService;
+            _licenseService = licenseService;
 
             if (!string.IsNullOrWhiteSpace(customStorageDirectory))
             {
@@ -299,19 +302,6 @@ namespace FileFormatAIStudio.Services.Knowledgebase
                     doc.Status = "Processing";
                     await _context.SaveChangesAsync(ct);
 
-                    // Stage A: Extraction
-                    progress?.Report(new IndexingProgressReport
-                    {
-                        Stage = IndexingStage.Extracting,
-                        TotalDocuments = documents.Count,
-                        CurrentDocumentIndex = docNumber,
-                        CurrentDocumentName = doc.FileName,
-                        ProcessedDocuments = i,
-                        TotalChunksIndexed = totalChunksAccumulated,
-                        Percentage = basePercent + (10.0 / documents.Count),
-                        Message = $"[{docNumber}/{documents.Count}] Extracting text from {doc.FileName}..."
-                    });
-
                     IDocumentParser? resolvedParser = null;
                     if (_enginePreferenceService != null)
                     {
@@ -331,8 +321,25 @@ namespace FileFormatAIStudio.Services.Knowledgebase
                         throw new NotSupportedException($"No available parser engine registered to handle document: '{doc.FileName}'.");
                     }
 
+                    bool isAsposeEval = resolvedParser.EngineId.Contains("aspose", StringComparison.OrdinalIgnoreCase) &&
+                        !(_licenseService?.IsEngineLicensed(resolvedParser.EngineId) ?? false);
+                    string evalSuffix = isAsposeEval ? " (Evaluation Mode)" : string.Empty;
+
+                    // Stage A: Extraction
+                    progress?.Report(new IndexingProgressReport
+                    {
+                        Stage = IndexingStage.Extracting,
+                        TotalDocuments = documents.Count,
+                        CurrentDocumentIndex = docNumber,
+                        CurrentDocumentName = doc.FileName,
+                        ProcessedDocuments = i,
+                        TotalChunksIndexed = totalChunksAccumulated,
+                        Percentage = basePercent + (10.0 / documents.Count),
+                        Message = $"[{docNumber}/{documents.Count}] Extracting text from {doc.FileName} using {resolvedParser.DisplayName}{evalSuffix}..."
+                    });
+
                     string extractedText = await resolvedParser.ExtractTextAsync(doc.FilePath, ct);
-                    doc.ParserEngineUsed = resolvedParser.DisplayName;
+                    doc.ParserEngineUsed = isAsposeEval ? $"{resolvedParser.DisplayName} (Evaluation Mode)" : resolvedParser.DisplayName;
                     doc.RawExtractedText = extractedText;
 
                     // Stage B: Chunking

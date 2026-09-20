@@ -203,6 +203,13 @@
                         </ScrollViewer>
                     </Grid>
                 </Border>
+
+                <!-- Evaluation Notice InfoBar -->
+                <InfoBar IsOpen="{x:Bind ViewModel.HasUnlicensedEngineWarning, Mode=OneWay}"
+                         Severity="Warning"
+                         Message="{x:Bind ViewModel.UnlicensedEngineNoticeMessage, Mode=OneWay}"
+                         IsClosable="False"
+                         Margin="0,4,0,0" />
             </StackPanel>
         </StackPanel>
 

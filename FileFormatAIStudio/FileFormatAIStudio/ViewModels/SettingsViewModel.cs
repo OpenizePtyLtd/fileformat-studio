@@ -21,6 +21,7 @@ namespace FileFormatAIStudio.ViewModels
         private readonly IDocumentEnginePreferenceService? _enginePreferenceService;
         private readonly IDocumentCategoryRegistry? _categoryRegistry;
         private readonly IDocumentParserFactory? _parserFactory;
+        private readonly IAsposeLicenseService? _licenseService;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsAiProvidersTabActive))]
@@ -130,13 +131,15 @@ namespace FileFormatAIStudio.ViewModels
             IAIClientFactory aiClientFactory,
             IDocumentEnginePreferenceService? enginePreferenceService = null,
             IDocumentCategoryRegistry? categoryRegistry = null,
-            IDocumentParserFactory? parserFactory = null)
+            IDocumentParserFactory? parserFactory = null,
+            IAsposeLicenseService? licenseService = null)
         {
             _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
             _aiClientFactory = aiClientFactory ?? throw new ArgumentNullException(nameof(aiClientFactory));
             _enginePreferenceService = enginePreferenceService;
             _categoryRegistry = categoryRegistry;
             _parserFactory = parserFactory;
+            _licenseService = licenseService;
         }
 
         [RelayCommand]
@@ -190,7 +193,8 @@ namespace FileFormatAIStudio.ViewModels
                     availableEngines: options,
                     initialSelectedEngine: selectedOption,
                     benchmarkWinnerDisplayName: winnerName,
-                    preferenceService: _enginePreferenceService);
+                    preferenceService: _enginePreferenceService,
+                    licenseService: _licenseService);
 
                 DocumentCategories.Add(vm);
             }

@@ -17,6 +17,7 @@ namespace FileFormatAIStudio.ViewModels
     public partial class DocumentCategorySettingItemViewModel : ObservableObject
     {
         private readonly IDocumentEnginePreferenceService _preferenceService;
+        private readonly IAsposeLicenseService? _licenseService;
 
         public DocumentCategory Category { get; }
         public string CategoryName { get; }
@@ -42,6 +43,29 @@ namespace FileFormatAIStudio.ViewModels
             ? $"Latest Benchmark Champion: {BenchmarkWinnerDisplayName}"
             : "No benchmark run yet for this category (Auto will use default engine)";
 
+        public bool IsSelectedEngineAspose =>
+            SelectedEngine != null &&
+            SelectedEngine.EngineId.Contains("aspose", StringComparison.OrdinalIgnoreCase);
+
+        public bool IsSelectedEngineLicensed =>
+            _licenseService != null && _licenseService.IsEngineLicensed(SelectedEngine?.EngineId ?? "");
+
+        public bool IsSelectedEngineInEvaluation =>
+            IsSelectedEngineAspose && !IsSelectedEngineLicensed;
+
+        public string LicenseStatusBadgeText =>
+            IsSelectedEngineLicensed ? "Licensed" : "Evaluation Mode";
+
+        public string LicenseStatusTooltip =>
+            IsSelectedEngineLicensed
+                ? "Active Aspose product license detected. Uncapped document extraction enabled."
+                : (_licenseService?.GetEvaluationNotice(Category) ?? "Aspose is running without a license. Processing is subject to evaluation limits and watermarks.");
+
+        public string LicenseStatusShortNote =>
+            IsSelectedEngineLicensed
+                ? "Licensed product"
+                : (Category == DocumentCategory.Pdf ? "4-page ceiling" : "Evaluation watermarks");
+
         public DocumentCategorySettingItemViewModel(
             DocumentCategory category,
             string categoryName,
@@ -50,7 +74,8 @@ namespace FileFormatAIStudio.ViewModels
             IReadOnlyList<EngineOptionItem> availableEngines,
             EngineOptionItem initialSelectedEngine,
             string? benchmarkWinnerDisplayName,
-            IDocumentEnginePreferenceService preferenceService)
+            IDocumentEnginePreferenceService preferenceService,
+            IAsposeLicenseService? licenseService = null)
         {
             Category = category;
             CategoryName = categoryName ?? throw new ArgumentNullException(nameof(categoryName));
@@ -61,6 +86,7 @@ namespace FileFormatAIStudio.ViewModels
             _benchmarkWinnerDisplayName = benchmarkWinnerDisplayName;
             _hasBenchmarkWinner = !string.IsNullOrWhiteSpace(benchmarkWinnerDisplayName);
             _preferenceService = preferenceService ?? throw new ArgumentNullException(nameof(preferenceService));
+            _licenseService = licenseService;
         }
 
         partial void OnSelectedEngineChanged(EngineOptionItem value)
@@ -69,6 +95,12 @@ namespace FileFormatAIStudio.ViewModels
             {
                 _ = _preferenceService.SetPreferredEngineIdAsync(Category, value.EngineId);
                 StatusFeedback = $"Saved: Using {value.DisplayName} for {CategoryName}.";
+                OnPropertyChanged(nameof(IsSelectedEngineAspose));
+                OnPropertyChanged(nameof(IsSelectedEngineLicensed));
+                OnPropertyChanged(nameof(IsSelectedEngineInEvaluation));
+                OnPropertyChanged(nameof(LicenseStatusBadgeText));
+                OnPropertyChanged(nameof(LicenseStatusTooltip));
+                OnPropertyChanged(nameof(LicenseStatusShortNote));
             }
         }
     }
