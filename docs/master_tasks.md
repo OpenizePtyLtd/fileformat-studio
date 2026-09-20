@@ -47,7 +47,7 @@
 | **TASK-23** | #134053 | 0. Foundation & Architecture | `[Build/UI] Automated date-based versioning and high-contrast version badge` | M0 | None | ✅ Completed |
 | **TASK-24** | #134054 | 1. Architectural Decisions | `spike(rag): Evaluate & decide Vector DB engine (In-Process SQLite BLOB + SIMD vs sqlite-vec vs Embedded)` | M1 | None | ✅ Completed |
 | **TASK-25** | #134055 | 1. Architectural Decisions | `spike(rag): Evaluate & decide Embedding Generation pipeline via Microsoft.Extensions.AI` | M1 | None | ✅ Completed |
-| **TASK-26** | #134056 | 1. Architectural Decisions | `spike(parser): Design Node.js IPC runner for officeparser / node scripts in WinUI 3` | M1 | None | ⏳ Pending |
+| **TASK-26** | #134056 | 1. Architectural Decisions | `spike(parser): Design Node.js IPC runner for officeparser / node scripts in WinUI 3` | M1 | None | ✅ Completed |
 | **TASK-27** | #134057 | 2. Data & Persistence | `feat(data): Implement Knowledgebase and Document Chunk EF Core Entities` | M1 | TASK-24 | ✅ Completed |
 | **TASK-28** | #134058 | 2. Data & Persistence | `feat(data): Add EF Core migration for Knowledgebase & Vector schema` | M1 | TASK-27 | ✅ Completed |
 | **TASK-29** | #134059 | 3. Parser Subsystem | `feat(parser): Implement IDocumentParser contract, metadata models, and DocumentParserFactory` | M1 | None | ✅ Completed |

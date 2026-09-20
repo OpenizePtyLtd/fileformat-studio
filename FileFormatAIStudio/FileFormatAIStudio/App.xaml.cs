@@ -63,6 +63,10 @@ namespace FileFormatAIStudio
             // PlainText Category
             services.AddSingleton<IDocumentParser, PlainTextParser>();
 
+            // Node.js Subsystem & Host Services
+            services.AddSingleton<FileFormatAIStudio.Services.Parsing.Node.INodeJsRuntimeService, FileFormatAIStudio.Services.Parsing.Node.NodeJsRuntimeService>();
+            services.AddSingleton<FileFormatAIStudio.Services.Parsing.Node.INodeJsHostService, FileFormatAIStudio.Services.Parsing.Node.NodeJsHostService>();
+
             services.AddSingleton<IDocumentParserFactory, DocumentParserFactory>();
             services.AddSingleton<ITextChunker, TextChunker>();
             services.AddSingleton<IDocumentCategoryRegistry, DocumentCategoryRegistry>();

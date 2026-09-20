@@ -1,0 +1,17 @@
+{
+  "name": "fileformat-node-host",
+  "version": "1.0.0",
+  "description": "Unified Node.js host subsystem and IPC dispatcher for FileFormat AI Studio",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js --probe"
+  },
+  "dependencies": {
+    "officeparser": "^6.0.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "private": true
+}
+
