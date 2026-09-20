@@ -484,7 +484,7 @@
                                                        FontSize="11"
                                                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"
                                                        TextWrapping="Wrap"
-                                                       Visibility="{x:Bind ErrorMessage, Mode=OneWay, Converter={x:Null}}" />
+                                                       Visibility="{x:Bind local:BenchmarkPage.StringToVisibility(ErrorMessage)}" />
                                         </Grid>
                                     </Border>
                                 </DataTemplate>

@@ -223,6 +223,9 @@ namespace FileFormatAIStudio.Views
                 ViewModel.ShowStatus($"Error during export: {ex.Message}", InfoBarSeverity.Error);
             }
         }
+
+        public static Visibility StringToVisibility(string? text) =>
+            string.IsNullOrWhiteSpace(text) ? Visibility.Collapsed : Visibility.Visible;
     }
 }
 
