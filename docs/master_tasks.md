@@ -91,6 +91,7 @@
 | **TASK-78** | #134380 | 11. Document Engine Configuration & Preferences | `test(parser): add unit and integration tests for document engine preferences, KB ingestion, and Settings ViewModel` | M6 | TASK-76, TASK-77 | ✅ Completed |
 | **TASK-79** | #134480 | 9. Benchmark & Comparison | `fix(ui): resolve blank benchmark scorecard cards by correcting ErrorMessage visibility binding` | M4 | TASK-65, TASK-71 | ✅ Completed |
 | **TASK-80** | #134481 | 9. Benchmark & Comparison | `feat(benchmark): implement dual-pane in-text search and navigation in benchmark extracted text diff dialog` | M4 | TASK-52 | ✅ Completed |
+| **TASK-81** | #134482 | 9. Benchmark & Comparison | `feat(benchmark): add in-text search highlighting and scrollbar match markers in diff inspector` | M4 | TASK-80 | ✅ Completed |
 
 ---
 
@@ -164,6 +165,7 @@ flowchart TD
         T65["TASK-65 (#134084)<br/>Benchmark Dashboard & Winner"]
         T79["TASK-79 (#134480)<br/>Scorecard ErrorMessage Binding Fix"]
         T80["TASK-80 (#134481)<br/>Dual-Pane Search &amp; Nav in Diff"]
+        T81["TASK-81 (#134482)<br/>Search Highlighting &amp; Scrollbar Markers"]
     end
 
     %% M1 Dependencies
@@ -212,6 +214,7 @@ flowchart TD
     T51 --> T65
     T65 --> T79
     T52 --> T80
+    T80 --> T81
     end
 
     subgraph ModularParsersM5 ["Phase 10: Format-Centric Parser Architecture (M5)"]

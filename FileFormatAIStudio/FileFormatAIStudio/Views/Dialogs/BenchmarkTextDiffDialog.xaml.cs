@@ -1,9 +1,13 @@
 using System;
+using System.Collections.Generic;
 using Windows.ApplicationModel.DataTransfer;
 using FileFormatAIStudio.Services.Benchmarking;
 using FileFormatAIStudio.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Shapes;
 
 namespace FileFormatAIStudio.Views.Dialogs
 {
@@ -44,10 +48,7 @@ namespace FileFormatAIStudio.Views.Dialogs
                 UnifiedDiffContainer.Visibility = Visibility.Collapsed;
                 SideBySideTabButton.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
                 UnifiedDiffTabButton.Style = (Style)Application.Current.Resources["DefaultButtonStyle"];
-                if (ViewModel.HasSearchQuery)
-                {
-                    HighlightCurrentMatches();
-                }
+                HighlightCurrentMatches();
             }
             else
             {
@@ -69,26 +70,25 @@ namespace FileFormatAIStudio.Views.Dialogs
             {
                 _isSyncingScroll = true;
 
+                // 1. Text Highlighters
+                UpdateTextHighlighters(LeftTextBlock, ViewModel.MatchesA, ViewModel.CurrentMatchA);
+                UpdateTextHighlighters(RightTextBlock, ViewModel.MatchesB, ViewModel.CurrentMatchB);
+
+                // 2. Scrollbar Markers
+                UpdateScrollMarkers(LeftMarkerCanvas, ViewModel.MatchesA, ViewModel.CurrentMatchIndexA, ViewModel.TextA);
+                UpdateScrollMarkers(RightMarkerCanvas, ViewModel.MatchesB, ViewModel.CurrentMatchIndexB, ViewModel.TextB);
+
+                // 3. Scroll active matches into view
                 var matchA = ViewModel.CurrentMatchA;
                 if (matchA != null)
                 {
-                    LeftTextBox.Select(matchA.Index, matchA.Length);
-                    ScrollToMatch(LeftScrollViewer, LeftTextBox, matchA);
-                }
-                else if (!ViewModel.HasSearchQuery)
-                {
-                    LeftTextBox.Select(0, 0);
+                    ScrollToMatch(LeftScrollViewer, LeftTextBlock, matchA);
                 }
 
                 var matchB = ViewModel.CurrentMatchB;
                 if (matchB != null)
                 {
-                    RightTextBox.Select(matchB.Index, matchB.Length);
-                    ScrollToMatch(RightScrollViewer, RightTextBox, matchB);
-                }
-                else if (!ViewModel.HasSearchQuery)
-                {
-                    RightTextBox.Select(0, 0);
+                    ScrollToMatch(RightScrollViewer, RightTextBlock, matchB);
                 }
             }
             catch { }
@@ -98,11 +98,101 @@ namespace FileFormatAIStudio.Views.Dialogs
             }
         }
 
-        private void ScrollToMatch(ScrollViewer scrollViewer, TextBox textBox, TextSearchMatch match)
+        private void UpdateTextHighlighters(TextBlock textBlock, List<TextSearchMatch> matches, TextSearchMatch? currentMatch)
+        {
+            textBlock.TextHighlighters.Clear();
+
+            if (matches == null || matches.Count == 0)
+                return;
+
+            // Yellow/Amber highlight for all occurrences
+            var allMatchesHighlighter = new TextHighlighter
+            {
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(210, 255, 235, 59)), // Soft Amber Yellow
+                Foreground = new SolidColorBrush(Microsoft.UI.Colors.Black)
+            };
+
+            foreach (var match in matches)
+            {
+                if (currentMatch != null && match.Index == currentMatch.Index && match.Length == currentMatch.Length)
+                    continue; // current active match gets distinct styling below
+
+                allMatchesHighlighter.Ranges.Add(new TextRange { StartIndex = match.Index, Length = match.Length });
+            }
+
+            if (allMatchesHighlighter.Ranges.Count > 0)
+            {
+                textBlock.TextHighlighters.Add(allMatchesHighlighter);
+            }
+
+            // Bright Orange/Accent highlight for currently active match
+            if (currentMatch != null)
+            {
+                var activeHighlighter = new TextHighlighter
+                {
+                    Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 112, 67)), // Vivid Coral Orange
+                    Foreground = new SolidColorBrush(Microsoft.UI.Colors.White)
+                };
+                activeHighlighter.Ranges.Add(new TextRange { StartIndex = currentMatch.Index, Length = currentMatch.Length });
+                textBlock.TextHighlighters.Add(activeHighlighter);
+            }
+        }
+
+        private void UpdateScrollMarkers(Canvas canvas, List<TextSearchMatch> matches, int currentMatchIndex, string text)
+        {
+            canvas.Children.Clear();
+
+            if (matches == null || matches.Count == 0 || string.IsNullOrEmpty(text) || canvas.ActualHeight <= 0)
+                return;
+
+            int totalLines = 1;
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (text[i] == '\n') totalLines++;
+            }
+
+            double trackHeight = canvas.ActualHeight;
+            var yellowBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(220, 255, 193, 7)); // Amber Gold
+            var orangeBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 87, 34)); // Vivid Orange
+            var borderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(100, 0, 0, 0));
+
+            for (int i = 0; i < matches.Count; i++)
+            {
+                var match = matches[i];
+                bool isActive = (i == currentMatchIndex);
+
+                double ratio = (double)match.LineIndex / Math.Max(1, totalLines);
+                double top = ratio * (trackHeight - (isActive ? 6 : 3));
+                top = Math.Clamp(top, 0, Math.Max(0, trackHeight - 6));
+
+                var rect = new Rectangle
+                {
+                    Width = isActive ? 11 : 8,
+                    Height = isActive ? 5 : 3,
+                    RadiusX = 1.5,
+                    RadiusY = 1.5,
+                    Fill = isActive ? orangeBrush : yellowBrush,
+                    Stroke = borderBrush,
+                    StrokeThickness = 0.5
+                };
+
+                Canvas.SetLeft(rect, isActive ? 0.5 : 2);
+                Canvas.SetTop(rect, top);
+                canvas.Children.Add(rect);
+            }
+        }
+
+        private void OnMarkerCanvasSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateScrollMarkers(LeftMarkerCanvas, ViewModel.MatchesA, ViewModel.CurrentMatchIndexA, ViewModel.TextA);
+            UpdateScrollMarkers(RightMarkerCanvas, ViewModel.MatchesB, ViewModel.CurrentMatchIndexB, ViewModel.TextB);
+        }
+
+        private void ScrollToMatch(ScrollViewer scrollViewer, TextBlock textBlock, TextSearchMatch match)
         {
             try
             {
-                string text = textBox.Text;
+                string text = textBlock.Text;
                 if (string.IsNullOrEmpty(text)) return;
 
                 int totalLines = 1;

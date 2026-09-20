@@ -244,24 +244,30 @@
                         </Grid>
 
                         <!-- Pane A Content -->
-                        <ScrollViewer Grid.Row="1"
-                                      x:Name="LeftScrollViewer"
-                                      VerticalScrollBarVisibility="Auto"
-                                      HorizontalScrollBarVisibility="Auto"
-                                      HorizontalScrollMode="Enabled"
-                                      VerticalScrollMode="Enabled"
-                                      ViewChanged="OnLeftScrollViewerViewChanged">
-                            <TextBox x:Name="LeftTextBox"
-                                     Text="{x:Bind ViewModel.TextA, Mode=OneWay}"
-                                     IsReadOnly="True"
-                                     AcceptsReturn="True"
-                                     TextWrapping="{x:Bind ViewModel.TextWrappingMode, Mode=OneWay}"
-                                     FontFamily="Consolas, 'Cascadia Code', 'Segoe UI Mono', monospace"
-                                     FontSize="11"
-                                     BorderThickness="0"
-                                     Background="Transparent"
-                                     Padding="6" />
-                        </ScrollViewer>
+                        <Grid Grid.Row="1">
+                            <ScrollViewer x:Name="LeftScrollViewer"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Auto"
+                                          HorizontalScrollMode="Enabled"
+                                          VerticalScrollMode="Enabled"
+                                          ViewChanged="OnLeftScrollViewerViewChanged">
+                                <TextBlock x:Name="LeftTextBlock"
+                                           Text="{x:Bind ViewModel.TextA, Mode=OneWay}"
+                                           IsTextSelectionEnabled="True"
+                                           TextWrapping="{x:Bind ViewModel.TextWrappingMode, Mode=OneWay}"
+                                           FontFamily="Consolas, 'Cascadia Code', 'Segoe UI Mono', monospace"
+                                           FontSize="11"
+                                           Padding="6" />
+                            </ScrollViewer>
+
+                            <!-- Scrollbar Match Markers Track -->
+                            <Canvas x:Name="LeftMarkerCanvas"
+                                    HorizontalAlignment="Right"
+                                    Width="12"
+                                    Margin="0,2,2,2"
+                                    IsHitTestVisible="False"
+                                    SizeChanged="OnMarkerCanvasSizeChanged" />
+                        </Grid>
                     </Grid>
                 </Border>
 
@@ -299,24 +305,30 @@
                         </Grid>
 
                         <!-- Pane B Content -->
-                        <ScrollViewer Grid.Row="1"
-                                      x:Name="RightScrollViewer"
-                                      VerticalScrollBarVisibility="Auto"
-                                      HorizontalScrollBarVisibility="Auto"
-                                      HorizontalScrollMode="Enabled"
-                                      VerticalScrollMode="Enabled"
-                                      ViewChanged="OnRightScrollViewerViewChanged">
-                            <TextBox x:Name="RightTextBox"
-                                     Text="{x:Bind ViewModel.TextB, Mode=OneWay}"
-                                     IsReadOnly="True"
-                                     AcceptsReturn="True"
-                                     TextWrapping="{x:Bind ViewModel.TextWrappingMode, Mode=OneWay}"
-                                     FontFamily="Consolas, 'Cascadia Code', 'Segoe UI Mono', monospace"
-                                     FontSize="11"
-                                     BorderThickness="0"
-                                     Background="Transparent"
-                                     Padding="6" />
-                        </ScrollViewer>
+                        <Grid Grid.Row="1">
+                            <ScrollViewer x:Name="RightScrollViewer"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Auto"
+                                          HorizontalScrollMode="Enabled"
+                                          VerticalScrollMode="Enabled"
+                                          ViewChanged="OnRightScrollViewerViewChanged">
+                                <TextBlock x:Name="RightTextBlock"
+                                           Text="{x:Bind ViewModel.TextB, Mode=OneWay}"
+                                           IsTextSelectionEnabled="True"
+                                           TextWrapping="{x:Bind ViewModel.TextWrappingMode, Mode=OneWay}"
+                                           FontFamily="Consolas, 'Cascadia Code', 'Segoe UI Mono', monospace"
+                                           FontSize="11"
+                                           Padding="6" />
+                            </ScrollViewer>
+
+                            <!-- Scrollbar Match Markers Track -->
+                            <Canvas x:Name="RightMarkerCanvas"
+                                    HorizontalAlignment="Right"
+                                    Width="12"
+                                    Margin="0,2,2,2"
+                                    IsHitTestVisible="False"
+                                    SizeChanged="OnMarkerCanvasSizeChanged" />
+                        </Grid>
                     </Grid>
                 </Border>
             </Grid>
