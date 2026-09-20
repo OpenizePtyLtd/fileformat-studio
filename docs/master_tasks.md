@@ -94,6 +94,8 @@
 | **TASK-81** | #134482 | 9. Benchmark & Comparison | `feat(benchmark): add in-text search highlighting and scrollbar match markers in diff inspector` | M4 | TASK-80 | ✅ Completed |
 | **TASK-82** | #134483 | 9. Benchmark & Comparison | `fix(benchmark): enable dynamic word wrap by binding ScrollViewer horizontal scroll mode and visibility in diff inspector` | M4 | TASK-81 | ✅ Completed |
 | **TASK-83** | #134488 | 9. Benchmark & Comparison | `feat(benchmark): rebalance benchmark metrics to extraction-dominant weight distribution` | M4 | TASK-49 | ✅ Completed |
+| **TASK-84** | #134489 | 11. Document Engine Configuration & Preferences | `feat(license): display Aspose evaluation mode warnings and license status indicators across document workflows` | M6 | TASK-77, TASK-83 | ⏳ Ready |
+| **TASK-85** | #134490 | 11. Document Engine Configuration & Preferences | `feat(settings): implement in-app Aspose license file upload and dynamic activation in Settings` | M6 | TASK-84 | ⏳ Ready |
 
 ---
 
@@ -240,6 +242,8 @@ flowchart TD
         T76["TASK-76 (#134378)<br/>Category Parser Ingestion Pipeline"]
         T77["TASK-77 (#134379)<br/>Settings Document Engine UI &amp; VM"]
         T78["TASK-78 (#134380)<br/>Preferences &amp; Pipeline Tests"]
+        T84["TASK-84 (#134489)<br/>Aspose Evaluation Mode Warnings"]
+        T85["TASK-85 (#134490)<br/>Settings In-App License Upload"]
     end
 
     %% M5 Dependencies
@@ -265,6 +269,9 @@ flowchart TD
     T74 --> T77
     T76 --> T78
     T77 --> T78
+    T77 --> T84
+    T83 --> T84
+    T84 --> T85
 ```
 
 ---
