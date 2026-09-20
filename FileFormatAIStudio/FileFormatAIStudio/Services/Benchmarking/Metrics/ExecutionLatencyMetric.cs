@@ -22,7 +22,7 @@ namespace FileFormatAIStudio.Services.Benchmarking.Metrics
 
         public bool HigherIsBetter => false;
 
-        public double DefaultWeight => 0.6;
+        public double DefaultWeight => 0.1;
 
         public MetricScoreResult Evaluate(
             BenchmarkExecutionContext targetContext,

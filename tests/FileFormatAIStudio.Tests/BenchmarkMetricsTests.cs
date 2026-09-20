@@ -310,6 +310,55 @@ namespace FileFormatAIStudio.Tests
 
             score.NormalizedScore.Should().BeLessThan(50.0);
         }
+
+        [Fact]
+        public void BenchmarkMetrics_DefaultWeights_MatchOptionAExtractionCentricDistribution()
+        {
+            new CharacterCountMetric().DefaultWeight.Should().Be(3.0);
+            new ContentCharacterCountMetric().DefaultWeight.Should().Be(3.0);
+            new WordAndTokenCountMetric().DefaultWeight.Should().Be(1.5);
+            new TextCleanlinessMetric().DefaultWeight.Should().Be(0.3);
+            new ExecutionLatencyMetric().DefaultWeight.Should().Be(0.1);
+            new MemoryAllocationMetric().DefaultWeight.Should().Be(0.1);
+
+            double totalWeight = 3.0 + 3.0 + 1.5 + 0.3 + 0.1 + 0.1;
+            totalWeight.Should().BeApproximately(8.0, 0.001);
+            ((3.0 + 3.0 + 1.5) / totalWeight).Should().BeGreaterThan(0.90); // Extraction volume >= 93.75%
+        }
+
+        [Fact]
+        public void BenchmarkMetrics_HigherExtractionVolume_DefeatsFasterEngineWithLowerVolume()
+        {
+            // Simulate the user's PDF scenario:
+            // Engine 1 (OfficeParser): 42k chars, 34k content chars, 8k words, 300ms latency, 20MB memory
+            // Engine 2 (PdfPig): 39k chars, 35k content chars, 6k words, 50ms latency, 5MB memory
+            // 8,000 words of length 3-4 chars + spaces produces ~34k content chars and 42k total chars:
+            var engine1Text = string.Join(" ", Enumerable.Repeat("data", 8000)) + new string(' ', 2000); 
+            // 6,000 words of length 5 chars: ~30k-35k content chars and 39k total chars:
+            var engine2Text = string.Join(" ", Enumerable.Repeat("model", 6000)) + new string(' ', 9000); 
+
+            var ctx1 = CreateContext("officeparser", engine1Text, TimeSpan.FromMilliseconds(300), allocatedBytes: 20 * 1024 * 1024);
+            var ctx2 = CreateContext("pdfpig", engine2Text, TimeSpan.FromMilliseconds(50), allocatedBytes: 5 * 1024 * 1024);
+            var competitors = new List<BenchmarkExecutionContext> { ctx1, ctx2 };
+
+            var metrics = new IBenchmarkMetric[]
+            {
+                new CharacterCountMetric(),
+                new ContentCharacterCountMetric(),
+                new WordAndTokenCountMetric(),
+                new TextCleanlinessMetric(),
+                new ExecutionLatencyMetric(),
+                new MemoryAllocationMetric()
+            };
+
+            double totalWeight = metrics.Sum(m => m.DefaultWeight);
+
+            var score1 = metrics.Sum(m => m.Evaluate(ctx1, competitors).NormalizedScore * m.DefaultWeight) / totalWeight;
+            var score2 = metrics.Sum(m => m.Evaluate(ctx2, competitors).NormalizedScore * m.DefaultWeight) / totalWeight;
+
+            // OfficeParser wins overall score because of heavy text extraction volume weighting (Option A)
+            score1.Should().BeGreaterThan(score2);
+        }
     }
 }
 

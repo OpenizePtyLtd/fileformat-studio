@@ -93,6 +93,7 @@
 | **TASK-80** | #134481 | 9. Benchmark & Comparison | `feat(benchmark): implement dual-pane in-text search and navigation in benchmark extracted text diff dialog` | M4 | TASK-52 | ✅ Completed |
 | **TASK-81** | #134482 | 9. Benchmark & Comparison | `feat(benchmark): add in-text search highlighting and scrollbar match markers in diff inspector` | M4 | TASK-80 | ✅ Completed |
 | **TASK-82** | #134483 | 9. Benchmark & Comparison | `fix(benchmark): enable dynamic word wrap by binding ScrollViewer horizontal scroll mode and visibility in diff inspector` | M4 | TASK-81 | ✅ Completed |
+| **TASK-83** | #134488 | 9. Benchmark & Comparison | `feat(benchmark): rebalance benchmark metrics to extraction-dominant weight distribution` | M4 | TASK-49 | ✅ Completed |
 
 ---
 
@@ -168,6 +169,7 @@ flowchart TD
         T80["TASK-80 (#134481)<br/>Dual-Pane Search &amp; Nav in Diff"]
         T81["TASK-81 (#134482)<br/>Search Highlighting &amp; Scrollbar Markers"]
         T82["TASK-82 (#134483)<br/>Dynamic Word Wrap &amp; ScrollMode Fix"]
+        T83["TASK-83 (#134488)<br/>Extraction-Dominant Weights"]
     end
 
     %% M1 Dependencies
@@ -218,6 +220,7 @@ flowchart TD
     T52 --> T80
     T80 --> T81
     T81 --> T82
+    T49 --> T83
     end
 
     subgraph ModularParsersM5 ["Phase 10: Format-Centric Parser Architecture (M5)"]
