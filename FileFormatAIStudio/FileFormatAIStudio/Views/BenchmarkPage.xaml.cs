@@ -142,7 +142,27 @@ namespace FileFormatAIStudio.Views
         {
             if (sender is FrameworkElement element && element.DataContext is BenchmarkSessionEntity session)
             {
-                await ViewModel.DeleteSessionCommand.ExecuteAsync(session);
+                var sessionTitle = !string.IsNullOrWhiteSpace(session.Title) ? session.Title : "Benchmark Session";
+                var dialog = new ContentDialog
+                {
+                    Title = "Delete Benchmark Session?",
+                    Content = $"Are you sure you want to delete '{sessionTitle}'? All associated benchmark run results, scores, and metrics will be permanently removed.",
+                    PrimaryButtonText = "Delete",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot ?? this.Content?.XamlRoot
+                };
+
+                if (Application.Current.Resources.TryGetValue("DestructiveButtonStyle", out var style) && style is Style destructiveStyle)
+                {
+                    dialog.PrimaryButtonStyle = destructiveStyle;
+                }
+
+                var result = await dialog.ShowAsync();
+                if (result == ContentDialogResult.Primary)
+                {
+                    await ViewModel.DeleteSessionCommand.ExecuteAsync(session);
+                }
             }
         }
 
