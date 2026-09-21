@@ -237,11 +237,11 @@ namespace FileFormatAIStudio.Tests
         [Fact]
         public async Task DocumentParserFactory_ResolvesDotNetOss_WhenRequestedExplicitly()
         {
-            var asposeParser = new AsposeDocumentParser();
+            var licensedAspose = new AsposeDocumentParser(new FileFormatAIStudio.Tests.TestHelpers.FakeAsposeLicenseService(allLicensed: true));
             var ossParser = new DotNetOssDocumentParser();
             var plainParser = new PlainTextParser();
 
-            var factory = new DocumentParserFactory(new IDocumentParser[] { asposeParser, ossParser, plainParser });
+            var factory = new DocumentParserFactory(new IDocumentParser[] { licensedAspose, ossParser, plainParser });
 
             var resolved = factory.GetParser("dotnet-oss");
             resolved.Should().NotBeNull();
@@ -251,10 +251,17 @@ namespace FileFormatAIStudio.Tests
             resolvedForDocx.Should().NotBeNull();
             resolvedForDocx.Should().BeSameAs(ossParser);
 
-            // Default auto-resolve picks Aspose due to higher priority (100 > 50)
+            // Licensed Aspose auto-resolves first due to higher priority (100 > 50)
             var autoResolvedDocx = factory.ResolveParser("document.docx");
             autoResolvedDocx.Should().NotBeNull();
-            autoResolvedDocx.Should().BeSameAs(asposeParser);
+            autoResolvedDocx.Should().BeSameAs(licensedAspose);
+
+            // Unlicensed Aspose has lower priority (20), so DotNetOss (50) is picked automatically
+            var unlicensedAspose = new AsposeDocumentParser();
+            var factoryWithUnlicensedAspose = new DocumentParserFactory(new IDocumentParser[] { unlicensedAspose, ossParser, plainParser });
+            var autoResolvedWithUnlicensed = factoryWithUnlicensedAspose.ResolveParser("document.docx");
+            autoResolvedWithUnlicensed.Should().NotBeNull();
+            autoResolvedWithUnlicensed.Should().BeSameAs(ossParser);
 
             // Without Aspose, auto-resolve picks DotNetOss over PlainText
             var factoryWithoutAspose = new DocumentParserFactory(new IDocumentParser[] { ossParser, plainParser });

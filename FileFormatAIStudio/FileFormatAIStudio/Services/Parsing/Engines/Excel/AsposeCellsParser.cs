@@ -34,7 +34,7 @@ namespace FileFormatAIStudio.Services.Parsing.Engines.Excel
 
         public string DisplayName => "Aspose.Cells (.NET)";
 
-        public int Priority => 100;
+        public int Priority => _licenseService?.IsCellsLicensed == true ? 100 : 20;
 
         public bool IsAvailable => true;
 

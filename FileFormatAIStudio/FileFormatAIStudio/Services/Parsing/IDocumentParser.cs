@@ -29,7 +29,7 @@ namespace FileFormatAIStudio.Services.Parsing
 
         /// <summary>
         /// Priority ranking of the engine when multiple parsers support the same format.
-        /// Higher number indicates higher priority (e.g. 100 for Aspose, 60 for OfficeParser, 10 for PlainText).
+        /// Higher number indicates higher priority (e.g. 100 for licensed Aspose, 50 for .NET OSS, 40/30 for OfficeParser, 20 for unlicensed Aspose, 10 for PlainText).
         /// </summary>
         int Priority { get; }
 

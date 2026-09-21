@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -35,7 +36,7 @@ namespace FileFormatAIStudio.ViewModels
 
         public string PageTitle => IsAiProvidersTabActive
             ? "AI Providers & Models Settings"
-            : "Document Engine Configuration";
+            : "Document Library Preferences";
 
         public string PageSubtitle => IsAiProvidersTabActive
             ? "Configure cloud and local LLM endpoints (OpenAI, OpenRouter, Local company LLMs)"
@@ -52,6 +53,40 @@ namespace FileFormatAIStudio.ViewModels
 
         [ObservableProperty]
         private InfoBarSeverity _engineSettingsStatusSeverity = InfoBarSeverity.Informational;
+
+        [ObservableProperty]
+        private bool _isAsposeLicensed;
+
+        [ObservableProperty]
+        private string? _asposeLicensePath;
+
+        [ObservableProperty]
+        private bool _isWordsLicensed;
+
+        [ObservableProperty]
+        private bool _isCellsLicensed;
+
+        [ObservableProperty]
+        private bool _isSlidesLicensed;
+
+        [ObservableProperty]
+        private bool _isPdfLicensed;
+
+        [ObservableProperty]
+        private string _asposeLicenseStatusMessage = string.Empty;
+
+        [ObservableProperty]
+        private bool _isAsposeLicenseStatusOpen;
+
+        [ObservableProperty]
+        private InfoBarSeverity _asposeLicenseStatusSeverity = InfoBarSeverity.Informational;
+
+        public bool CanRemoveAsposeLicense => IsAsposeLicensed;
+
+        partial void OnIsAsposeLicensedChanged(bool value)
+        {
+            OnPropertyChanged(nameof(CanRemoveAsposeLicense));
+        }
 
         [RelayCommand]
         public void SelectAiProvidersTab() => SelectedSettingsTabIndex = 0;
@@ -145,6 +180,8 @@ namespace FileFormatAIStudio.ViewModels
         [RelayCommand]
         public async Task LoadDocumentEngineSettingsAsync()
         {
+            RefreshAsposeLicenseState();
+
             if (_enginePreferenceService == null || _categoryRegistry == null || _parserFactory == null)
             {
                 return;
@@ -230,6 +267,82 @@ namespace FileFormatAIStudio.ViewModels
             EngineSettingsStatusSeverity = InfoBarSeverity.Success;
             EngineSettingsStatusMessage = "All document categories have been reset to Auto (Benchmark Winner / Default).";
             IsEngineSettingsStatusOpen = true;
+        }
+
+        public void RefreshAsposeLicenseState()
+        {
+            if (_licenseService == null)
+            {
+                IsAsposeLicensed = false;
+                AsposeLicensePath = null;
+                IsWordsLicensed = false;
+                IsCellsLicensed = false;
+                IsSlidesLicensed = false;
+                IsPdfLicensed = false;
+                return;
+            }
+
+            IsAsposeLicensed = _licenseService.IsLicensed;
+            AsposeLicensePath = _licenseService.ActiveLicensePath;
+            IsWordsLicensed = _licenseService.IsWordsLicensed;
+            IsCellsLicensed = _licenseService.IsCellsLicensed;
+            IsSlidesLicensed = _licenseService.IsSlidesLicensed;
+            IsPdfLicensed = _licenseService.IsPdfLicensed;
+        }
+
+        [RelayCommand]
+        public async Task InstallLicenseAsync(string sourceFilePath)
+        {
+            if (_licenseService == null) return;
+
+            if (string.IsNullOrWhiteSpace(sourceFilePath) || !File.Exists(sourceFilePath))
+            {
+                AsposeLicenseStatusSeverity = InfoBarSeverity.Error;
+                AsposeLicenseStatusMessage = "Selected license file could not be found or read.";
+                IsAsposeLicenseStatusOpen = true;
+                return;
+            }
+
+            bool success = _licenseService.InstallLicense(sourceFilePath);
+            RefreshAsposeLicenseState();
+
+            if (success)
+            {
+                var licensedProducts = new List<string>();
+                if (IsWordsLicensed) licensedProducts.Add("Words");
+                if (IsCellsLicensed) licensedProducts.Add("Cells");
+                if (IsSlidesLicensed) licensedProducts.Add("Slides");
+                if (IsPdfLicensed) licensedProducts.Add("PDF");
+
+                string productsSummary = licensedProducts.Count > 0 ? string.Join(", ", licensedProducts) : "Core";
+                AsposeLicenseStatusSeverity = InfoBarSeverity.Success;
+                AsposeLicenseStatusMessage = $"Aspose license activated successfully for: {productsSummary}. Engine priorities elevated to 100.";
+                IsAsposeLicenseStatusOpen = true;
+
+                await LoadDocumentEngineSettingsAsync();
+            }
+            else
+            {
+                AsposeLicenseStatusSeverity = InfoBarSeverity.Warning;
+                AsposeLicenseStatusMessage = "License file was copied, but none of the integrated Aspose products accepted it. Please verify your license format and expiry.";
+                IsAsposeLicenseStatusOpen = true;
+                await LoadDocumentEngineSettingsAsync();
+            }
+        }
+
+        [RelayCommand]
+        public async Task RemoveLicenseAsync()
+        {
+            if (_licenseService == null) return;
+
+            _licenseService.RemoveLicense();
+            RefreshAsposeLicenseState();
+
+            AsposeLicenseStatusSeverity = InfoBarSeverity.Informational;
+            AsposeLicenseStatusMessage = "Aspose license removed. Engines reverted to evaluation mode (watermarks & limits active; Priority: 20).";
+            IsAsposeLicenseStatusOpen = true;
+
+            await LoadDocumentEngineSettingsAsync();
         }
 
         public void UpdateCanAddProvider()

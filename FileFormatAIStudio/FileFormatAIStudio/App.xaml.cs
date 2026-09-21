@@ -85,6 +85,7 @@ namespace FileFormatAIStudio
             services.AddScoped<IDocumentEnginePreferenceService, DocumentEnginePreferenceService>();
             services.AddScoped<IVectorStoreService, VectorStoreService>();
             services.AddScoped<IKnowledgebaseService, KnowledgebaseService>();
+            services.AddSingleton<IDocumentLibraryCatalogService, DocumentLibraryCatalogService>();
 
             // ViewModels
             services.AddTransient<HomeViewModel>();
@@ -95,6 +96,7 @@ namespace FileFormatAIStudio
             services.AddTransient<CreateKnowledgebaseViewModel>();
             services.AddTransient<ViewExtractedTextViewModel>();
             services.AddTransient<BenchmarkViewModel>();
+            services.AddTransient<DocumentLibrariesViewModel>();
 
             return services.BuildServiceProvider();
         }

@@ -33,7 +33,7 @@ namespace FileFormatAIStudio.Services.Parsing.Engines.Pdf
 
         public string DisplayName => "Aspose.PDF (.NET)";
 
-        public int Priority => 100;
+        public int Priority => _licenseService?.IsPdfLicensed == true ? 100 : 20;
 
         public bool IsAvailable => true;
 

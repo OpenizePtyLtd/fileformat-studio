@@ -74,6 +74,63 @@ namespace FileFormatAIStudio.Views
                 ? (dimensions.HasValue && dimensions.Value > 0 ? $"Embedding ({dimensions.Value}d)" : "Embedding")
                 : "Chat (LLM)";
 
+        public static string GetLicenseStatusGlyph(bool isLicensed) => isLicensed ? "\uE73E" : "\uE7BA";
+        public static Microsoft.UI.Xaml.Media.Brush GetLicenseStatusBrush(bool isLicensed) =>
+            (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[isLicensed ? "SystemFillColorSuccessBrush" : "SystemFillColorCautionBrush"];
+        public static string GetLicenseHeaderStatus(bool isLicensed) =>
+            isLicensed ? "Active License Applied" : "Evaluation Mode (Unlicensed)";
+        public static string GetLicenseDetailText(bool isLicensed, string? path) =>
+            isLicensed
+                ? (!string.IsNullOrWhiteSpace(path) ? path : "Installed in local app data")
+                : "Operating with evaluation watermarks and volume limits (Priority: 20)";
+        public static string FormatComponentBadge(string name, bool isLicensed) =>
+            $"{name}: {(isLicensed ? "Licensed" : "Eval")}";
+        public static Microsoft.UI.Xaml.Media.Brush GetComponentBadgeBrush(bool isLicensed) =>
+            (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources[isLicensed ? "SystemFillColorSuccessBrush" : "TextFillColorTertiaryBrush"];
+
+        private async void OnBrowseLicenseClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var picker = new Windows.Storage.Pickers.FileOpenPicker();
+
+                var hwnd = App.MainWindowInstance != null
+                    ? WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindowInstance)
+                    : IntPtr.Zero;
+
+                if (hwnd != IntPtr.Zero)
+                {
+                    WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+                }
+
+                picker.ViewMode = Windows.Storage.Pickers.PickerViewMode.List;
+                picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+                picker.FileTypeFilter.Add(".lic");
+
+                var file = await picker.PickSingleFileAsync();
+                if (file != null)
+                {
+                    await ViewModel.InstallLicenseAsync(file.Path);
+                }
+            }
+            catch (Exception ex)
+            {
+                ViewModel.AsposeLicenseStatusSeverity = InfoBarSeverity.Error;
+                ViewModel.AsposeLicenseStatusMessage = $"Failed to open file picker: {ex.Message}";
+                ViewModel.IsAsposeLicenseStatusOpen = true;
+            }
+        }
+
+        private async void OnRemoveLicenseClicked(object sender, RoutedEventArgs e)
+        {
+            await ViewModel.RemoveLicenseAsync();
+        }
+
+        private void OnViewAllLibrariesClicked(object sender, RoutedEventArgs e)
+        {
+            Frame?.Navigate(typeof(DocumentLibrariesPage));
+        }
+
         private void OnCloseSettingsClicked(object sender, RoutedEventArgs e)
         {
             if (Frame != null && Frame.CanGoBack)

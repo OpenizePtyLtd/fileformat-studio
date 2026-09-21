@@ -66,6 +66,20 @@ namespace FileFormatAIStudio.Services.Parsing
         /// If no valid license is available, operates gracefully in evaluation mode.
         /// </summary>
         void InitializeLicenses(string? explicitLicensePath = null);
+
+        /// <summary>
+        /// Installs an Aspose license file from a source path by copying it to the local app data folder
+        /// and dynamically activating the license across integrated Aspose libraries.
+        /// </summary>
+        /// <param name="sourceFilePath">Path to the .lic file selected by the user.</param>
+        /// <returns>True if at least one product license was successfully activated; otherwise false.</returns>
+        bool InstallLicense(string sourceFilePath);
+
+        /// <summary>
+        /// Removes the installed license file and reverts all Aspose libraries to evaluation mode.
+        /// </summary>
+        /// <returns>True if license was removed; otherwise false.</returns>
+        bool RemoveLicense();
     }
 
     /// <summary>
@@ -186,7 +200,92 @@ namespace FileFormatAIStudio.Services.Parsing
             }
         }
 
-        private static string? ResolveLicensePath(string? explicitPath)
+        private string _targetLicenseDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "FileFormatAIStudio");
+
+        public string TargetLicenseDirectory
+        {
+            get => _targetLicenseDirectory;
+            set => _targetLicenseDirectory = value ?? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "FileFormatAIStudio");
+        }
+
+        public string TargetLicensePath => Path.Combine(_targetLicenseDirectory, "Aspose.lic");
+
+        public bool InstallLicense(string sourceFilePath)
+        {
+            if (string.IsNullOrWhiteSpace(sourceFilePath) || !File.Exists(sourceFilePath))
+            {
+                return false;
+            }
+
+            lock (SyncLock)
+            {
+                try
+                {
+                    if (!Directory.Exists(_targetLicenseDirectory))
+                    {
+                        Directory.CreateDirectory(_targetLicenseDirectory);
+                    }
+
+                    File.Copy(sourceFilePath, TargetLicensePath, overwrite: true);
+                    InitializeLicenses(TargetLicensePath);
+                    return _isLicensed;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+        }
+
+        public bool RemoveLicense()
+        {
+            lock (SyncLock)
+            {
+                try
+                {
+                    if (File.Exists(TargetLicensePath))
+                    {
+                        File.Delete(TargetLicensePath);
+                    }
+
+                    var candidateFileNames = new[]
+                    {
+                        "Aspose.Total.NET.lic",
+                        "Aspose.Total.lic",
+                        "Aspose.Words.lic",
+                        "Aspose.lic"
+                    };
+
+                    foreach (var name in candidateFileNames)
+                    {
+                        var candidate = Path.Combine(_targetLicenseDirectory, name);
+                        if (File.Exists(candidate))
+                        {
+                            File.Delete(candidate);
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore deletion failures if file locked or inaccessible
+                }
+
+                _isLicensed = false;
+                _isWordsLicensed = false;
+                _isCellsLicensed = false;
+                _isSlidesLicensed = false;
+                _isPdfLicensed = false;
+                _activeLicensePath = null;
+
+                return true;
+            }
+        }
+
+        private string? ResolveLicensePath(string? explicitPath)
         {
             if (!string.IsNullOrWhiteSpace(explicitPath) && File.Exists(explicitPath))
             {
@@ -203,6 +302,7 @@ namespace FileFormatAIStudio.Services.Parsing
             var searchDirectories = new[]
             {
                 AppDomain.CurrentDomain.BaseDirectory,
+                _targetLicenseDirectory,
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FileFormatAIStudio")
             };
 

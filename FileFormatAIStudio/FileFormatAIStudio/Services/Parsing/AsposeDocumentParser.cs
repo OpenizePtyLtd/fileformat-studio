@@ -59,7 +59,7 @@ namespace FileFormatAIStudio.Services.Parsing
 
         public string DisplayName => "Aspose Document Engine (.NET)";
 
-        public int Priority => 100;
+        public int Priority => _licenseService?.IsLicensed == true ? 100 : 20;
 
         public bool IsAvailable => true;
 

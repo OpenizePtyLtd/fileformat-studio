@@ -33,7 +33,7 @@ namespace FileFormatAIStudio.Services.Parsing.Engines.Word
 
         public string DisplayName => "Aspose.Words (.NET)";
 
-        public int Priority => 100;
+        public int Priority => _licenseService?.IsWordsLicensed == true ? 100 : 20;
 
         public bool IsAvailable => true;
 

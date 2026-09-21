@@ -44,7 +44,7 @@ namespace FileFormatAIStudio.Tests
             _categoryRegistry = new DocumentCategoryRegistry();
             _parserFactory = new DocumentParserFactory(new IDocumentParser[]
             {
-                new AsposeWordsParser(),
+                new AsposeWordsParser(new FileFormatAIStudio.Tests.TestHelpers.FakeAsposeLicenseService(allLicensed: true)),
                 new OpenXmlWordParser(),
                 new PlainTextParser()
             });
@@ -151,8 +151,28 @@ namespace FileFormatAIStudio.Tests
             var resolved = await service.ResolveParserForDocumentAsync("contract.docx");
 
             resolved.Should().NotBeNull();
-            // Default priority parser for docx is AsposeWordsParser (priority 100 vs OpenXml 80)
+            // Default priority parser for docx is AsposeWordsParser when licensed (priority 100 vs OpenXml 50)
             resolved!.EngineId.Should().Be("aspose-words");
+        }
+
+        [Fact]
+        public async Task ResolveParserForDocumentAsync_AutoMode_FallsBackToOpenXml_WhenAsposeIsUnlicensed()
+        {
+            using var context = new AppDbContext(_options);
+            var unlicensedFactory = new DocumentParserFactory(new IDocumentParser[]
+            {
+                new AsposeWordsParser(), // unlicensed -> Priority 20
+                new OpenXmlWordParser(), // OSS -> Priority 50
+                new PlainTextParser()
+            });
+            var service = new DocumentEnginePreferenceService(context, _categoryRegistry, unlicensedFactory);
+
+            // Word is Auto and no benchmark champion recorded yet
+            var resolved = await service.ResolveParserForDocumentAsync("contract.docx");
+
+            resolved.Should().NotBeNull();
+            // OpenXml has priority 50 vs unlicensed Aspose 20
+            resolved!.EngineId.Should().Be("openxml-words");
         }
 
         [Fact]

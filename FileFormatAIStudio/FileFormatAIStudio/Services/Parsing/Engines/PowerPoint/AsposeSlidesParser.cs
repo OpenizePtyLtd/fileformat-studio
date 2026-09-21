@@ -34,7 +34,7 @@ namespace FileFormatAIStudio.Services.Parsing.Engines.PowerPoint
 
         public string DisplayName => "Aspose.Slides (.NET)";
 
-        public int Priority => 100;
+        public int Priority => _licenseService?.IsSlidesLicensed == true ? 100 : 20;
 
         public bool IsAvailable => true;
 

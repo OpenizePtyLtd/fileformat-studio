@@ -6,6 +6,7 @@ using FileFormatAIStudio.Services.Parsing.Engines.Excel;
 using FileFormatAIStudio.Services.Parsing.Engines.Pdf;
 using FileFormatAIStudio.Services.Parsing.Engines.PowerPoint;
 using FileFormatAIStudio.Services.Parsing.Engines.Word;
+using FileFormatAIStudio.Tests.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -16,13 +17,16 @@ namespace FileFormatAIStudio.Tests
         [Fact]
         public void WordParsers_MetadataAndCategories_AreAccurate()
         {
-            var asposeWords = new AsposeWordsParser();
-            asposeWords.Category.Should().Be(DocumentCategory.Word);
-            asposeWords.EngineId.Should().Be("aspose-words");
-            asposeWords.DisplayName.Should().Be("Aspose.Words (.NET)");
-            asposeWords.Priority.Should().Be(100);
-            asposeWords.IsAvailable.Should().BeTrue();
-            asposeWords.SupportedExtensions.Should().Contain(new[] { ".docx", ".doc", ".rtf", ".odt" });
+            var asposeWordsUnlicensed = new AsposeWordsParser();
+            asposeWordsUnlicensed.Category.Should().Be(DocumentCategory.Word);
+            asposeWordsUnlicensed.EngineId.Should().Be("aspose-words");
+            asposeWordsUnlicensed.DisplayName.Should().Be("Aspose.Words (.NET)");
+            asposeWordsUnlicensed.Priority.Should().Be(20);
+            asposeWordsUnlicensed.IsAvailable.Should().BeTrue();
+            asposeWordsUnlicensed.SupportedExtensions.Should().Contain(new[] { ".docx", ".doc", ".rtf", ".odt" });
+
+            var asposeWordsLicensed = new AsposeWordsParser(new FakeAsposeLicenseService(allLicensed: true));
+            asposeWordsLicensed.Priority.Should().Be(100);
 
             var openXml = new OpenXmlWordParser();
             openXml.Category.Should().Be(DocumentCategory.Word);
@@ -36,13 +40,16 @@ namespace FileFormatAIStudio.Tests
         [Fact]
         public void PdfParsers_MetadataAndCategories_AreAccurate()
         {
-            var asposePdf = new AsposePdfParser();
-            asposePdf.Category.Should().Be(DocumentCategory.Pdf);
-            asposePdf.EngineId.Should().Be("aspose-pdf");
-            asposePdf.DisplayName.Should().Be("Aspose.PDF (.NET)");
-            asposePdf.Priority.Should().Be(100);
-            asposePdf.IsAvailable.Should().BeTrue();
-            asposePdf.SupportedExtensions.Should().Contain(".pdf");
+            var asposePdfUnlicensed = new AsposePdfParser();
+            asposePdfUnlicensed.Category.Should().Be(DocumentCategory.Pdf);
+            asposePdfUnlicensed.EngineId.Should().Be("aspose-pdf");
+            asposePdfUnlicensed.DisplayName.Should().Be("Aspose.PDF (.NET)");
+            asposePdfUnlicensed.Priority.Should().Be(20);
+            asposePdfUnlicensed.IsAvailable.Should().BeTrue();
+            asposePdfUnlicensed.SupportedExtensions.Should().Contain(".pdf");
+
+            var asposePdfLicensed = new AsposePdfParser(new FakeAsposeLicenseService(allLicensed: true));
+            asposePdfLicensed.Priority.Should().Be(100);
 
             var pdfPig = new PdfPigParser();
             pdfPig.Category.Should().Be(DocumentCategory.Pdf);
@@ -56,13 +63,16 @@ namespace FileFormatAIStudio.Tests
         [Fact]
         public void ExcelParsers_MetadataAndCategories_AreAccurate()
         {
-            var asposeCells = new AsposeCellsParser();
-            asposeCells.Category.Should().Be(DocumentCategory.Excel);
-            asposeCells.EngineId.Should().Be("aspose-cells");
-            asposeCells.DisplayName.Should().Be("Aspose.Cells (.NET)");
-            asposeCells.Priority.Should().Be(100);
-            asposeCells.IsAvailable.Should().BeTrue();
-            asposeCells.SupportedExtensions.Should().Contain(new[] { ".xlsx", ".xls", ".csv" });
+            var asposeCellsUnlicensed = new AsposeCellsParser();
+            asposeCellsUnlicensed.Category.Should().Be(DocumentCategory.Excel);
+            asposeCellsUnlicensed.EngineId.Should().Be("aspose-cells");
+            asposeCellsUnlicensed.DisplayName.Should().Be("Aspose.Cells (.NET)");
+            asposeCellsUnlicensed.Priority.Should().Be(20);
+            asposeCellsUnlicensed.IsAvailable.Should().BeTrue();
+            asposeCellsUnlicensed.SupportedExtensions.Should().Contain(new[] { ".xlsx", ".xls", ".csv" });
+
+            var asposeCellsLicensed = new AsposeCellsParser(new FakeAsposeLicenseService(allLicensed: true));
+            asposeCellsLicensed.Priority.Should().Be(100);
 
             var excelReader = new ExcelDataReaderParser();
             excelReader.Category.Should().Be(DocumentCategory.Excel);
@@ -84,13 +94,16 @@ namespace FileFormatAIStudio.Tests
         [Fact]
         public void PowerPointParser_MetadataAndCategories_AreAccurate()
         {
-            var asposeSlides = new AsposeSlidesParser();
-            asposeSlides.Category.Should().Be(DocumentCategory.PowerPoint);
-            asposeSlides.EngineId.Should().Be("aspose-slides");
-            asposeSlides.DisplayName.Should().Be("Aspose.Slides (.NET)");
-            asposeSlides.Priority.Should().Be(100);
-            asposeSlides.IsAvailable.Should().BeTrue();
-            asposeSlides.SupportedExtensions.Should().Contain(new[] { ".pptx", ".ppt", ".odp" });
+            var asposeSlidesUnlicensed = new AsposeSlidesParser();
+            asposeSlidesUnlicensed.Category.Should().Be(DocumentCategory.PowerPoint);
+            asposeSlidesUnlicensed.EngineId.Should().Be("aspose-slides");
+            asposeSlidesUnlicensed.DisplayName.Should().Be("Aspose.Slides (.NET)");
+            asposeSlidesUnlicensed.Priority.Should().Be(20);
+            asposeSlidesUnlicensed.IsAvailable.Should().BeTrue();
+            asposeSlidesUnlicensed.SupportedExtensions.Should().Contain(new[] { ".pptx", ".ppt", ".odp" });
+
+            var asposeSlidesLicensed = new AsposeSlidesParser(new FakeAsposeLicenseService(allLicensed: true));
+            asposeSlidesLicensed.Priority.Should().Be(100);
         }
 
         [Fact]

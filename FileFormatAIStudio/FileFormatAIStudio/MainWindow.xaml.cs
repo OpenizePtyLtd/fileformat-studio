@@ -106,6 +106,11 @@ namespace FileFormatAIStudio
                 SessionsListView.SelectedItem = null;
                 ContentFrame.Navigate(typeof(BenchmarkPage));
             }
+            else if (args.SelectedItemContainer == DocumentLibrariesNavItem || (args.SelectedItem as NavigationViewItem)?.Tag?.ToString() == "DocumentLibraries")
+            {
+                SessionsListView.SelectedItem = null;
+                ContentFrame.Navigate(typeof(DocumentLibrariesPage));
+            }
         }
 
         private void OnBackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
@@ -152,6 +157,15 @@ namespace FileFormatAIStudio
             else if (e.SourcePageType == typeof(BenchmarkPage))
             {
                 RootNavigationView.SelectedItem = BenchmarkNavItem;
+                SessionsListView.SelectedItem = null;
+                RootNavigationView.IsBackButtonVisible = ContentFrame.CanGoBack
+                    ? NavigationViewBackButtonVisible.Visible
+                    : NavigationViewBackButtonVisible.Collapsed;
+                RootNavigationView.IsBackEnabled = ContentFrame.CanGoBack;
+            }
+            else if (e.SourcePageType == typeof(DocumentLibrariesPage))
+            {
+                RootNavigationView.SelectedItem = DocumentLibrariesNavItem;
                 SessionsListView.SelectedItem = null;
                 RootNavigationView.IsBackButtonVisible = ContentFrame.CanGoBack
                     ? NavigationViewBackButtonVisible.Visible

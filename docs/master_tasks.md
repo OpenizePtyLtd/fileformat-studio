@@ -95,7 +95,10 @@
 | **TASK-82** | #134483 | 9. Benchmark & Comparison | `fix(benchmark): enable dynamic word wrap by binding ScrollViewer horizontal scroll mode and visibility in diff inspector` | M4 | TASK-81 | ✅ Completed |
 | **TASK-83** | #134488 | 9. Benchmark & Comparison | `feat(benchmark): rebalance benchmark metrics to extraction-dominant weight distribution` | M4 | TASK-49 | ✅ Completed |
 | **TASK-84** | #134489 | 11. Document Engine Configuration & Preferences | `feat(license): display Aspose evaluation mode warnings and license status indicators across document workflows` | M6 | TASK-77, TASK-83 | ✅ Completed |
-| **TASK-85** | #134490 | 11. Document Engine Configuration & Preferences | `feat(settings): implement in-app Aspose license file upload and dynamic activation in Settings` | M6 | TASK-84 | ⏳ Ready |
+| **TASK-85** | #134490 | 11. Document Engine Configuration & Preferences | `feat(settings): implement in-app Aspose license file upload and dynamic activation in Settings` | M6 | TASK-84 | ✅ Completed |
+| **TASK-86** | #134491 | 11. Document Engine Configuration & Preferences | `feat(parser): dynamic Aspose priority based on active license mode` | M6 | TASK-84 | ✅ Completed |
+| **TASK-87** | #134497 | 12. Document Libraries Catalog & Stats | `feat(libraries): dedicated document libraries catalog with package stats and license management` | M6 | TASK-85, TASK-86 | ✅ Completed |
+| **TASK-88** | #134498 | 12. Document Libraries Catalog & Stats | `feat(libraries): persist refreshed package stats to local app data cache` | M6 | TASK-87 | 🔄 In Progress |
 
 ---
 
@@ -244,6 +247,9 @@ flowchart TD
         T78["TASK-78 (#134380)<br/>Preferences &amp; Pipeline Tests"]
         T84["TASK-84 (#134489)<br/>Aspose Evaluation Mode Warnings"]
         T85["TASK-85 (#134490)<br/>Settings In-App License Upload"]
+        T86["TASK-86 (#134491)<br/>Dynamic Aspose Priority"]
+        T87["TASK-87 (#134497)<br/>Document Libraries Catalog &amp; Stats"]
+        T88["TASK-88 (#134498)<br/>Package Stats Cache Persistence"]
     end
 
     %% M5 Dependencies
@@ -272,6 +278,10 @@ flowchart TD
     T77 --> T84
     T83 --> T84
     T84 --> T85
+    T84 --> T86
+    T85 --> T87
+    T86 --> T87
+    T87 --> T88
 ```
 
 ---

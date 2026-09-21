@@ -21,7 +21,12 @@ namespace FileFormatAIStudio.Tests
         {
             _parser.EngineId.Should().Be("aspose");
             _parser.DisplayName.Should().Contain("Aspose");
-            _parser.Priority.Should().Be(100);
+            var unlicensedParser = new AsposeDocumentParser();
+            unlicensedParser.Priority.Should().Be(20);
+
+            var licensedParser = new AsposeDocumentParser(new FileFormatAIStudio.Tests.TestHelpers.FakeAsposeLicenseService(allLicensed: true));
+            licensedParser.Priority.Should().Be(100);
+
             _parser.IsAvailable.Should().BeTrue();
 
             _parser.SupportedExtensions.Should().Contain(new[]

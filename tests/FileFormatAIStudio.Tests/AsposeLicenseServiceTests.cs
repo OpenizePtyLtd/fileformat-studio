@@ -93,6 +93,77 @@ namespace FileFormatAIStudio.Tests
             service.IsPdfLicensed.Should().BeFalse();
             service.ActiveLicensePath.Should().BeNull();
         }
+
+        [Fact]
+        public void InstallLicense_CopiesFileToTargetDirectory()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), $"aspose_test_{Guid.NewGuid():N}");
+            Directory.CreateDirectory(tempDir);
+
+            try
+            {
+                var service = new AsposeLicenseService
+                {
+                    TargetLicenseDirectory = tempDir
+                };
+
+                var sourceFile = Path.Combine(tempDir, "SourceLicense.lic");
+                File.WriteAllText(sourceFile, "<License><Data></Data></License>");
+
+                // Attempt install - file will be copied to TargetLicensePath
+                service.InstallLicense(sourceFile);
+
+                File.Exists(service.TargetLicensePath).Should().BeTrue();
+                File.ReadAllText(service.TargetLicensePath).Should().Be("<License><Data></Data></License>");
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, true);
+                }
+            }
+        }
+
+        [Fact]
+        public void InstallLicense_NonExistentSourceFile_ReturnsFalse()
+        {
+            var service = new AsposeLicenseService();
+            bool result = service.InstallLicense(@"C:\NonExistent\Missing_" + Guid.NewGuid() + ".lic");
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public void RemoveLicense_DeletesLicenseFilesAndResetsState()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), $"aspose_test_{Guid.NewGuid():N}");
+            Directory.CreateDirectory(tempDir);
+
+            try
+            {
+                var service = new AsposeLicenseService
+                {
+                    TargetLicenseDirectory = tempDir
+                };
+
+                File.WriteAllText(service.TargetLicensePath, "test license content");
+                File.Exists(service.TargetLicensePath).Should().BeTrue();
+
+                bool removed = service.RemoveLicense();
+                removed.Should().BeTrue();
+                File.Exists(service.TargetLicensePath).Should().BeFalse();
+                service.IsLicensed.Should().BeFalse();
+                service.IsWordsLicensed.Should().BeFalse();
+                service.ActiveLicensePath.Should().BeNull();
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, true);
+                }
+            }
+        }
     }
 }
 
