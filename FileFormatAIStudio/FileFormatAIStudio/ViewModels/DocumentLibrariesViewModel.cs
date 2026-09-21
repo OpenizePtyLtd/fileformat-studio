@@ -43,6 +43,9 @@ namespace FileFormatAIStudio.ViewModels
         private string _lastRefreshedStatus = string.Empty;
 
         [ObservableProperty]
+        private string _lastUpdatedDisplay = string.Empty;
+
+        [ObservableProperty]
         private bool _isRefreshStatusOpen;
 
         [ObservableProperty]
@@ -252,6 +255,16 @@ namespace FileFormatAIStudio.ViewModels
         private void ApplyFiltersAndSort()
         {
             var all = _catalogService.GetAllLibraries();
+
+            if (_catalogService.LastStatsRefreshedUtc.HasValue)
+            {
+                var localTime = _catalogService.LastStatsRefreshedUtc.Value.ToLocalTime();
+                LastUpdatedDisplay = $"Last refreshed: {localTime:MMM dd, yyyy h:mm tt}";
+            }
+            else
+            {
+                LastUpdatedDisplay = "Using built-in baseline statistics";
+            }
 
             TotalLibrariesCount = all.Count;
             long totalDl = all.Sum(l => l.TotalDownloads);

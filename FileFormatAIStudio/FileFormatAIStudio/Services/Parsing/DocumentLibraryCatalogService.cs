@@ -23,8 +23,20 @@ namespace FileFormatAIStudio.Services.Parsing
         private readonly string _cacheFilePath;
         private readonly List<DocumentLibraryInfo> _libraries;
         private readonly object _lock = new();
+        private DateTime? _lastStatsRefreshedUtc;
 
         public event EventHandler? CatalogUpdated;
+
+        public DateTime? LastStatsRefreshedUtc
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    return _lastStatsRefreshedUtc;
+                }
+            }
+        }
 
         public DocumentLibraryCatalogService(
             IAsposeLicenseService? licenseService = null,
@@ -476,6 +488,19 @@ namespace FileFormatAIStudio.Services.Parsing
 
                 var cacheMap = cachedList.ToDictionary(c => c.Id, StringComparer.OrdinalIgnoreCase);
 
+                var mostRecent = cachedList
+                    .Where(c => c.LastRefreshedUtc != default)
+                    .OrderByDescending(c => c.LastRefreshedUtc)
+                    .FirstOrDefault();
+
+                lock (_lock)
+                {
+                    if (mostRecent != null && mostRecent.LastRefreshedUtc != default)
+                    {
+                        _lastStatsRefreshedUtc = mostRecent.LastRefreshedUtc;
+                    }
+                }
+
                 foreach (var lib in _libraries)
                 {
                     if (cacheMap.TryGetValue(lib.Id, out var cached))
@@ -520,8 +545,12 @@ namespace FileFormatAIStudio.Services.Parsing
                     Directory.CreateDirectory(dir);
                 }
 
+                DateTime nowUtc = DateTime.UtcNow;
+
                 lock (_lock)
                 {
+                    _lastStatsRefreshedUtc = nowUtc;
+
                     var cacheItems = _libraries.Select(lib => new CachedLibraryStats
                     {
                         Id = lib.Id,
@@ -529,7 +558,7 @@ namespace FileFormatAIStudio.Services.Parsing
                         LatestVersion = lib.LatestVersion,
                         LatestPublishDate = lib.LatestPublishDate,
                         TotalReleasesCount = lib.TotalReleasesCount,
-                        LastRefreshedUtc = DateTime.UtcNow
+                        LastRefreshedUtc = nowUtc
                     }).ToList();
 
                     string json = JsonSerializer.Serialize(cacheItems, new JsonSerializerOptions

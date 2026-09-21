@@ -244,6 +244,45 @@ namespace FileFormatAIStudio.Tests
 
                 var openXml = libs.First(l => l.Id == "openxml-words");
                 openXml.TotalDownloads.Should().BeGreaterThan(0); // Baseline preserved
+                service.LastStatsRefreshedUtc.Should().BeNull();
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    try { Directory.Delete(tempDir, recursive: true); } catch { }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task LastStatsRefreshedUtc_PersistsAndFormatsInViewModel()
+        {
+            string tempDir = Path.Combine(Path.GetTempPath(), "FFTests_" + Guid.NewGuid().ToString("N"));
+            string cachePath = Path.Combine(tempDir, "document_libraries_cache.json");
+
+            try
+            {
+                var licenseService = new FakeAsposeLicenseService(allLicensed: false);
+                var service1 = new DocumentLibraryCatalogService(licenseService, cacheFilePath: cachePath);
+                var vm1 = new DocumentLibrariesViewModel(service1, licenseService);
+
+                vm1.LastUpdatedDisplay.Should().Be("Using built-in baseline statistics");
+                service1.LastStatsRefreshedUtc.Should().BeNull();
+
+                // Refresh stats
+                await service1.RefreshLiveStatsAsync();
+
+                service1.LastStatsRefreshedUtc.Should().NotBeNull();
+                service1.LastStatsRefreshedUtc!.Value.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+
+                // Re-instantiate service pointing to same cache file (app restart)
+                var service2 = new DocumentLibraryCatalogService(licenseService, cacheFilePath: cachePath);
+                service2.LastStatsRefreshedUtc.Should().NotBeNull();
+                service2.LastStatsRefreshedUtc!.Value.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+
+                var vm2 = new DocumentLibrariesViewModel(service2, licenseService);
+                vm2.LastUpdatedDisplay.Should().StartWith("Last refreshed:");
             }
             finally
             {
@@ -255,5 +294,6 @@ namespace FileFormatAIStudio.Tests
         }
     }
 }
+
 
 

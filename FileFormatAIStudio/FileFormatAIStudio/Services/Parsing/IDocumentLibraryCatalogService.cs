@@ -18,6 +18,11 @@ namespace FileFormatAIStudio.Services.Parsing
         event EventHandler? CatalogUpdated;
 
         /// <summary>
+        /// Gets the UTC timestamp when package statistics were last refreshed and cached, or null if using initial baseline.
+        /// </summary>
+        DateTime? LastStatsRefreshedUtc { get; }
+
+        /// <summary>
         /// Gets all integrated document extraction libraries.
         /// </summary>
         IReadOnlyList<DocumentLibraryInfo> GetAllLibraries();

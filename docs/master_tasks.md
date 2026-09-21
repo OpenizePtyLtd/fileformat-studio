@@ -99,6 +99,7 @@
 | **TASK-86** | #134491 | 11. Document Engine Configuration & Preferences | `feat(parser): dynamic Aspose priority based on active license mode` | M6 | TASK-84 | ✅ Completed |
 | **TASK-87** | #134497 | 12. Document Libraries Catalog & Stats | `feat(libraries): dedicated document libraries catalog with package stats and license management` | M6 | TASK-85, TASK-86 | ✅ Completed |
 | **TASK-88** | #134498 | 12. Document Libraries Catalog & Stats | `feat(libraries): persist refreshed package stats to local app data cache` | M6 | TASK-87 | ✅ Completed |
+| **TASK-89** | #134499 | 12. Document Libraries Catalog & Stats | `feat(libraries): persist and display last updated timestamp for library package stats` | M6 | TASK-88 | ✅ Completed |
 
 ---
 
@@ -250,6 +251,7 @@ flowchart TD
         T86["TASK-86 (#134491)<br/>Dynamic Aspose Priority"]
         T87["TASK-87 (#134497)<br/>Document Libraries Catalog &amp; Stats"]
         T88["TASK-88 (#134498)<br/>Package Stats Cache Persistence"]
+        T89["TASK-89 (#134499)<br/>Stats Timestamp Persistence &amp; UI"]
     end
 
     %% M5 Dependencies
@@ -282,6 +284,7 @@ flowchart TD
     T85 --> T87
     T86 --> T87
     T87 --> T88
+    T88 --> T89
 ```
 
 ---
