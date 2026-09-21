@@ -153,14 +153,15 @@ namespace FileFormatAIStudio.Tests
         [Fact]
         public void ViewModel_SortsByDownloadsAndRecency()
         {
+            string nonExistentCache = Path.Combine(Path.GetTempPath(), "FF_EmptyCache_" + Guid.NewGuid().ToString("N") + ".json");
             var licenseService = new FakeAsposeLicenseService(allLicensed: false);
-            var catalogService = new DocumentLibraryCatalogService(licenseService);
+            var catalogService = new DocumentLibraryCatalogService(licenseService, cacheFilePath: nonExistentCache);
             var vm = new DocumentLibrariesViewModel(catalogService, licenseService);
 
             // Sort 0: Most Downloads
             vm.SelectedSortIndex = 0;
             var first = vm.FilteredLibraries.First();
-            first.PackageId.Should().Be("DocumentFormat.OpenXml"); // Over 437M downloads
+            first.PackageId.Should().Be("DocumentFormat.OpenXml"); // Over 437M downloads in baseline
 
             // Sort 3: Alphabetical
             vm.SelectedSortIndex = 3;
@@ -180,6 +181,79 @@ namespace FileFormatAIStudio.Tests
             result.Should().NotBeNull();
             result.Should().HaveCount(10);
         }
+
+        [Fact]
+        public async Task RefreshLiveStatsAsync_SavesStatsToCacheFile_AndRehydratesOnStartup()
+        {
+            string tempDir = Path.Combine(Path.GetTempPath(), "FFTests_" + Guid.NewGuid().ToString("N"));
+            string cachePath = Path.Combine(tempDir, "document_libraries_cache.json");
+
+            try
+            {
+                var licenseService = new FakeAsposeLicenseService(allLicensed: false);
+                var service1 = new DocumentLibraryCatalogService(licenseService, cacheFilePath: cachePath);
+
+                // Initial baseline
+                var initialOpenXml = service1.GetAllLibraries().First(l => l.Id == "openxml-words");
+                long baselineDownloads = initialOpenXml.TotalDownloads;
+
+                // Execute refresh which will query APIs or keep baseline and save to cache file
+                await service1.RefreshLiveStatsAsync();
+
+                File.Exists(cachePath).Should().BeTrue();
+                string json = File.ReadAllText(cachePath);
+                json.Should().Contain("openxml-words");
+
+                // Now simulate manual modification / new live fetched values in cache
+                string modifiedJson = json.Replace(
+                    baselineDownloads.ToString(),
+                    "999888777");
+                File.WriteAllText(cachePath, modifiedJson);
+
+                // Create a new service instance pointing to the same cache file (simulating app restart)
+                var service2 = new DocumentLibraryCatalogService(licenseService, cacheFilePath: cachePath);
+                var rehydratedOpenXml = service2.GetAllLibraries().First(l => l.Id == "openxml-words");
+
+                rehydratedOpenXml.TotalDownloads.Should().Be(999888777);
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    try { Directory.Delete(tempDir, recursive: true); } catch { }
+                }
+            }
+        }
+
+        [Fact]
+        public void DocumentLibraryCatalogService_HandlesCorruptCacheFileGracefully()
+        {
+            string tempDir = Path.Combine(Path.GetTempPath(), "FFTests_" + Guid.NewGuid().ToString("N"));
+            string cachePath = Path.Combine(tempDir, "document_libraries_cache.json");
+
+            try
+            {
+                Directory.CreateDirectory(tempDir);
+                File.WriteAllText(cachePath, "{ invalid json content truncated [!] }");
+
+                var licenseService = new FakeAsposeLicenseService(allLicensed: false);
+                var service = new DocumentLibraryCatalogService(licenseService, cacheFilePath: cachePath);
+
+                var libs = service.GetAllLibraries();
+                libs.Should().HaveCount(10);
+
+                var openXml = libs.First(l => l.Id == "openxml-words");
+                openXml.TotalDownloads.Should().BeGreaterThan(0); // Baseline preserved
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    try { Directory.Delete(tempDir, recursive: true); } catch { }
+                }
+            }
+        }
     }
 }
+
 

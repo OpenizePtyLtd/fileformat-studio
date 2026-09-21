@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
@@ -13,21 +14,32 @@ namespace FileFormatAIStudio.Services.Parsing
     /// <summary>
     /// Default implementation of IDocumentLibraryCatalogService.
     /// Maintains catalog of all 10 document extraction libraries and supports live stats refresh via NuGet and npm APIs.
+    /// Persists refreshed stats to local app data cache to retain user updates across application restarts.
     /// </summary>
     public class DocumentLibraryCatalogService : IDocumentLibraryCatalogService
     {
         private readonly IAsposeLicenseService? _licenseService;
         private readonly HttpClient _httpClient;
+        private readonly string _cacheFilePath;
         private readonly List<DocumentLibraryInfo> _libraries;
         private readonly object _lock = new();
 
         public event EventHandler? CatalogUpdated;
 
-        public DocumentLibraryCatalogService(IAsposeLicenseService? licenseService = null, HttpClient? httpClient = null)
+        public DocumentLibraryCatalogService(
+            IAsposeLicenseService? licenseService = null,
+            HttpClient? httpClient = null,
+            string? cacheFilePath = null)
         {
             _licenseService = licenseService;
             _httpClient = httpClient ?? new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
+            _cacheFilePath = cacheFilePath ?? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "FileFormatAIStudio",
+                "document_libraries_cache.json");
+
             _libraries = InitializeBaselineCatalog();
+            LoadCachedStats();
             SyncLicenseState();
         }
 
@@ -65,6 +77,7 @@ namespace FileFormatAIStudio.Services.Parsing
                 // Network errors or timeouts fall back silently to current catalog values
             }
 
+            SaveCachedStats();
             SyncLicenseState();
             CatalogUpdated?.Invoke(this, EventArgs.Empty);
 
@@ -446,6 +459,101 @@ namespace FileFormatAIStudio.Services.Parsing
                     DownloadStatsSource = "System"
                 }
             };
+        }
+
+        private void LoadCachedStats()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(_cacheFilePath) || !File.Exists(_cacheFilePath))
+                {
+                    return;
+                }
+
+                string json = File.ReadAllText(_cacheFilePath);
+                var cachedList = JsonSerializer.Deserialize<List<CachedLibraryStats>>(json);
+                if (cachedList == null || cachedList.Count == 0) return;
+
+                var cacheMap = cachedList.ToDictionary(c => c.Id, StringComparer.OrdinalIgnoreCase);
+
+                foreach (var lib in _libraries)
+                {
+                    if (cacheMap.TryGetValue(lib.Id, out var cached))
+                    {
+                        if (cached.TotalDownloads > 0)
+                        {
+                            lib.TotalDownloads = cached.TotalDownloads;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(cached.LatestVersion))
+                        {
+                            lib.LatestVersion = cached.LatestVersion;
+                        }
+
+                        if (cached.LatestPublishDate.HasValue)
+                        {
+                            lib.LatestPublishDate = cached.LatestPublishDate.Value;
+                        }
+
+                        if (cached.TotalReleasesCount > 0)
+                        {
+                            lib.TotalReleasesCount = cached.TotalReleasesCount;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Silently fallback to baseline catalog on any cache read or deserialization failure
+            }
+        }
+
+        private void SaveCachedStats()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(_cacheFilePath)) return;
+
+                string? dir = Path.GetDirectoryName(_cacheFilePath);
+                if (!string.IsNullOrWhiteSpace(dir) && !Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
+                lock (_lock)
+                {
+                    var cacheItems = _libraries.Select(lib => new CachedLibraryStats
+                    {
+                        Id = lib.Id,
+                        TotalDownloads = lib.TotalDownloads,
+                        LatestVersion = lib.LatestVersion,
+                        LatestPublishDate = lib.LatestPublishDate,
+                        TotalReleasesCount = lib.TotalReleasesCount,
+                        LastRefreshedUtc = DateTime.UtcNow
+                    }).ToList();
+
+                    string json = JsonSerializer.Serialize(cacheItems, new JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    });
+
+                    File.WriteAllText(_cacheFilePath, json);
+                }
+            }
+            catch
+            {
+                // Silently ignore cache write failures so UI operations are never interrupted
+            }
+        }
+
+        private sealed class CachedLibraryStats
+        {
+            public string Id { get; set; } = string.Empty;
+            public long TotalDownloads { get; set; }
+            public string LatestVersion { get; set; } = string.Empty;
+            public DateTime? LatestPublishDate { get; set; }
+            public int TotalReleasesCount { get; set; }
+            public DateTime LastRefreshedUtc { get; set; }
         }
     }
 }

@@ -98,7 +98,7 @@
 | **TASK-85** | #134490 | 11. Document Engine Configuration & Preferences | `feat(settings): implement in-app Aspose license file upload and dynamic activation in Settings` | M6 | TASK-84 | ✅ Completed |
 | **TASK-86** | #134491 | 11. Document Engine Configuration & Preferences | `feat(parser): dynamic Aspose priority based on active license mode` | M6 | TASK-84 | ✅ Completed |
 | **TASK-87** | #134497 | 12. Document Libraries Catalog & Stats | `feat(libraries): dedicated document libraries catalog with package stats and license management` | M6 | TASK-85, TASK-86 | ✅ Completed |
-| **TASK-88** | #134498 | 12. Document Libraries Catalog & Stats | `feat(libraries): persist refreshed package stats to local app data cache` | M6 | TASK-87 | 🔄 In Progress |
+| **TASK-88** | #134498 | 12. Document Libraries Catalog & Stats | `feat(libraries): persist refreshed package stats to local app data cache` | M6 | TASK-87 | ✅ Completed |
 
 ---
 
