@@ -78,6 +78,8 @@ jobs:
               New-Item -ItemType Directory -Path (Split-Path -Parent $destModules) -Force -ErrorAction SilentlyContinue
               Copy-Item -Path $sourceModules -Destination $destModules -Recurse -Force
               Write-Host "Successfully bundled node_modules into publish directory."
+          }
+
       - name: Ensure PRI Resource Files in Publish Output
         shell: pwsh
         run: |
