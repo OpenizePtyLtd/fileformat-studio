@@ -1,0 +1,31 @@
+changelog:
+  categories:
+    - title: "🚀 Features & Enhancements"
+      labels:
+        - "feature"
+        - "enhancement"
+        - "feat"
+    - title: "🐛 Bug Fixes"
+      labels:
+        - "bug"
+        - "fix"
+        - "bugfix"
+    - title: "⚡ Benchmarks & Performance"
+      labels:
+        - "benchmark"
+        - "perf"
+        - "performance"
+    - title: "📚 Documentation & Architecture"
+      labels:
+        - "documentation"
+        - "docs"
+        - "adr"
+        - "spike"
+    - title: "🔧 Maintenance & Infrastructure"
+      labels:
+        - "chore"
+        - "refactor"
+        - "dependencies"
+        - "ci"
+        - "build"
+
