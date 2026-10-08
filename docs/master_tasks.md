@@ -18,6 +18,7 @@
 | **M4: Text Extraction Benchmark & Comparison Suite** | Multi-library extraction benchmark grouped by document categories (Word, Excel, PowerPoint, PDF, Text), multi-metric scoring (character volume, latency, memory, cleanliness), and side-by-side comparison UI. | Full in-app benchmark runner, scorecard comparison matrix, and side-by-side text diff inspector. |
 | **M5: Format-Centric Parser Architecture & Modular Engine Decoupling** | Decouple monolithic parser suites into granular, format-centric engines (Word, Excel, PowerPoint, PDF, PlainText) with independent competitors, legacy fallback aliases, and pluggable runtime support. | Clean format-first parser architecture with granular scorecard ranking and seamless extensibility for future libraries. |
 | **M6: Document Engine Configuration & Per-Category Preferences** | Dedicated Document Engine Configuration in Settings with per-category preference selection (Word, Excel, PowerPoint, PDF, Text), dynamic benchmark winner resolution, Auto selection, and ingestion pipeline integration replacing legacy broad dropdowns. | Fully configurable category-based document parser preference engine with automatic benchmark champion integration. |
+| **M7: Release Engineering & Deployment Pipeline** | Windows installer packaging (Inno Setup), automated GitHub Actions monthly release pipeline with draft publishing, unpackaged Windows App SDK runtime bootstrapping, and XAML PRI resource bundling. | Production-ready desktop setup installer, portable ZIP archive, and automated GitHub Releases. |
 
 ---
 
@@ -100,6 +101,11 @@
 | **TASK-87** | #134497 | 12. Document Libraries Catalog & Stats | `feat(libraries): dedicated document libraries catalog with package stats and license management` | M6 | TASK-85, TASK-86 | ✅ Completed |
 | **TASK-88** | #134498 | 12. Document Libraries Catalog & Stats | `feat(libraries): persist refreshed package stats to local app data cache` | M6 | TASK-87 | ✅ Completed |
 | **TASK-89** | #134499 | 12. Document Libraries Catalog & Stats | `feat(libraries): persist and display last updated timestamp for library package stats` | M6 | TASK-88 | ✅ Completed |
+| **TASK-90** | #135486 | 13. Release Engineering & Deployment | `feat(release): configure Inno Setup installer script for self-contained 64-bit desktop packaging` | M7 | TASK-89 | ✅ Completed |
+| **TASK-91** | #135487 | 13. Release Engineering & Deployment | `ci(release): create automated GitHub Actions monthly release pipeline with draft publishing` | M7 | TASK-90 | ✅ Completed |
+| **TASK-92** | #135488 | 13. Release Engineering & Deployment | `fix(desktop): resolve REGDB_E_CLASSNOTREG crash by enabling Windows App SDK auto-bootstrapper for unpackaged execution` | M7 | TASK-90, TASK-91 | ✅ Completed |
+| **TASK-93** | #135489 | 13. Release Engineering & Deployment | `fix(desktop): bundle XAML resources.pri index and add startup crash diagnostics in App.xaml.cs` | M7 | TASK-92 | ✅ Completed |
+| **TASK-94** | #135490 | 13. Release Engineering & Deployment | `fix(ci): upgrade release workflow to Node 24 and Chocolatey Inno Setup tooling with PowerShell syntax fixes` | M7 | TASK-91, TASK-93 | ✅ Completed |
 
 ---
 
@@ -285,6 +291,23 @@ flowchart TD
     T86 --> T87
     T87 --> T88
     T88 --> T89
+
+    subgraph ReleaseEngineeringM7 ["Phase 13: Release Engineering & Deployment (M7)"]
+        T90["TASK-90 (#135486)<br/>Inno Setup Packaging"]
+        T91["TASK-91 (#135487)<br/>GitHub Actions Release CI"]
+        T92["TASK-92 (#135488)<br/>WinAppSDK Bootstrapper Fix"]
+        T93["TASK-93 (#135489)<br/>PRI Index &amp; Crash Logging"]
+        T94["TASK-94 (#135490)<br/>Node 24 &amp; Workflow Hardening"]
+    end
+
+    %% M7 Dependencies
+    T89 --> T90
+    T90 --> T91
+    T90 --> T92
+    T91 --> T92
+    T92 --> T93
+    T91 --> T94
+    T93 --> T94
 ```
 
 ---
