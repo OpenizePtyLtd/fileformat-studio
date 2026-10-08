@@ -8,7 +8,8 @@
     <Platforms>x86;x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
-    <WinUISDKReferences>false</WinUISDKReferences>
+    <WindowsPackageType Condition="'$(WindowsPackageType)'==''">None</WindowsPackageType>
+    <WindowsAppSdkBootstrapInitialize>true</WindowsAppSdkBootstrapInitialize>
     <Nullable>enable</Nullable>
     <Version Condition="'$(Version)' == ''">1.0.0</Version>
     <NoWarn>$(NoWarn);MVVMTK0045</NoWarn>
@@ -78,4 +79,16 @@
     <PublishReadyToRun>False</PublishReadyToRun>
     <PublishTrimmed>False</PublishTrimmed>
   </PropertyGroup>
+
+  <!-- Ensure WinUI 3 XAML resources.pri is bundled into the publish folder for unpackaged execution -->
+  <Target Name="CopyPriToPublish" AfterTargets="Publish">
+    <Copy SourceFiles="$(TargetDir)$(TargetName).pri"
+          DestinationFiles="$(PublishDir)resources.pri"
+          Condition="Exists('$(TargetDir)$(TargetName).pri')"
+          SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(TargetDir)$(TargetName).pri"
+          DestinationFiles="$(PublishDir)$(TargetName).pri"
+          Condition="Exists('$(TargetDir)$(TargetName).pri')"
+          SkipUnchangedFiles="true" />
+  </Target>
 </Project>

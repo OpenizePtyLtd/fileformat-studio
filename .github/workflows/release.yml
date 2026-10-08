@@ -78,6 +78,15 @@ jobs:
               New-Item -ItemType Directory -Path (Split-Path -Parent $destModules) -Force -ErrorAction SilentlyContinue
               Copy-Item -Path $sourceModules -Destination $destModules -Recurse -Force
               Write-Host "Successfully bundled node_modules into publish directory."
+      - name: Ensure PRI Resource Files in Publish Output
+        shell: pwsh
+        run: |
+          $publishDir = "FileFormatAIStudio\FileFormatAIStudio\bin\Release\net10.0-windows10.0.19041.0\win-x64\publish"
+          $sourcePri = "FileFormatAIStudio\FileFormatAIStudio\bin\Release\net10.0-windows10.0.19041.0\win-x64\FileFormatAIStudio.pri"
+          if (Test-Path $sourcePri) {
+              Copy-Item $sourcePri "$publishDir\resources.pri" -Force
+              Copy-Item $sourcePri "$publishDir\FileFormatAIStudio.pri" -Force
+              Write-Host "Ensured PRI resource files are in publish output."
           }
 
       - name: Create Portable Zip Package

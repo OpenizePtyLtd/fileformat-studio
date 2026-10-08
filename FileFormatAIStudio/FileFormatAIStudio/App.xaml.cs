@@ -24,8 +24,41 @@ namespace FileFormatAIStudio
 
         public App()
         {
-            InitializeComponent();
-            Services = ConfigureServices();
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                LogException("AppDomain.UnhandledException", e.ExceptionObject as Exception);
+            };
+            UnhandledException += (s, e) =>
+            {
+                LogException("Application.UnhandledException", e.Exception);
+            };
+
+            try
+            {
+                InitializeComponent();
+                Services = ConfigureServices();
+            }
+            catch (Exception ex)
+            {
+                LogException("App.Constructor", ex);
+                throw;
+            }
+        }
+
+        private static void LogException(string source, Exception? ex)
+        {
+            try
+            {
+                string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                string appDir = System.IO.Path.Combine(localAppData, "FileFormatAIStudio");
+                if (!System.IO.Directory.Exists(appDir))
+                {
+                    System.IO.Directory.CreateDirectory(appDir);
+                }
+                string logPath = System.IO.Path.Combine(appDir, "crash.log");
+                System.IO.File.AppendAllText(logPath, $"[{DateTime.UtcNow:O}] [{source}] {ex}\n\n");
+            }
+            catch { }
         }
 
         private static IServiceProvider ConfigureServices()
@@ -103,16 +136,24 @@ namespace FileFormatAIStudio
 
         protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
-            // Initialize Database Schema & Seed Data
-            using (var scope = Services.CreateScope())
+            try
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                await DbInitializer.InitializeAsync(dbContext);
-            }
+                // Initialize Database Schema & Seed Data
+                using (var scope = Services.CreateScope())
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    await DbInitializer.InitializeAsync(dbContext);
+                }
 
-            _window = new MainWindow();
-            MainWindowInstance = _window;
-            _window.Activate();
+                _window = new MainWindow();
+                MainWindowInstance = _window;
+                _window.Activate();
+            }
+            catch (Exception ex)
+            {
+                LogException("App.OnLaunched", ex);
+                throw;
+            }
         }
     }
 }
