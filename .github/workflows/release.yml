@@ -88,14 +88,19 @@ jobs:
           Compress-Archive -Path "$publishDir\*" -DestinationPath $zipName -Force
           Write-Host "Created portable archive: $zipName"
 
-      - name: Setup Inno Setup
-        uses: joshlis/setup-inno@v1
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress
+          Add-Content -Path $env:GITHUB_PATH -Value "C:\Program Files (x86)\Inno Setup 6"
 
       - name: Build Installer with Inno Setup
         shell: pwsh
         run: |
           $ver = "${{ steps.get_version.outputs.APP_VERSION }}"
-          iscc /DAppVersion=$ver installer.iss
+          $iscc = (Get-Command iscc.exe -ErrorAction SilentlyContinue)?.Source
+          if (-not $iscc) { $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" }
+          & $iscc /DAppVersion=$ver installer.iss
           if (Test-Path "publish_installer\FileFormatAIStudio-Setup.exe") {
               Copy-Item "publish_installer\FileFormatAIStudio-Setup.exe" "publish_installer\FileFormatAIStudio-$ver-Setup.exe"
               Write-Host "Installer created successfully: publish_installer\FileFormatAIStudio-$ver-Setup.exe"
