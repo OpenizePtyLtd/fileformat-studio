@@ -18,7 +18,7 @@
 | **M4: Text Extraction Benchmark & Comparison Suite** | Multi-library extraction benchmark grouped by document categories (Word, Excel, PowerPoint, PDF, Text), multi-metric scoring (character volume, latency, memory, cleanliness), and side-by-side comparison UI. | Full in-app benchmark runner, scorecard comparison matrix, and side-by-side text diff inspector. |
 | **M5: Format-Centric Parser Architecture & Modular Engine Decoupling** | Decouple monolithic parser suites into granular, format-centric engines (Word, Excel, PowerPoint, PDF, PlainText) with independent competitors, legacy fallback aliases, and pluggable runtime support. | Clean format-first parser architecture with granular scorecard ranking and seamless extensibility for future libraries. |
 | **M6: Document Engine Configuration & Per-Category Preferences** | Dedicated Document Engine Configuration in Settings with per-category preference selection (Word, Excel, PowerPoint, PDF, Text), dynamic benchmark winner resolution, Auto selection, and ingestion pipeline integration replacing legacy broad dropdowns. | Fully configurable category-based document parser preference engine with automatic benchmark champion integration. |
-| **M7: Release Engineering & Deployment Pipeline** | Windows installer packaging (Inno Setup), automated GitHub Actions monthly release pipeline with draft publishing, unpackaged Windows App SDK runtime bootstrapping, and XAML PRI resource bundling. | Production-ready desktop setup installer, portable ZIP archive, and automated GitHub Releases. |
+| **M7: Release Engineering & Deployment Pipeline** | Windows installer packaging (Inno Setup), automated GitHub Actions monthly release pipeline with draft publishing, unpackaged Windows App SDK runtime bootstrapping, XAML PRI resource bundling, and desktop/installer brand iconography. | Production-ready desktop setup installer, portable ZIP archive, branded icons, and automated GitHub Releases. |
 
 ---
 
@@ -106,6 +106,8 @@
 | **TASK-92** | #135488 | 13. Release Engineering & Deployment | `fix(desktop): resolve REGDB_E_CLASSNOTREG crash by enabling Windows App SDK auto-bootstrapper for unpackaged execution` | M7 | TASK-90, TASK-91 | ✅ Completed |
 | **TASK-93** | #135489 | 13. Release Engineering & Deployment | `fix(desktop): bundle XAML resources.pri index and add startup crash diagnostics in App.xaml.cs` | M7 | TASK-92 | ✅ Completed |
 | **TASK-94** | #135490 | 13. Release Engineering & Deployment | `fix(ci): upgrade release workflow to Node 24 and Chocolatey Inno Setup tooling with PowerShell syntax fixes` | M7 | TASK-91, TASK-93 | ✅ Completed |
+| **TASK-95** | #135930 | 13. Release Engineering & Deployment | `feat(branding): configure desktop application icon and runtime window icon in MainWindow` | M7 | TASK-93 | ✅ Completed |
+| **TASK-96** | #135931 | 13. Release Engineering & Deployment | `feat(release): configure Inno Setup installer icon and update Windows App SDK package visual assets` | M7 | TASK-90, TASK-95 | ✅ Completed |
 
 ---
 
@@ -298,6 +300,8 @@ flowchart TD
         T92["TASK-92 (#135488)<br/>WinAppSDK Bootstrapper Fix"]
         T93["TASK-93 (#135489)<br/>PRI Index &amp; Crash Logging"]
         T94["TASK-94 (#135490)<br/>Node 24 &amp; Workflow Hardening"]
+        T95["TASK-95 (#135930)<br/>App &amp; Window Iconography"]
+        T96["TASK-96 (#135931)<br/>Installer &amp; Package Branding"]
     end
 
     %% M7 Dependencies
@@ -308,6 +312,9 @@ flowchart TD
     T92 --> T93
     T91 --> T94
     T93 --> T94
+    T93 --> T95
+    T90 --> T96
+    T95 --> T96
 ```
 
 ---
