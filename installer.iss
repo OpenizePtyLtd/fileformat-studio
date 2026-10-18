@@ -34,6 +34,7 @@ OutputBaseFilename=FileFormatAIStudio-Setup
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=FileFormatAIStudio\FileFormatAIStudio\Assets\app.ico
 
 ; Uninstaller configuration
 UninstallDisplayIcon={app}\{#MyAppExeName}
