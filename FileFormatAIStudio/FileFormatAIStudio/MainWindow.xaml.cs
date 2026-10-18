@@ -16,6 +16,13 @@ namespace FileFormatAIStudio
         public MainWindow()
         {
             InitializeComponent();
+
+            string iconPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "Assets", "app.ico");
+            if (System.IO.File.Exists(iconPath))
+            {
+                AppWindow.SetIcon(iconPath);
+            }
+
             ViewModel = ((App)Application.Current).Services.GetRequiredService<MainViewModel>();
 
             ViewModel.SessionSelected += OnSessionSelectedFromViewModel;
