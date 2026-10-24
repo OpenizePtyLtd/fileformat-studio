@@ -187,8 +187,15 @@ namespace FileFormatAIStudio.ViewModels
             long wordsB = SelectedEngineB?.WordCount ?? CountWords(TextB);
             string latencyB = SelectedEngineB != null ? $"{SelectedEngineB.ElapsedTime.TotalMilliseconds:N0} ms" : "N/A";
 
-            HeaderStatsA = $"{charsA:N0} chars • {wordsA:N0} words • Latency: {latencyA}";
-            HeaderStatsB = $"{charsB:N0} chars • {wordsB:N0} words • Latency: {latencyB}";
+            string ext = Path.GetExtension(DocumentName)?.TrimStart('.') ?? string.Empty;
+            var ocrA = ViewExtractedTextViewModel.ParseOcrItems(TextA, ext);
+            var ocrB = ViewExtractedTextViewModel.ParseOcrItems(TextB, ext);
+
+            string ocrSuffixA = ocrA.Count > 0 ? $" • {ocrA.Count} OCR figure(s)" : string.Empty;
+            string ocrSuffixB = ocrB.Count > 0 ? $" • {ocrB.Count} OCR figure(s)" : string.Empty;
+
+            HeaderStatsA = $"{charsA:N0} chars • {wordsA:N0} words • Latency: {latencyA}{ocrSuffixA}";
+            HeaderStatsB = $"{charsB:N0} chars • {wordsB:N0} words • Latency: {latencyB}{ocrSuffixB}";
 
             var (diffs, summary) = TextDiffEngine.Compare(TextA, TextB);
             Summary = summary;

@@ -113,6 +113,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
             <!-- Metric 1: Characters -->
@@ -166,6 +167,19 @@
                     <TextBlock Text="{x:Bind ViewModel.ChunkCount, Mode=OneWay}" FontSize="15" FontWeight="Bold" />
                 </StackPanel>
             </Border>
+
+            <!-- Metric 5: OCR Figures -->
+            <Border Grid.Column="4"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="10,6">
+                <StackPanel Spacing="1">
+                    <TextBlock Text="OCR FIGURES" FontSize="10" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Text="{x:Bind ViewModel.OcrItemCount, Mode=OneWay}" FontSize="15" FontWeight="Bold" />
+                </StackPanel>
+            </Border>
         </Grid>
 
         <!-- Row 2: View Selector (Segmented Tab Bar) -->
@@ -193,6 +207,24 @@
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <FontIcon Glyph="&#xE943;" FontSize="12" />
                         <TextBlock Text="Chunks Breakdown" FontSize="12" FontWeight="SemiBold" />
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="OcrTabButton"
+                        Padding="12,5"
+                        CornerRadius="4"
+                        Click="OnOcrTabClicked">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xEB9F;" FontSize="12" />
+                        <TextBlock Text="Images &amp; OCR" FontSize="12" FontWeight="SemiBold" />
+                        <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                CornerRadius="10"
+                                Padding="5,1"
+                                Visibility="{x:Bind ViewModel.HasOcrItems, Mode=OneWay}">
+                            <TextBlock Text="{x:Bind ViewModel.OcrItemCount, Mode=OneWay}"
+                                       FontSize="10"
+                                       FontWeight="Bold" />
+                        </Border>
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -347,6 +379,120 @@
 
                                         <!-- Chunk Content -->
                                         <TextBox Text="{x:Bind TextContent}"
+                                                 IsReadOnly="True"
+                                                 AcceptsReturn="True"
+                                                 TextWrapping="Wrap"
+                                                 FontFamily="Consolas, 'Cascadia Code', 'Segoe UI Mono', monospace"
+                                                 FontSize="11"
+                                                 BorderThickness="0"
+                                                 Background="Transparent"
+                                                 Padding="0"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                                 ScrollViewer.HorizontalScrollMode="Enabled" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </Border>
+
+            <!-- Tab 3: Extracted Images & OCR View -->
+            <Border x:Name="OcrContainer"
+                    Visibility="Collapsed"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="4">
+                <Grid>
+                    <!-- Empty Notice -->
+                    <StackPanel VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                Spacing="6"
+                                Padding="20"
+                                Visibility="{x:Bind local:ViewExtractedTextDialog.InvertBoolToVisibility(ViewModel.HasOcrItems), Mode=OneWay}">
+                        <FontIcon Glyph="&#xEB9F;" FontSize="28" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                        <TextBlock Text="No extracted images or OCR text found."
+                                   FontSize="13"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="This document contains digital native text with no embedded figures or scanned page images."
+                                   FontSize="11"
+                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                   HorizontalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- Scrollable OCR Items List -->
+                    <ListView ItemsSource="{x:Bind ViewModel.OcrItems, Mode=OneWay}"
+                              SelectionMode="None"
+                              Padding="6">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,0,0,8" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ExtractedOcrItemViewModel">
+                                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="12,10">
+                                    <StackPanel Spacing="8">
+                                        <!-- Header -->
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <Border Grid.Column="0"
+                                                    Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                    CornerRadius="4"
+                                                    Padding="6,2"
+                                                    Margin="0,0,8,0">
+                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <FontIcon Glyph="{x:Bind Glyph}" FontSize="10" Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                                                    <TextBlock Text="{x:Bind Title}"
+                                                               FontSize="11"
+                                                               FontWeight="Bold"
+                                                               Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{x:Bind SourceContext}"
+                                                       FontSize="11"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                       VerticalAlignment="Center" />
+
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{x:Bind FormattedStats}"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="0,0,8,0" />
+
+                                            <Button Grid.Column="3"
+                                                    Padding="6,3"
+                                                    ToolTipService.ToolTip="Copy recognized text to clipboard"
+                                                    Command="{x:Bind CopyTextCommand}">
+                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <FontIcon Glyph="&#xE8C8;" FontSize="11" />
+                                                    <TextBlock Text="Copy" FontSize="11" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+
+                                        <!-- OCR Text Content -->
+                                        <TextBox Text="{x:Bind OcrText}"
                                                  IsReadOnly="True"
                                                  AcceptsReturn="True"
                                                  TextWrapping="Wrap"

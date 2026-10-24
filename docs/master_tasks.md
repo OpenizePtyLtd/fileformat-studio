@@ -116,7 +116,7 @@
 | **TASK-101** | #136771 | 14. Document OCR & Vision Intelligence | `feat(parser): implement ImageDocumentParser for standalone image files (.png, .jpg, .jpeg, .bmp, .tiff)` | M8 | TASK-97 | ✅ Completed |
 | **TASK-102** | #136772 | 14. Document OCR & Vision Intelligence | `feat(vision): implement IVisionDescriptionService using Microsoft.Extensions.AI for semantic chart and diagram descriptions` | M8 | TASK-98 | ✅ Completed |
 | **TASK-103** | #136773 | 14. Document OCR & Vision Intelligence | `feat(settings): add OCR and AI Vision configuration in Settings page` | M8 | TASK-97, TASK-102 | ✅ Completed |
-| **TASK-104** | #136774 | 14. Document OCR & Vision Intelligence | `feat(ui): add Images & OCR tab in Extracted Text Viewer and diff inspector` | M8 | TASK-99, TASK-100, TASK-101 | ⏳ Pending |
+| **TASK-104** | #136774 | 14. Document OCR & Vision Intelligence | `feat(ui): add Images & OCR tab in Extracted Text Viewer and diff inspector` | M8 | TASK-99, TASK-100, TASK-101 | ✅ Completed |
 | **TASK-105** | #136775 | 14. Document OCR & Vision Intelligence | `test(ocr): comprehensive unit and integration tests for OCR engines, image extraction, and parser pipelines` | M8 | TASK-99, TASK-100, TASK-101, TASK-102 | ⏳ Pending |
 
 ---

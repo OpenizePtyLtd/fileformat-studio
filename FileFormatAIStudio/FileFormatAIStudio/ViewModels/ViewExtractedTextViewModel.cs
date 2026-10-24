@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -56,6 +58,9 @@ namespace FileFormatAIStudio.ViewModels
         private int _chunkCount;
 
         [ObservableProperty]
+        private int _ocrItemCount;
+
+        [ObservableProperty]
         private bool _isLoading = true;
 
         [ObservableProperty]
@@ -80,9 +85,11 @@ namespace FileFormatAIStudio.ViewModels
         public TextWrapping TextWrappingMode => IsWordWrap ? TextWrapping.Wrap : TextWrapping.NoWrap;
 
         public ObservableCollection<DocumentChunkEntity> Chunks { get; } = new();
+        public ObservableCollection<ExtractedOcrItemViewModel> OcrItems { get; } = new();
 
         public bool HasExtractedText => !string.IsNullOrEmpty(ExtractedText);
         public bool HasChunks => Chunks.Count > 0;
+        public bool HasOcrItems => OcrItems.Count > 0;
 
         public ViewExtractedTextViewModel(IKnowledgebaseService knowledgebaseService)
         {
@@ -143,8 +150,18 @@ namespace FileFormatAIStudio.ViewModels
                     ChunkCount = Chunks.Count;
                 }
 
+                // 3. Extract OCR images and figure blocks
+                var ocrList = ParseOcrItems(text, FileType);
+                OcrItems.Clear();
+                foreach (var item in ocrList)
+                {
+                    OcrItems.Add(item);
+                }
+                OcrItemCount = OcrItems.Count;
+
                 OnPropertyChanged(nameof(HasExtractedText));
                 OnPropertyChanged(nameof(HasChunks));
+                OnPropertyChanged(nameof(HasOcrItems));
             }
             catch (Exception ex)
             {
@@ -215,6 +232,71 @@ namespace FileFormatAIStudio.ViewModels
                 CopyFeedbackMessage = $"Failed to copy to clipboard: {ex.Message}";
                 IsCopyFeedbackOpen = true;
             }
+        }
+
+        public static List<ExtractedOcrItemViewModel> ParseOcrItems(string text, string fileType)
+        {
+            var list = new List<ExtractedOcrItemViewModel>();
+            if (string.IsNullOrWhiteSpace(text)) return list;
+
+            // Pattern: [Page X Image Y Text: ...], [Embedded Image X Text: ...], [Slide X Image Y Text: ...], [Image OCR Text: ...], [Diagram: ...]
+            var regex = new Regex(@"\[(Page \d+ Image \d+|Embedded Image \d+|Slide \d+ Image \d+|Image OCR Text|Diagram)(?: Text)?:?\s*([\s\S]*?)\]", RegexOptions.Compiled);
+            var matches = regex.Matches(text);
+            foreach (Match m in matches)
+            {
+                string label = m.Groups[1].Value.Trim();
+                string content = m.Groups[2].Value.Trim();
+                string context = "Embedded Document Image";
+                string glyph = "\uEB9F";
+
+                if (label.StartsWith("Page", StringComparison.OrdinalIgnoreCase))
+                {
+                    context = "Scanned PDF Page Image";
+                    glyph = "\uEA90";
+                }
+                else if (label.StartsWith("Slide", StringComparison.OrdinalIgnoreCase))
+                {
+                    context = "PowerPoint Slide Picture";
+                    glyph = "\uE8B9";
+                }
+                else if (label.StartsWith("Diagram", StringComparison.OrdinalIgnoreCase))
+                {
+                    context = "AI Vision Diagram Description";
+                    glyph = "\uE8A5";
+                }
+                else if (label.StartsWith("Embedded Image", StringComparison.OrdinalIgnoreCase))
+                {
+                    context = "Word Document Figure";
+                    glyph = "\uE8A5";
+                }
+
+                list.Add(new ExtractedOcrItemViewModel
+                {
+                    Title = label,
+                    SourceContext = context,
+                    OcrText = content,
+                    Glyph = glyph
+                });
+            }
+
+            // If no bracketed OCR blocks were found, but the file is an image file type, present the whole text as OCR result
+            var imageExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "PNG", "JPG", "JPEG", "BMP", "TIFF", "TIF", "WEBP"
+            };
+
+            if (list.Count == 0 && imageExtensions.Contains(fileType?.Trim().ToUpperInvariant() ?? "") && !string.IsNullOrWhiteSpace(text))
+            {
+                list.Add(new ExtractedOcrItemViewModel
+                {
+                    Title = "Image OCR Text",
+                    SourceContext = $"{(fileType?.ToUpperInvariant() ?? "IMAGE")} Image File",
+                    OcrText = text.Trim(),
+                    Glyph = "\uEB9F"
+                });
+            }
+
+            return list;
         }
 
         public static string FormatParser(string? parser)

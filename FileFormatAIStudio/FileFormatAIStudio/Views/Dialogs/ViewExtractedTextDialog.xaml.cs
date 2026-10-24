@@ -36,6 +36,7 @@ namespace FileFormatAIStudio.Views.Dialogs
         {
             FullTextContainer.Visibility = Visibility.Visible;
             ChunksContainer.Visibility = Visibility.Collapsed;
+            OcrContainer.Visibility = Visibility.Collapsed;
             UpdateTabStyles();
         }
 
@@ -43,26 +44,35 @@ namespace FileFormatAIStudio.Views.Dialogs
         {
             FullTextContainer.Visibility = Visibility.Collapsed;
             ChunksContainer.Visibility = Visibility.Visible;
+            OcrContainer.Visibility = Visibility.Collapsed;
+            UpdateTabStyles();
+        }
+
+        private void OnOcrTabClicked(object sender, RoutedEventArgs e)
+        {
+            FullTextContainer.Visibility = Visibility.Collapsed;
+            ChunksContainer.Visibility = Visibility.Collapsed;
+            OcrContainer.Visibility = Visibility.Visible;
             UpdateTabStyles();
         }
 
         private void UpdateTabStyles()
         {
             bool isFullText = FullTextContainer?.Visibility == Visibility.Visible;
+            bool isChunks = ChunksContainer?.Visibility == Visibility.Visible;
+            bool isOcr = OcrContainer?.Visibility == Visibility.Visible;
 
-            if (FullTextTabButton != null && ChunksTabButton != null)
-            {
-                if (isFullText)
-                {
-                    FullTextTabButton.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
-                    ChunksTabButton.Style = (Style)Application.Current.Resources["DefaultButtonStyle"];
-                }
-                else
-                {
-                    FullTextTabButton.Style = (Style)Application.Current.Resources["DefaultButtonStyle"];
-                    ChunksTabButton.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
-                }
-            }
+            var accentStyle = (Style)Application.Current.Resources["AccentButtonStyle"];
+            var defaultStyle = (Style)Application.Current.Resources["DefaultButtonStyle"];
+
+            if (FullTextTabButton != null)
+                FullTextTabButton.Style = isFullText ? accentStyle : defaultStyle;
+
+            if (ChunksTabButton != null)
+                ChunksTabButton.Style = isChunks ? accentStyle : defaultStyle;
+
+            if (OcrTabButton != null)
+                OcrTabButton.Style = isOcr ? accentStyle : defaultStyle;
         }
 
         public static Visibility InvertBoolToVisibility(bool value)
