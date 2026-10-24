@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.Input;
 using FileFormatAIStudio.Data.Entities;
 using FileFormatAIStudio.Services.AI;
 using FileFormatAIStudio.Services.Benchmarking;
+using FileFormatAIStudio.Services.Ocr;
 using FileFormatAIStudio.Services.Parsing;
 using FileFormatAIStudio.Services.Settings;
 using Microsoft.UI.Xaml.Controls;
@@ -23,6 +24,8 @@ namespace FileFormatAIStudio.ViewModels
         private readonly IDocumentCategoryRegistry? _categoryRegistry;
         private readonly IDocumentParserFactory? _parserFactory;
         private readonly IAsposeLicenseService? _licenseService;
+        private readonly IOcrEngine? _ocrEngine;
+        private readonly IVisionDescriptionService? _visionService;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsAiProvidersTabActive))]
@@ -82,6 +85,18 @@ namespace FileFormatAIStudio.ViewModels
         private InfoBarSeverity _asposeLicenseStatusSeverity = InfoBarSeverity.Informational;
 
         public bool CanRemoveAsposeLicense => IsAsposeLicensed;
+
+        [ObservableProperty]
+        private bool _isOcrEnabled = true;
+
+        [ObservableProperty]
+        private string _ocrLanguageStatus = "Windows Native OCR is ready";
+
+        [ObservableProperty]
+        private bool _isVisionEnabled;
+
+        [ObservableProperty]
+        private double _minImageDimension = 100;
 
         partial void OnIsAsposeLicensedChanged(bool value)
         {
@@ -167,7 +182,9 @@ namespace FileFormatAIStudio.ViewModels
             IDocumentEnginePreferenceService? enginePreferenceService = null,
             IDocumentCategoryRegistry? categoryRegistry = null,
             IDocumentParserFactory? parserFactory = null,
-            IAsposeLicenseService? licenseService = null)
+            IAsposeLicenseService? licenseService = null,
+            IOcrEngine? ocrEngine = null,
+            IVisionDescriptionService? visionService = null)
         {
             _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
             _aiClientFactory = aiClientFactory ?? throw new ArgumentNullException(nameof(aiClientFactory));
@@ -175,12 +192,15 @@ namespace FileFormatAIStudio.ViewModels
             _categoryRegistry = categoryRegistry;
             _parserFactory = parserFactory;
             _licenseService = licenseService;
+            _ocrEngine = ocrEngine;
+            _visionService = visionService;
         }
 
         [RelayCommand]
         public async Task LoadDocumentEngineSettingsAsync()
         {
             RefreshAsposeLicenseState();
+            InitializeOcrSettings();
 
             if (_enginePreferenceService == null || _categoryRegistry == null || _parserFactory == null)
             {
@@ -199,6 +219,7 @@ namespace FileFormatAIStudio.ViewModels
                     DocumentCategory.Excel => "\uEE49",
                     DocumentCategory.PowerPoint => "\uE8B9",
                     DocumentCategory.Pdf => "\uEA90",
+                    DocumentCategory.Image => "\uEB9F",
                     _ => "\uE8C4"
                 };
 
@@ -267,6 +288,21 @@ namespace FileFormatAIStudio.ViewModels
             EngineSettingsStatusSeverity = InfoBarSeverity.Success;
             EngineSettingsStatusMessage = "All document categories have been reset to Auto (Benchmark Winner / Default).";
             IsEngineSettingsStatusOpen = true;
+        }
+
+        public void InitializeOcrSettings()
+        {
+            if (_ocrEngine != null)
+            {
+                if (_ocrEngine.IsAvailable && _ocrEngine.SupportedLanguages.Count > 0)
+                {
+                    OcrLanguageStatus = $"{_ocrEngine.SupportedLanguages.Count} language pack(s) installed ({string.Join(", ", _ocrEngine.SupportedLanguages)})";
+                }
+                else
+                {
+                    OcrLanguageStatus = "No Windows OCR language pack found on system";
+                }
+            }
         }
 
         public void RefreshAsposeLicenseState()
