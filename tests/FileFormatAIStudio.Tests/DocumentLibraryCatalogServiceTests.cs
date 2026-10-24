@@ -205,8 +205,9 @@ namespace FileFormatAIStudio.Tests
                 json.Should().Contain("openxml-words");
 
                 // Now simulate manual modification / new live fetched values in cache
+                long currentDownloads = service1.GetAllLibraries().First(l => l.Id == "openxml-words").TotalDownloads;
                 string modifiedJson = json.Replace(
-                    baselineDownloads.ToString(),
+                    currentDownloads.ToString(),
                     "999888777");
                 File.WriteAllText(cachePath, modifiedJson);
 

@@ -6,6 +6,7 @@ using FileFormatAIStudio.Services.Benchmarking;
 using FileFormatAIStudio.Services.Benchmarking.Metrics;
 using FileFormatAIStudio.Services.Chat;
 using FileFormatAIStudio.Services.Knowledgebase;
+using FileFormatAIStudio.Services.Ocr;
 using FileFormatAIStudio.Services.Parsing;
 using FileFormatAIStudio.Services.Settings;
 using FileFormatAIStudio.ViewModels;
@@ -73,6 +74,7 @@ namespace FileFormatAIStudio
             services.AddScoped<ISettingsService, SettingsService>();
             services.AddScoped<IChatSessionService, ChatSessionService>();
             services.AddScoped<IChatExecutionService, ChatExecutionService>();
+            services.AddSingleton<IOcrEngine, WindowsNativeOcrEngine>();
 
             // Document Parsing - Granular Category Engines
             services.AddSingleton<IAsposeLicenseService, AsposeLicenseService>();

@@ -109,7 +109,7 @@
 | **TASK-94** | #135490 | 13. Release Engineering & Deployment | `fix(ci): upgrade release workflow to Node 24 and Chocolatey Inno Setup tooling with PowerShell syntax fixes` | M7 | TASK-91, TASK-93 | ✅ Completed |
 | **TASK-95** | #135930 | 13. Release Engineering & Deployment | `feat(branding): configure desktop application icon and runtime window icon in MainWindow` | M7 | TASK-93 | ✅ Completed |
 | **TASK-96** | #135931 | 13. Release Engineering & Deployment | `feat(release): configure Inno Setup installer icon and update Windows App SDK package visual assets` | M7 | TASK-90, TASK-95 | ✅ Completed |
-| **TASK-97** | #136767 | 14. Document OCR & Vision Intelligence | `feat(ocr): implement IOcrEngine abstraction and WindowsNativeOcrEngine using Windows.Media.Ocr` | M8 | None | ⏳ Pending |
+| **TASK-97** | #136767 | 14. Document OCR & Vision Intelligence | `feat(ocr): implement IOcrEngine abstraction and WindowsNativeOcrEngine using Windows.Media.Ocr` | M8 | None | ✅ Completed |
 | **TASK-98** | #136768 | 14. Document OCR & Vision Intelligence | `feat(ocr): implement IImageExtractorService with noise and size filtering for document streams` | M8 | TASK-97 | ⏳ Pending |
 | **TASK-99** | #136769 | 14. Document OCR & Vision Intelligence | `feat(parser): integrate hybrid per-page OCR extraction into PDF parser engines (PdfPig and Aspose.Pdf)` | M8 | TASK-97, TASK-98 | ⏳ Pending |
 | **TASK-100** | #136770 | 14. Document OCR & Vision Intelligence | `feat(parser): integrate embedded image OCR extraction into Word and PowerPoint parsers` | M8 | TASK-97, TASK-98 | ⏳ Pending |
@@ -325,36 +325,6 @@ flowchart TD
     T93 --> T95
     T90 --> T96
     T95 --> T96
-
-    subgraph OcrAndVisionM8 ["Phase 14: Document OCR & Vision Intelligence (M8)"]
-        T97["TASK-97 (#136767)<br/>IOcrEngine &amp; Windows OCR"]
-        T98["TASK-98 (#136768)<br/>IImageExtractor &amp; Filter"]
-        T99["TASK-99 (#136769)<br/>Hybrid PDF Parser OCR"]
-        T100["TASK-100 (#136770)<br/>Word &amp; PPTX Image OCR"]
-        T101["TASK-101 (#136771)<br/>Standalone Image Parser"]
-        T102["TASK-102 (#136772)<br/>AI Vision Diagram Service"]
-        T103["TASK-103 (#136773)<br/>Settings OCR &amp; Vision UI"]
-        T104["TASK-104 (#136774)<br/>Viewer Images &amp; OCR Tab"]
-        T105["TASK-105 (#136775)<br/>Comprehensive OCR Tests"]
-    end
-
-    %% M8 Dependencies
-    T97 --> T98
-    T97 --> T99
-    T98 --> T99
-    T97 --> T100
-    T98 --> T100
-    T97 --> T101
-    T98 --> T102
-    T97 --> T103
-    T102 --> T103
-    T99 --> T104
-    T100 --> T104
-    T101 --> T104
-    T99 --> T105
-    T100 --> T105
-    T101 --> T105
-    T102 --> T105
 ```
 
 ---
