@@ -112,7 +112,7 @@
 | **TASK-97** | #136767 | 14. Document OCR & Vision Intelligence | `feat(ocr): implement IOcrEngine abstraction and WindowsNativeOcrEngine using Windows.Media.Ocr` | M8 | None | ✅ Completed |
 | **TASK-98** | #136768 | 14. Document OCR & Vision Intelligence | `feat(ocr): implement IImageExtractorService with noise and size filtering for document streams` | M8 | TASK-97 | ✅ Completed |
 | **TASK-99** | #136769 | 14. Document OCR & Vision Intelligence | `feat(parser): integrate hybrid per-page OCR extraction into PDF parser engines (PdfPig and Aspose.Pdf)` | M8 | TASK-97, TASK-98 | ✅ Completed |
-| **TASK-100** | #136770 | 14. Document OCR & Vision Intelligence | `feat(parser): integrate embedded image OCR extraction into Word and PowerPoint parsers` | M8 | TASK-97, TASK-98 | ⏳ Pending |
+| **TASK-100** | #136770 | 14. Document OCR & Vision Intelligence | `feat(parser): integrate embedded image OCR extraction into Word and PowerPoint parsers` | M8 | TASK-97, TASK-98 | ✅ Completed |
 | **TASK-101** | #136771 | 14. Document OCR & Vision Intelligence | `feat(parser): implement ImageDocumentParser for standalone image files (.png, .jpg, .jpeg, .bmp, .tiff)` | M8 | TASK-97 | ⏳ Pending |
 | **TASK-102** | #136772 | 14. Document OCR & Vision Intelligence | `feat(vision): implement IVisionDescriptionService using Microsoft.Extensions.AI for semantic chart and diagram descriptions` | M8 | TASK-98 | ⏳ Pending |
 | **TASK-103** | #136773 | 14. Document OCR & Vision Intelligence | `feat(settings): add OCR and AI Vision configuration in Settings page` | M8 | TASK-97, TASK-102 | ⏳ Pending |

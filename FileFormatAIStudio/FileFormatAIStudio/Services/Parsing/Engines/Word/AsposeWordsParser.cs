@@ -1,15 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FileFormatAIStudio.Services.Benchmarking;
+using FileFormatAIStudio.Services.Ocr;
 
 namespace FileFormatAIStudio.Services.Parsing.Engines.Word
 {
     /// <summary>
     /// Word processing document parser utilizing Aspose.Words for .NET.
-    /// Supports .docx, .doc, .dot, .dotx, .rtf, .odt with full formatting preservation.
+    /// Supports .docx, .doc, .dot, .dotx, .rtf, .odt with full formatting preservation and embedded image OCR.
     /// </summary>
     public class AsposeWordsParser : IDocumentParser
     {
@@ -21,10 +23,17 @@ namespace FileFormatAIStudio.Services.Parsing.Engines.Word
         };
 
         private readonly IAsposeLicenseService? _licenseService;
+        private readonly IOcrEngine? _ocrEngine;
+        private readonly IImageExtractorService? _imageExtractor;
 
-        public AsposeWordsParser(IAsposeLicenseService? licenseService = null)
+        public AsposeWordsParser(
+            IAsposeLicenseService? licenseService = null,
+            IOcrEngine? ocrEngine = null,
+            IImageExtractorService? imageExtractor = null)
         {
             _licenseService = licenseService;
+            _ocrEngine = ocrEngine;
+            _imageExtractor = imageExtractor;
         }
 
         public DocumentCategory Category => DocumentCategory.Word;
@@ -53,11 +62,57 @@ namespace FileFormatAIStudio.Services.Parsing.Engines.Word
                 throw new NotSupportedException($"AsposeWordsParser does not support format '{ext}' for file '{Path.GetFileName(filePath)}'.");
             }
 
-            return Task.Run(() =>
+            return Task.Run(async () =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
+
                 var doc = new Aspose.Words.Document(filePath);
-                return doc.ToString(Aspose.Words.SaveFormat.Text);
+                var text = doc.ToString(Aspose.Words.SaveFormat.Text) ?? string.Empty;
+                var sb = new StringBuilder(text.Trim());
+
+                // Hybrid embedded image OCR
+                if (_ocrEngine != null && _ocrEngine.IsAvailable && _imageExtractor != null)
+                {
+                    try
+                    {
+                        var shapes = doc.GetChildNodes(Aspose.Words.NodeType.Shape, true);
+                        int imgIndex = 1;
+                        foreach (Aspose.Words.Drawing.Shape shape in shapes)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            if (shape.HasImage && shape.ImageData?.ImageBytes != null && shape.ImageData.ImageBytes.Length > 0)
+                            {
+                                var bytes = shape.ImageData.ImageBytes;
+                                var info = await _imageExtractor.InspectAndFilterAsync(
+                                    bytes,
+                                    pageNumber: 1,
+                                    imageIndex: imgIndex,
+                                    cancellationToken: cancellationToken);
+
+                                if (info.IsQualifyingForOcr)
+                                {
+                                    var ocrResult = await _ocrEngine.RecognizeTextAsync(bytes, cancellationToken: cancellationToken);
+                                    if (ocrResult.HasText)
+                                    {
+                                        if (sb.Length > 0)
+                                        {
+                                            sb.AppendLine();
+                                            sb.AppendLine();
+                                        }
+                                        sb.AppendLine($"[Embedded Image {imgIndex} Text: {ocrResult.Text.Trim()}]");
+                                    }
+                                }
+                                imgIndex++;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Non-fatal
+                    }
+                }
+
+                return sb.ToString().Trim();
             }, cancellationToken);
         }
     }

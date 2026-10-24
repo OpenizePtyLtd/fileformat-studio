@@ -5,12 +5,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FileFormatAIStudio.Services.Benchmarking;
+using FileFormatAIStudio.Services.Ocr;
 
 namespace FileFormatAIStudio.Services.Parsing.Engines.PowerPoint
 {
     /// <summary>
     /// Presentation document parser utilizing Aspose.Slides for .NET.
-    /// Supports .pptx, .ppt, .pps, .ppsx, .odp with slide-by-slide text, shape, and speaker notes extraction.
+    /// Supports .pptx, .ppt, .pps, .ppsx, .odp with slide-by-slide text, shape, speaker notes, and embedded image OCR.
     /// </summary>
     public class AsposeSlidesParser : IDocumentParser
     {
@@ -22,10 +23,17 @@ namespace FileFormatAIStudio.Services.Parsing.Engines.PowerPoint
         };
 
         private readonly IAsposeLicenseService? _licenseService;
+        private readonly IOcrEngine? _ocrEngine;
+        private readonly IImageExtractorService? _imageExtractor;
 
-        public AsposeSlidesParser(IAsposeLicenseService? licenseService = null)
+        public AsposeSlidesParser(
+            IAsposeLicenseService? licenseService = null,
+            IOcrEngine? ocrEngine = null,
+            IImageExtractorService? imageExtractor = null)
         {
             _licenseService = licenseService;
+            _ocrEngine = ocrEngine;
+            _imageExtractor = imageExtractor;
         }
 
         public DocumentCategory Category => DocumentCategory.PowerPoint;
@@ -54,7 +62,7 @@ namespace FileFormatAIStudio.Services.Parsing.Engines.PowerPoint
                 throw new NotSupportedException($"AsposeSlidesParser does not support format '{ext}' for file '{Path.GetFileName(filePath)}'.");
             }
 
-            return Task.Run(() =>
+            return Task.Run(async () =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -63,6 +71,8 @@ namespace FileFormatAIStudio.Services.Parsing.Engines.PowerPoint
 
                 for (int i = 0; i < pres.Slides.Count; i++)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     var slide = pres.Slides[i];
 
                     if (sb.Length > 0)
@@ -73,32 +83,91 @@ namespace FileFormatAIStudio.Services.Parsing.Engines.PowerPoint
 
                     sb.AppendLine($"--- Slide {i + 1} ---");
 
-                    var textFrames = Aspose.Slides.Util.SlideUtil.GetAllTextBoxes(slide);
-                    if (textFrames != null)
+                    // Extract text from slide shapes
+                    foreach (var shape in slide.Shapes)
                     {
-                        foreach (var tf in textFrames)
+                        if (shape is Aspose.Slides.IAutoShape autoShape && autoShape.TextFrame != null)
                         {
-                            var text = tf.Text?.Trim();
+                            var text = autoShape.TextFrame.Text?.Trim();
                             if (!string.IsNullOrEmpty(text))
                             {
                                 sb.AppendLine(text);
                             }
                         }
+                        else if (shape is Aspose.Slides.ITable table)
+                        {
+                            for (int r = 0; r < table.Rows.Count; r++)
+                            {
+                                var cellTexts = new List<string>();
+                                for (int c = 0; c < table.Columns.Count; c++)
+                                {
+                                    var cellText = table[c, r].TextFrame?.Text?.Trim();
+                                    if (!string.IsNullOrEmpty(cellText))
+                                        cellTexts.Add(cellText);
+                                }
+
+                                if (cellTexts.Count > 0)
+                                {
+                                    sb.AppendLine(string.Join("\t", cellTexts));
+                                }
+                            }
+                        }
                     }
 
-                    // Append speaker notes if present
+                    // Extract speaker notes
                     var notesSlide = slide.NotesSlideManager?.NotesSlide;
                     if (notesSlide?.NotesTextFrame != null)
                     {
                         var notesText = notesSlide.NotesTextFrame.Text?.Trim();
                         if (!string.IsNullOrEmpty(notesText))
                         {
-                            sb.AppendLine($"[Speaker Notes: {notesText}]");
+                            sb.AppendLine();
+                            sb.AppendLine($"[Notes: {notesText}]");
+                        }
+                    }
+
+                    // Hybrid embedded image OCR
+                    if (_ocrEngine != null && _ocrEngine.IsAvailable && _imageExtractor != null)
+                    {
+                        try
+                        {
+                            int imgIndex = 1;
+                            foreach (Aspose.Slides.IShape shape in slide.Shapes)
+                            {
+                                cancellationToken.ThrowIfCancellationRequested();
+                                if (shape is Aspose.Slides.IPictureFrame pf && pf.PictureFormat?.Picture?.Image != null)
+                                {
+                                    var bytes = pf.PictureFormat.Picture.Image.BinaryData;
+                                    if (bytes != null && bytes.Length > 0)
+                                    {
+                                        var info = await _imageExtractor.InspectAndFilterAsync(
+                                            bytes,
+                                            pageNumber: i + 1,
+                                            imageIndex: imgIndex,
+                                            cancellationToken: cancellationToken);
+
+                                        if (info.IsQualifyingForOcr)
+                                        {
+                                            var ocrResult = await _ocrEngine.RecognizeTextAsync(bytes, cancellationToken: cancellationToken);
+                                            if (ocrResult.HasText)
+                                            {
+                                                sb.AppendLine();
+                                                sb.AppendLine($"[Slide {i + 1} Image {imgIndex} Text: {ocrResult.Text.Trim()}]");
+                                            }
+                                        }
+                                        imgIndex++;
+                                    }
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            // Non-fatal
                         }
                     }
                 }
 
-                return sb.ToString();
+                return sb.ToString().Trim();
             }, cancellationToken);
         }
     }

@@ -7,12 +7,13 @@ using System.Threading.Tasks;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using FileFormatAIStudio.Services.Benchmarking;
+using FileFormatAIStudio.Services.Ocr;
 
 namespace FileFormatAIStudio.Services.Parsing.Engines.Word
 {
     /// <summary>
     /// Open-source Word document parser utilizing Microsoft DocumentFormat.OpenXml SDK.
-    /// Extracts paragraphs and table cell contents from modern .docx files.
+    /// Extracts paragraphs, table cell contents, and embedded image OCR text from modern .docx files.
     /// </summary>
     public class OpenXmlWordParser : IDocumentParser
     {
@@ -22,6 +23,9 @@ namespace FileFormatAIStudio.Services.Parsing.Engines.Word
         {
             ".docx"
         };
+
+        private readonly IOcrEngine? _ocrEngine;
+        private readonly IImageExtractorService? _imageExtractor;
 
         public DocumentCategory Category => DocumentCategory.Word;
 
@@ -34,6 +38,12 @@ namespace FileFormatAIStudio.Services.Parsing.Engines.Word
         public bool IsAvailable => true;
 
         public IReadOnlySet<string> SupportedExtensions => Extensions;
+
+        public OpenXmlWordParser(IOcrEngine? ocrEngine = null, IImageExtractorService? imageExtractor = null)
+        {
+            _ocrEngine = ocrEngine;
+            _imageExtractor = imageExtractor;
+        }
 
         public Task<string> ExtractTextAsync(string filePath, CancellationToken cancellationToken = default)
         {
@@ -49,7 +59,7 @@ namespace FileFormatAIStudio.Services.Parsing.Engines.Word
                 throw new NotSupportedException($"OpenXmlWordParser does not support format '{ext}' for file '{Path.GetFileName(filePath)}'.");
             }
 
-            return Task.Run(() =>
+            return Task.Run(async () =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -74,27 +84,65 @@ namespace FileFormatAIStudio.Services.Parsing.Engines.Word
                     }
                     else if (element is Table table)
                     {
-                        if (sb.Length > 0)
-                            sb.AppendLine();
-
                         foreach (var row in table.Elements<TableRow>())
                         {
                             var cellTexts = new List<string>();
-                            bool rowHasData = false;
-
                             foreach (var cell in row.Elements<TableCell>())
                             {
-                                var cellVal = cell.InnerText?.Trim() ?? string.Empty;
-                                if (!string.IsNullOrEmpty(cellVal))
-                                    rowHasData = true;
-                                cellTexts.Add(cellVal);
+                                var cellText = cell.InnerText?.Trim();
+                                if (!string.IsNullOrEmpty(cellText))
+                                    cellTexts.Add(cellText);
                             }
 
-                            if (rowHasData)
+                            if (cellTexts.Count > 0)
                             {
-                                sb.AppendLine(string.Join(" | ", cellTexts));
+                                if (sb.Length > 0)
+                                    sb.AppendLine();
+                                sb.AppendLine(string.Join("\t", cellTexts));
                             }
                         }
+                    }
+                }
+
+                // Hybrid embedded image OCR
+                if (_ocrEngine != null && _ocrEngine.IsAvailable && _imageExtractor != null && doc.MainDocumentPart?.ImageParts != null)
+                {
+                    try
+                    {
+                        int imgIndex = 1;
+                        foreach (var imagePart in doc.MainDocumentPart.ImageParts)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            using var stream = imagePart.GetStream();
+                            using var ms = new MemoryStream();
+                            await stream.CopyToAsync(ms, cancellationToken);
+                            var bytes = ms.ToArray();
+
+                            var info = await _imageExtractor.InspectAndFilterAsync(
+                                bytes,
+                                pageNumber: 1,
+                                imageIndex: imgIndex,
+                                cancellationToken: cancellationToken);
+
+                            if (info.IsQualifyingForOcr)
+                            {
+                                var ocrResult = await _ocrEngine.RecognizeTextAsync(bytes, cancellationToken: cancellationToken);
+                                if (ocrResult.HasText)
+                                {
+                                    if (sb.Length > 0)
+                                    {
+                                        sb.AppendLine();
+                                        sb.AppendLine();
+                                    }
+                                    sb.AppendLine($"[Embedded Image {imgIndex} Text: {ocrResult.Text.Trim()}]");
+                                }
+                            }
+                            imgIndex++;
+                        }
+                    }
+                    catch
+                    {
+                        // Non-fatal
                     }
                 }
 
