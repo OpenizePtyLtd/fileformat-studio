@@ -16,7 +16,8 @@ namespace FileFormatAIStudio.Services.Benchmarking
             DocumentCategory.Excel,
             DocumentCategory.PowerPoint,
             DocumentCategory.Pdf,
-            DocumentCategory.PlainText
+            DocumentCategory.PlainText,
+            DocumentCategory.Image
         };
 
         private readonly Dictionary<string, DocumentFormatDescriptor> _formatsByExtension;
@@ -65,7 +66,16 @@ namespace FileFormatAIStudio.Services.Benchmarking
                 new(".json", "JSON Document", DocumentCategory.PlainText, "application/json", "Code Editor", "JavaScript Object Notation structured data file."),
                 new(".xml", "XML Document", DocumentCategory.PlainText, "application/xml", "Code Editor", "Extensible Markup Language document."),
                 new(".html", "HTML Document", DocumentCategory.PlainText, "text/html", "Web Browser", "HyperText Markup Language file."),
-                new(".htm", "HTML Document", DocumentCategory.PlainText, "text/html", "Web Browser", "HyperText Markup Language file.")
+                new(".htm", "HTML Document", DocumentCategory.PlainText, "text/html", "Web Browser", "HyperText Markup Language file."),
+
+                // Standalone Images
+                new(".png", "Portable Network Graphics", DocumentCategory.Image, "image/png", "Photos / Graphics Viewer", "Lossless compressed raster graphics format widely used on the web."),
+                new(".jpg", "JPEG Image", DocumentCategory.Image, "image/jpeg", "Photos / Graphics Viewer", "Lossy compressed standard photographic image format."),
+                new(".jpeg", "JPEG Image", DocumentCategory.Image, "image/jpeg", "Photos / Graphics Viewer", "Lossy compressed standard photographic image format."),
+                new(".bmp", "Bitmap Image", DocumentCategory.Image, "image/bmp", "Photos / Graphics Viewer", "Uncompressed Windows raster graphics bitmap format."),
+                new(".tiff", "Tagged Image File Format", DocumentCategory.Image, "image/tiff", "Photos / Document Scanner", "Flexible image standard commonly used for scanned documents and faxes."),
+                new(".tif", "Tagged Image File Format", DocumentCategory.Image, "image/tiff", "Photos / Document Scanner", "Flexible image standard commonly used for scanned documents and faxes."),
+                new(".webp", "WebP Image", DocumentCategory.Image, "image/webp", "Web Browser / Graphics Viewer", "Modern Google raster image format with lossy and lossless compression.")
             };
 
             _formatsByExtension = new Dictionary<string, DocumentFormatDescriptor>(StringComparer.OrdinalIgnoreCase);
@@ -84,6 +94,7 @@ namespace FileFormatAIStudio.Services.Benchmarking
             DocumentCategory.PowerPoint => "PowerPoint Presentation",
             DocumentCategory.Pdf => "PDF Document",
             DocumentCategory.PlainText => "Plain / Structured Text",
+            DocumentCategory.Image => "Images & Scans",
             _ => category.ToString()
         };
 
@@ -114,6 +125,7 @@ namespace FileFormatAIStudio.Services.Benchmarking
                 ".xlsx" or ".xls" or ".xlsm" or ".xlsb" or ".xltx" or ".xlt" or ".ods" or ".csv" or ".tsv" => DocumentCategory.Excel,
                 ".pptx" or ".ppt" or ".ppsx" or ".pps" or ".potx" or ".pot" or ".odp" => DocumentCategory.PowerPoint,
                 ".pdf" => DocumentCategory.Pdf,
+                ".png" or ".jpg" or ".jpeg" or ".bmp" or ".tiff" or ".tif" or ".webp" => DocumentCategory.Image,
                 _ => DocumentCategory.PlainText
             };
         }

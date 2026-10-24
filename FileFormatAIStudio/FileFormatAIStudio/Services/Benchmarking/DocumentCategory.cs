@@ -28,7 +28,12 @@ namespace FileFormatAIStudio.Services.Benchmarking
         /// <summary>
         /// Plain and structured text files (e.g. .txt, .md, .markdown, .json, .xml, .html).
         /// </summary>
-        PlainText
+        PlainText,
+
+        /// <summary>
+        /// Standalone raster images (e.g. .png, .jpg, .jpeg, .bmp, .tiff, .tif, .webp).
+        /// </summary>
+        Image
     }
 }
 
