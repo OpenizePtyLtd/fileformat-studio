@@ -12,18 +12,19 @@ namespace FileFormatAIStudio.Tests
         private readonly DocumentCategoryRegistry _registry = new();
 
         [Fact]
-        public void GetAllCategories_ReturnsAllFiveDocumentCategories()
+        public void GetAllCategories_ReturnsAllDocumentCategories()
         {
             var categories = _registry.GetAllCategories();
 
-            categories.Should().HaveCount(5)
+            categories.Should().HaveCount(6)
                 .And.Contain(new[]
                 {
                     DocumentCategory.Word,
                     DocumentCategory.Excel,
                     DocumentCategory.PowerPoint,
                     DocumentCategory.Pdf,
-                    DocumentCategory.PlainText
+                    DocumentCategory.PlainText,
+                    DocumentCategory.Image
                 });
         }
 
@@ -33,6 +34,7 @@ namespace FileFormatAIStudio.Tests
         [InlineData(DocumentCategory.PowerPoint, "PowerPoint Presentation")]
         [InlineData(DocumentCategory.Pdf, "PDF Document")]
         [InlineData(DocumentCategory.PlainText, "Plain / Structured Text")]
+        [InlineData(DocumentCategory.Image, "Images & Scans")]
         public void GetCategoryDisplayName_ReturnsExpectedDisplayName(DocumentCategory category, string expectedName)
         {
             var displayName = _registry.GetCategoryDisplayName(category);

@@ -93,7 +93,7 @@ namespace FileFormatAIStudio.Tests
         }
 
         [Fact]
-        public async Task GetAllPreferencesAsync_ReturnsAllFiveCategories()
+        public async Task GetAllPreferencesAsync_ReturnsAllConfiguredCategories()
         {
             using var context = new AppDbContext(_options);
             var service = new DocumentEnginePreferenceService(context, _categoryRegistry, _parserFactory);
@@ -102,12 +102,13 @@ namespace FileFormatAIStudio.Tests
 
             var all = await service.GetAllPreferencesAsync();
 
-            all.Should().HaveCount(5);
+            all.Should().HaveCount(6);
             all[DocumentCategory.Word].Should().Be("openxml-words");
             all[DocumentCategory.Excel].Should().Be("Auto");
             all[DocumentCategory.PowerPoint].Should().Be("Auto");
             all[DocumentCategory.Pdf].Should().Be("Auto");
             all[DocumentCategory.PlainText].Should().Be("Auto");
+            all[DocumentCategory.Image].Should().Be("Auto");
         }
 
         [Fact]
