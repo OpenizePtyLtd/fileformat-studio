@@ -75,6 +75,7 @@ namespace FileFormatAIStudio
             services.AddScoped<IChatSessionService, ChatSessionService>();
             services.AddScoped<IChatExecutionService, ChatExecutionService>();
             services.AddSingleton<IOcrEngine, WindowsNativeOcrEngine>();
+            services.AddSingleton<IImageExtractorService, ImageExtractorService>();
 
             // Document Parsing - Granular Category Engines
             services.AddSingleton<IAsposeLicenseService, AsposeLicenseService>();

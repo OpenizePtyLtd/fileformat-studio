@@ -110,7 +110,7 @@
 | **TASK-95** | #135930 | 13. Release Engineering & Deployment | `feat(branding): configure desktop application icon and runtime window icon in MainWindow` | M7 | TASK-93 | ✅ Completed |
 | **TASK-96** | #135931 | 13. Release Engineering & Deployment | `feat(release): configure Inno Setup installer icon and update Windows App SDK package visual assets` | M7 | TASK-90, TASK-95 | ✅ Completed |
 | **TASK-97** | #136767 | 14. Document OCR & Vision Intelligence | `feat(ocr): implement IOcrEngine abstraction and WindowsNativeOcrEngine using Windows.Media.Ocr` | M8 | None | ✅ Completed |
-| **TASK-98** | #136768 | 14. Document OCR & Vision Intelligence | `feat(ocr): implement IImageExtractorService with noise and size filtering for document streams` | M8 | TASK-97 | ⏳ Pending |
+| **TASK-98** | #136768 | 14. Document OCR & Vision Intelligence | `feat(ocr): implement IImageExtractorService with noise and size filtering for document streams` | M8 | TASK-97 | ✅ Completed |
 | **TASK-99** | #136769 | 14. Document OCR & Vision Intelligence | `feat(parser): integrate hybrid per-page OCR extraction into PDF parser engines (PdfPig and Aspose.Pdf)` | M8 | TASK-97, TASK-98 | ⏳ Pending |
 | **TASK-100** | #136770 | 14. Document OCR & Vision Intelligence | `feat(parser): integrate embedded image OCR extraction into Word and PowerPoint parsers` | M8 | TASK-97, TASK-98 | ⏳ Pending |
 | **TASK-101** | #136771 | 14. Document OCR & Vision Intelligence | `feat(parser): implement ImageDocumentParser for standalone image files (.png, .jpg, .jpeg, .bmp, .tiff)` | M8 | TASK-97 | ⏳ Pending |
